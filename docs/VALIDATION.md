@@ -32,7 +32,8 @@ install --write  →  启动服务  →  doctor 10/10 ok (1 warning)  →  写�
 ```
 
 - 在 **Windows** 上：通过（本机 Node 24.18、file secret store、`--summary-index none`）；
-- 在 **Linux** 上：仓库里的 CI 会在 `ubuntu-latest` 复跑同一脚本（见 `.github/workflows/ci.yml`）。
+- 在 **Linux / CI** 上：`.github/workflows/ci.yml` 会在 `ubuntu-latest` 与 `windows-latest` 复跑同一脚本；
+  **CI 机器通常没有 Ollama**，所以 `doctor` 第 4 项（健康/向量车道）会单项 FAIL —— smoke 按"已知环境差异"接受它，其余九项必须全过。
 
 ## 3. 语义层验过的点
 
@@ -62,3 +63,4 @@ node scripts/syntax-check.mjs                 # 所有 .mjs 语法
 node scripts/smoke.mjs                        # 端到端（临时目录，不碰你的数据）
 cd app/memory-lib && node scripts/run-tests.mjs   # 全量测试（Windows 上验过；Linux 未验）
 ```
+
