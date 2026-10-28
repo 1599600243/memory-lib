@@ -1,6 +1,9 @@
 # memory-lib
 
+[![ci](https://github.com/1599600243/memory-lib/actions/workflows/ci.yml/badge.svg)](https://github.com/1599600243/memory-lib/actions/workflows/ci.yml)
+
 > **状态：个人自用 / 实验性项目。** 接口与数据格式仍在变，暂不保证向后兼容。
+> **验过什么、没验过什么**，都写在 [`docs/VALIDATION.md`](docs/VALIDATION.md) 里，不吹。
 > 我把它开源出来，是因为"AI 的记忆"这件事值得多看几种做法；**它不是生产级产品**，用之前请自己评估。
 
 一个**本地优先**的长期记忆服务：文件是真相，SQLite 只是可重建的索引，通过 **HTTP + MCP** 两套标准接口对外提供服务。
@@ -60,7 +63,7 @@ node scripts/capture-tail.mjs --agent <id> --once --backfill --verify
 ```
 app/memory-lib/    服务本体（HTTP + MCP、检索、写入、索引、控制台）
 scripts/           安装、自检、接入、写回侧车
-docs/              接入规范（AGENT-SPEC）、注入契约（INJECT-SPEC）、版本策略
+docs/              接入规范（AGENT-SPEC）、注入契约（INJECT-SPEC）、验证记录（VALIDATION）、版本策略
 skills/            给接入方 agent 的 onboarding 技能
 ```
 
@@ -74,3 +77,4 @@ skills/            给接入方 agent 的 onboarding 技能
 ## License
 
 MIT，见 [`LICENSE`](LICENSE)。
+
