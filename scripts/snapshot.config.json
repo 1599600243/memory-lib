@@ -1,0 +1,32 @@
+{
+  "_comment": "memory archive snapshot 配置。迁移到别的机器时只改这个文件。",
+  "live": "D:\\MemoryArchive\\live",
+  "sources": [
+    {
+      "name": "memory-data",
+      "src": "I:\\OpenClaw\\memory-data",
+      "dst": "memory-data",
+      "excludeDirs": ["backups", "indexes", "runtime/audit", "runtime\\audit"],
+      "excludeFiles": []
+    },
+    {
+      "name": "openclaw-memory-plugin",
+      "src": "C:\\Users\\admin\\.openclaw\\workspace\\openclaw-memory",
+      "dst": "openclaw-memory-plugin",
+      "excludeDirs": ["node_modules", "tmp", "tmp-runtime"],
+      "excludeFiles": []
+    },
+    {
+      "name": "dsh-memory-capture",
+      "src": "C:\\Users\\admin\\.dsh\\memory-capture",
+      "dst": "dsh-memory-capture",
+      "excludeDirs": [],
+      "excludeFiles": ["realtime.log"]
+    }
+  ],
+  "redactScript": "redact-openclaw.mjs",
+  "oversizeLimitMB": 95,
+  "maxPushAttempts": 2,
+  "pushRetryDelayMs": 15000,
+  "stampFile": ".last-push.json"
+}

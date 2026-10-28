@@ -1,0 +1,24 @@
+# 运行时数据与产物 —— 永远不进仓库
+data/
+logs/
+state/
+indexes/
+runtime/
+backups/
+quarantine/
+snapshots/
+node_modules/
+*.log
+
+# 本地配置与密钥
+.env
+*.secret
+*.key
+config.local.*
+**/deploy.json
+
+# 编辑器/系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

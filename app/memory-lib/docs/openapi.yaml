@@ -1,0 +1,1027 @@
+openapi: 3.0.3
+info:
+  title: memory-lib library.v1
+  description: >
+    记忆库通用标准接口。任何框架凭身份接入，鉴权在请求体（credential_ref + secret + principal），
+    非 HTTP Header。默认 127.0.0.1:8787。详细规范见 docs/protocol.md。
+  version: "1.0.0"
+servers:
+  - url: http://127.0.0.1:8787
+    description: 本机回环（仅 127.0.0.1；远程需 TLS/受信代理）
+paths:
+  /v1/auth/login:
+    post:
+      summary: 人类账号密码登录并创建 Bearer 会话
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string, example: admin@example.com }
+                password: { type: string, format: password }
+      responses:
+        "200":
+          description: 会话创建成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "429": { description: 登录限速，响应含 Retry-After }
+  /v1/auth/logout:
+    post:
+      summary: 撤销当前 Bearer 会话（幂等）
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: 会话已撤销或原本不存在 }
+  /v1/auth/whoami:
+    get:
+      summary: 查看当前 Bearer 会话 principal（不续期）
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: 当前身份与会话时间 }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+  /v1/auth/password:
+    post:
+      summary: 修改密码并撤销该账号全部会话
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password, new_password]
+              properties:
+                current_password: { type: string, format: password }
+                new_password: { type: string, format: password }
+      responses:
+        "200": { description: 密码已更新 }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+  /v1/health:
+    get:
+      summary: 最小健康信息（弱鉴权，不泄露路径）；含只读探测的向量车道状态/原因
+      responses:
+        "200":
+          description: 健康状态（向量车道 down/stale 时 health 为 degraded，带 reason；不返回 5xx）
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+                  service: { type: string, example: memory-lib }
+                  version: { type: integer, example: 1 }
+                  health: { type: string, enum: [healthy, reduced, degraded], example: healthy }
+                  vector:
+                    $ref: "#/components/schemas/VectorLaneStatus"
+  /v1/search:
+    post:
+      summary: 授权范围内检索（默认 hybrid：FTS + 向量 + 图谱扩展 + RRF）
+      description: 默认启用图谱扩展并保留 graph provenance；graphExpand=false 时仅使用索引与向量。无 principal 的 parity 模式不会执行图谱扩展。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchRequest"
+      responses:
+        "200":
+          description: 检索结果
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+  /v1/search/joint:
+    post:
+      summary: 联合检索（索引、向量与显式图谱条件）
+      description: 需要 search 权限；结果保留 matched_by、graph_path、evidence_ids。可见性按认证 principal 过滤。
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/AuthEnvelope"
+                - type: object
+                  required: [query]
+                  properties:
+                    query: { type: string }
+                    limit: { type: integer, minimum: 1, maximum: 100, default: 10 }
+                    exact: { type: object, description: 可选的精确图谱谓词条件 }
+      responses:
+        "200": { description: 联合检索结果，content: { application/json: { schema: { $ref: "#/components/schemas/JointSearchResponse" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /v1/date/resolve:
+    post:
+      summary: 把人话时间表达归一成绝对日期范围（纯规则、零模型）
+      description: |
+        「10/10」「昨天」「上周三」「上个月」这类表达 → 绝对范围。**平台不调模型、不猜当前时间**：
+        `now` 必须由调用方给出，所以同一个请求重放一定得到同一个范围（可审计）。
+        拿到结果后：`calendarDate` 非空时用 /v1/search 的 calendarDate + calendarTimezone 取全那一天；
+        是区间（周/月）时用 since/until。
+        解析不了或存在歧义 ⇒ 422，响应里**没有 range**，调用方不可能把失败当成「搜全库」。
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/AuthEnvelope"
+                - type: object
+                  required: [text, now]
+                  properties:
+                    text: { type: string, description: 时间表达，也可以是「10/10 我们聊了什么」这类整句 }
+                    now: { type: string, description: "ISO 瞬时，解析相对时间的锚点；必填（服务端不猜「现在」）" }
+                    timezone: { type: string, description: "IANA 时区名；也接受已收录的 Windows 名（如 China Standard Time），响应回传归一化后的 IANA 名" }
+                    locale: { type: string, nullable: true, description: "如 zh-CN（默认）。显式 null = locale 未知 ⇒ 10/11 这类返回 ambiguous 候选" }
+                    weekStartsOn: { type: integer, minimum: 0, maximum: 6, description: "0=周日, 1=周一（默认）。只影响「本周/上周」的锚点，并在响应里回传" }
+      responses:
+        "200":
+          description: 解析成功
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DateResolveResponse" }
+        "422":
+          description: |
+            解析失败或存在歧义（调用方可恢复的输入问题）。`code` 取值：
+            `NO_MATCH`（认不出）· `INVALID_DATE`（如 2/30，**不会**滚到 3 月）·
+            `AMBIGUOUS`（`error.ambiguous.candidates` 给两种读法，**不替你选**）·
+            `INVALID_TIMEZONE` · `INVALID_NOW` · `INVALID_WEEK_START`。**失败响应不含 range。**
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DateResolveResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /v1/graph/query:
+    post:
+      summary: 查询授权范围内的项目图谱
+      description: 需要 search 权限；返回认证 principal 可见的 project graph 及其 memories、edges 和 evidence provenance。
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/AuthEnvelope"
+                - type: object
+                  required: [project_id]
+                  properties:
+                    project_id: { type: string }
+      responses:
+        "200": { description: 项目图谱，包含可见 memories、edges、graph_path 与 evidence_ids }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /v1/ingest/status:
+    get:
+      summary: 返回外部导入快捷目录与当前身份路径范围
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: 导入策略元数据 }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+  /v1/ingest:
+    post:
+      summary: 预览或执行外部文件/目录记忆导入
+      description: dry_run 默认 true；dry_run=false 需要同一 principal 先用相同业务参数完成预览。
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/IngestRequest" }
+      responses:
+        "200": { description: planned、skipped、imported 与 counts }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /v1/conversations/capture:
+    post:
+      summary: 保存对话 evidence；extract=true 时按权限提炼 inbox 候选
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CaptureRequest" }
+      responses:
+        "200": { description: 捕获或幂等重放成功 }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /v1/tools/note:
+    post:
+      summary: 写入工具记忆（需 propose；必须带证据引用）
+      security: [{ bearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/ToolNoteRequest" } } } }
+      responses: { "200": { description: 写入成功 }, "400": { $ref: "#/components/responses/BadRequest" }, "401": { $ref: "#/components/responses/Unauthenticated" }, "403": { $ref: "#/components/responses/Forbidden" } }
+  /v1/plans/put:
+    post:
+      summary: 写入计划 draft（需 propose；必须带证据引用）
+      security: [{ bearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/PlanPutRequest" } } } }
+      responses: { "200": { description: 写入成功 }, "400": { $ref: "#/components/responses/BadRequest" } }
+  /v1/project/state:
+    post:
+      summary: 写入项目当前状态（需 propose；必须带证据引用）
+      security: [{ bearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/ProjectStateRequest" } } } }
+      responses: { "200": { description: 写入成功 }, "400": { $ref: "#/components/responses/BadRequest" } }
+  /v1/project/decision:
+    post:
+      summary: 追加项目决策（需 propose；必须带证据引用）
+      security: [{ bearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/ProjectDecisionRequest" } } } }
+      responses: { "200": { description: 写入成功 }, "400": { $ref: "#/components/responses/BadRequest" } }
+  /v1/roles/note:
+    post:
+      summary: 写入角色记忆（需 propose；身份来自认证连接）
+      security: [{ bearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/RoleNoteRequest" } } } }
+      responses: { "200": { description: 写入成功 }, "400": { $ref: "#/components/responses/BadRequest" } }
+  /v1/profile/confirm:
+    post:
+      summary: 确认画像 draft（需 propose；必须带证据引用）
+      security: [{ bearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/ProfileConfirmRequest" } } } }
+      responses: { "200": { description: 确认成功 }, "400": { $ref: "#/components/responses/BadRequest" } }
+  /v1/evidence/import:
+    post:
+      summary: 导入证据文件（需 propose）
+      security: [{ bearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/EvidenceImportRequest" } } } }
+      responses: { "200": { description: 导入成功 }, "400": { $ref: "#/components/responses/BadRequest" } }
+  /v1/write:
+    post:
+      summary: 零模型直接写入记忆；写入归属始终使用认证 principal
+      description: 可选 visibility 仅能用于认证 principal 授权的范围；platform 需要 admin action。省略 visibility 保持现有层默认值。调用方提供的身份字段不构成归属。
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/AuthEnvelope"
+                - type: object
+                  required: [layer, evidence_refs]
+                  properties:
+                    layer: { type: string }
+                    id: { type: string }
+                    body: { type: string }
+                    project: { type: string }
+                    visibility: { type: string, enum: [platform, shared, user, private, role, agent, project, daily] }
+                    evidence_refs: { type: array, minItems: 1, items: { type: string, minLength: 1 } }
+      responses:
+        "200": { description: 写入成功 }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /v1/get:
+    post:
+      summary: 按 id 读正式记忆（不存在/越权 → 404，不泄漏存在性）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/AuthEnvelope"
+                - type: object
+                  required: [id]
+                  properties:
+                    id: { type: string, example: mem_20260805_memory_loop }
+      responses:
+        "200":
+          description: 记忆条目
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  item:
+                    type: object
+                    properties:
+                      id: { type: string }
+                      path: { type: string }
+                      frontmatter: { type: object }
+                      body: { type: string }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /v1/admin/health:
+    post:
+      summary: 完整健康检查（admin）
+      requestBody: { $ref: "#/components/requestBodies/AdminEnvelope" }
+      responses:
+        "200":
+          description: 完整健康（checks/roots/vector；checks 含 vector-lane）
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  health: { type: string, enum: [healthy, reduced, degraded] }
+                  reason: { type: string, nullable: true, description: 降级原因（向量车道 down/stale 时非空） }
+                  checks:
+                    type: array
+                    description: 目录/脚本存在性检查 + vector-lane（无 path 字段）
+                    items:
+                      type: object
+                      properties:
+                        name: { type: string, example: vector-lane }
+                        status: { type: string, enum: [ok, missing, down, stale, skipped] }
+                        path: { type: string, nullable: true }
+                        reason: { type: string, nullable: true }
+                  vector:
+                    $ref: "#/components/schemas/VectorLaneStatus"
+                  roots: { type: array, items: { type: string } }
+  /v1/admin/registry:
+    post:
+      summary: 注册表无密视图（admin）
+      requestBody: { $ref: "#/components/requestBodies/AdminEnvelope" }
+      responses:
+        "200":
+          description: 框架/智能体/角色/凭证状态（无密钥）
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  frameworks:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        framework_id: { type: string }
+                        credential_ref: { type: string }
+                        credential_status: { type: string }
+                        agents:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              agent_id: { type: string }
+                              roles:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    role_id: { type: string }
+                                    scopes: { type: array, items: { $ref: "#/components/schemas/Scope" } }
+                                    actions: { type: array, items: { type: string } }
+  # Bootstrap is a local CLI sequence, not an HTTP endpoint: it atomically adds the registry role declaration,
+  # creates the canonical group/user/role key binding, then issues one key. See docs/protocol.md.
+  /v1/admin/identity:
+    post:
+      summary: 身份清单无密视图（admin）
+      description: 返回平台、组、用户、角色与 API key 的元数据；响应绝不包含明文 key、prefix、secret_hash、密码 hash 或 secret 路径。
+      security: [{ bearerAuth: [] }]
+      requestBody: { $ref: "#/components/requestBodies/AdminEnvelope" }
+      responses:
+        "200":
+          description: 无密身份清单
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentityInventoryResponse"
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /v1/admin/roles/key:
+    post:
+      summary: 通过真实 admin API 发角色 API key
+      description: role/user/group 必须已存在于 canonical API-key registry；明文只在响应中出现一次，持久化只保存 hash。
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/AdminEnvelope"
+                - type: object
+                  required: [role_id]
+                  properties:
+                    role_id: { type: string }
+      responses:
+        "200":
+          description: key 已签发；响应含一次性明文 secret
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IssuedKeyResponse"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /v1/admin/roles/{role_id}/keys:
+    post:
+      summary: 按 role id 发角色 API key
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: role_id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody: { $ref: "#/components/requestBodies/AdminEnvelope" }
+      responses:
+        "200": { $ref: "#/components/responses/IssuedKey" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /v1/project/get:
+    post:
+      summary: 读取项目；不可见或不存在均返回 404
+      description: 有效凭证但项目超出 principal 可见范围时返回 404，避免泄露项目存在性。
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/AuthEnvelope"
+                - type: object
+                  required: [project]
+                  properties:
+                    project: { type: string }
+      responses:
+        "200": { description: 可见项目 }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /v1/admin/registry/revoke:
+    post:
+      summary: 撤销框架凭证（admin；撤销后即时生效）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/AdminEnvelope"
+                - type: object
+                  required: [framework_id]
+                  properties:
+                    framework_id: { type: string }
+      responses:
+        "200":
+          description: 已撤销
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  framework_id: { type: string }
+                  status: { type: string, example: revoked }
+  /v1/admin/registry/activate:
+    post:
+      summary: 恢复框架凭证（admin）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/AdminEnvelope"
+                - type: object
+                  required: [framework_id]
+                  properties:
+                    framework_id: { type: string }
+      responses:
+        "200":
+          description: 已恢复
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  framework_id: { type: string }
+                  status: { type: string, example: active }
+  /v1/admin/audit:
+    post:
+      summary: 审计查询（admin）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/AdminEnvelope"
+                - type: object
+                  properties:
+                    limit: { type: integer, default: 100 }
+                    allow: { type: boolean }
+      responses:
+        "200":
+          description: 审计事件列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  events: { type: array, items: { type: object } }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque session token
+  schemas:
+    LoginResponse:
+      type: object
+      properties:
+        ok: { type: boolean }
+        access_token: { type: string, description: Opaque token returned once; never persisted in plaintext }
+        token_type: { type: string, enum: [Bearer] }
+        expires_at: { type: string, format: date-time }
+        principal: { type: object }
+        scopes: { type: array, items: { type: object } }
+        actions: { type: array, items: { type: string } }
+    AuthEnvelope:
+      description: Machine compatibility envelope. Human sessions omit these fields and use the bearerAuth security scheme.
+      type: object
+      required: [credential_ref, secret, principal]
+      properties:
+        credential_ref: { type: string, example: memory-lib/deepseek-harness }
+        secret: { type: string, example: "******" }
+        principal:
+          type: object
+          required: [agent_id, role_id]
+          properties:
+            agent_id: { type: string, example: pilot-01 }
+            role_id: { type: string, example: researcher }
+    AdminEnvelope:
+      type: object
+      required: [credential_ref, secret, principal]
+      properties:
+        credential_ref: { type: string }
+        secret: { type: string }
+        principal:
+          type: object
+          required: [agent_id, role_id]
+          properties:
+            agent_id: { type: string, example: admin-01 }
+            role_id: { type: string, example: librarian-admin }
+    Scope:
+      type: object
+      required: [layer, visibility]
+      properties:
+        layer: { type: string, enum: [memory, knowledge, learning, evidence, recovery, runtime] }
+        visibility: { type: string, enum: [shared, project, agent, private, user, public] }
+        project: { type: string }
+    SearchRequest:
+      allOf:
+        - $ref: "#/components/schemas/AuthEnvelope"
+        - type: object
+          description: |
+            query 为空时进入「按时间枚举」模式（取全某一区间/某一天）。此时必须给出
+            calendarDate 或 since/until 之一，否则 400。
+            排序契约固定为 capturedAt ASC, id ASC。
+
+            ── 【"一天"的边界语义：两条入口完全一致】（DAY-INTERVAL-1）──
+            区间真值统一是**半开** `[since, untilExclusive)`。`until` 是它的**闭口径**写法
+            （= 区间最后一毫秒），两者相差正好 1ms，响应里的 `resolvedRange` 会把两个都回显。
+
+            1. **纯日期**（形如 `YYYY-MM-DD`）是**本地日历日**，按 `calendarTimezone` 解释：
+               `since` = 当天本地零点（含）；`until` = 当天本地最后一毫秒（含）。
+               ⇒ `{since:"2026-10-10", until:"2026-10-10"}` 与
+                  `{calendarDate:"2026-10-10"}` **完全等价**（集合、顺序、生效窗口都一致）。
+            2. **带时刻**（如 `2026-10-10T06:00:00Z`）是**瞬时上界**，按原样使用，
+               **不做**按天扩张：`until` 表示"截止到这个瞬间"。
+            3. 纯日期**不**按 UTC 日解释（旧行为；`calendarTimezone` 当时根本不参与）。
+               若你的调用方依赖"裸日期=UTC 日"，请改用显式时刻（见 since/until 的说明）。
+          properties:
+            query: { type: string, description: 搜索关键词；按时间枚举时省略 }
+            limit: { type: integer, minimum: 1, maximum: 100, default: 10 }
+            scope:
+              type: array
+              items: { $ref: "#/components/schemas/Scope" }
+            workspace: { type: string }
+            tags: { type: array, items: { type: string } }
+            graphExpand: { type: boolean, default: true, description: 默认启用图谱扩展；false 时仅使用索引与向量 }
+            since:
+              type: string
+              description: |
+                发生时间**下限，含**。
+                - 纯 `YYYY-MM-DD`：按 `calendarTimezone` 的**本地日**零点（含）。
+                - 带时刻：该瞬时（含）。
+                上下文行为变更（DAY-INTERVAL-1）：纯日期原先按 **UTC** 日解释，现按 `calendarTimezone` 本地日。
+            until:
+              type: string
+              description: |
+                发生时间**上限，含**（= 区间最后一毫秒）。
+                等价地：区间真值是半开 `[since, untilExclusive)`，其中 `untilExclusive` 比 `until` 大 1ms。
+                - 纯 `YYYY-MM-DD`：当天本地日的**最后一毫秒**（即"含这一整天"）。
+                  它由**次日本地零点减 1ms** 派生，**不是**硬编码 `23:59:59.999`（DST 日不是 24 小时）。
+                - 带时刻：该瞬时（含），**不做**按天扩张。
+                上下文行为变更（DAY-INTERVAL-1）：纯日期原先按 **UTC** 日补到 `23:59:59.999`，现按 `calendarTimezone` 本地日。
+            calendarDate:
+              type: string
+              pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+              description: |
+                本地日历日。与 calendarTimezone 一起解析成半开 UTC 窗口
+                [startOfDay(day,tz), startOfDay(day+1,tz))。
+                与 `{since:day, until:day}` **完全等价**（DAY-INTERVAL-1 起），两种写法可互换。
+            calendarTimezone:
+              type: string
+              description: |
+                IANA 时区名。它同时决定 `calendarDate` 与**纯日期形式 `since`/`until`** 的本地日解释；
+                省略则用部署默认时区。非法时区名 400，不静默当 UTC。
+            cursor:
+              type: string
+              description: keyset 游标：把上一页的 nextCursor 原样回传。与 offset 同时给出时以 cursor 为准。
+            offset:
+              type: integer
+              minimum: 0
+              default: 0
+              deprecated: true
+              description: |
+                兼容保留。基于「位次」而非「位置」：翻页期间若在已翻过的区间插入新条目，
+                后续页会重复已返回的条目、并漏掉未翻区间里的条目。
+                新接入请用 cursor；两者语义不同，未做静默替换。
+    ToolNoteRequest:
+      allOf:
+        - $ref: "#/components/schemas/AuthEnvelope"
+        - type: object
+          required: [tool_name, sections, evidence_refs]
+          properties:
+            tool_name: { type: string }
+            kind: { type: string }
+            env: { type: string }
+            sections: { type: object }
+            evidence_refs: { type: array, minItems: 1, items: { type: string, minLength: 1 } }
+    PlanPutRequest:
+      allOf:
+        - $ref: "#/components/schemas/AuthEnvelope"
+        - type: object
+          required: [topic, sections, evidence_refs]
+          properties:
+            topic: { type: string }
+            sections: { type: object }
+            evidence_refs: { type: array, minItems: 1, items: { type: string, minLength: 1 } }
+    ProjectStateRequest:
+      allOf:
+        - $ref: "#/components/schemas/AuthEnvelope"
+        - type: object
+          required: [project, sections, evidence_refs]
+          properties:
+            project: { type: string }
+            sections: { type: object }
+            evidence_refs: { type: array, minItems: 1, items: { type: string, minLength: 1 } }
+    ProjectDecisionRequest:
+      allOf:
+        - $ref: "#/components/schemas/AuthEnvelope"
+        - type: object
+          required: [project, sections, evidence_refs]
+          properties:
+            project: { type: string }
+            sections: { type: object }
+            evidence_refs: { type: array, minItems: 1, items: { type: string, minLength: 1 } }
+    RoleNoteRequest:
+      allOf:
+        - $ref: "#/components/schemas/AuthEnvelope"
+        - type: object
+          required: [kind, sections, evidence_refs]
+          properties:
+            kind: { type: string }
+            sections: { type: object }
+            evidence_refs: { type: array, minItems: 1, items: { type: string, minLength: 1 } }
+    ProfileConfirmRequest:
+      allOf:
+        - $ref: "#/components/schemas/AuthEnvelope"
+        - type: object
+          required: [id, evidence_refs]
+          properties:
+            id: { type: string }
+            evidence_refs: { type: array, minItems: 1, items: { type: string, minLength: 1 } }
+    EvidenceImportRequest:
+      allOf:
+        - $ref: "#/components/schemas/AuthEnvelope"
+        - type: object
+          required: [id, content]
+          properties:
+            id: { type: string }
+            content: { type: string }
+    IngestRequest:
+      allOf:
+        - $ref: "#/components/schemas/AuthEnvelope"
+        - type: object
+          required: [paths]
+          properties:
+            paths: { type: array, minItems: 1, items: { type: string } }
+            recursive: { type: boolean, default: false }
+            glob: { type: string }
+            kind: { type: string, enum: [conversation, document] }
+            source: { type: string, default: "external:unknown" }
+            tags: { type: array, items: { type: string } }
+            scope: { type: object, additionalProperties: true }
+            extract: { type: boolean, default: false }
+            dry_run: { type: boolean, default: true }
+    CaptureRequest:
+      allOf:
+        - $ref: "#/components/schemas/AuthEnvelope"
+        - type: object
+          required: [source, conversation_id, event_id, messages]
+          properties:
+            source: { type: string }
+            conversation_id: { type: string }
+            event_id: { type: string }
+            session_id: { type: string }
+            workspace: { type: string }
+            tags: { type: array, maxItems: 20, items: { type: string } }
+            extract: { type: boolean, default: false, description: 显式开启且角色有 propose 权限时创建 inbox 候选 }
+            partial: { type: boolean, default: false }
+            messages:
+              type: array
+              items:
+                type: object
+                additionalProperties: false
+                required: [role, content]
+                properties:
+                  role: { type: string, enum: [user, assistant] }
+                  content: { type: string }
+    SearchResponse:
+      description: POST /v1/search 的响应。query 非空时是相关性检索（只有 count/results）；
+        query 为空时是按时间枚举（额外给 total_count / hasMore / nextCursor / resolvedRange）。
+      type: object
+      properties:
+        ok: { type: boolean }
+        principal:
+          type: object
+          properties:
+            framework: { type: string }
+            agent: { type: string }
+            role: { type: string }
+        count: { type: integer }
+        total_count: { type: integer, description: 按时间枚举模式下的命中总数 }
+        hasMore: { type: boolean, description: 是否还有下一页（keyset 语义，权威字段） }
+        nextCursor: { type: string, nullable: true, description: 下一页的 keyset 游标；null 表示已遍历完 }
+        has_more: { type: boolean, deprecated: true, description: "兼容保留：cursor 或 offset 任一可继续即为 true。新接入请用 hasMore" }
+        next_offset: { type: integer, nullable: true, deprecated: true, description: "兼容保留：offset 翻页的下一页位次，局限见 SearchRequest.offset" }
+        resolvedRange:
+          type: object
+          nullable: true
+          description: |
+            本次请求实际解析出的时间范围，**回显以便审计**：调用方不必猜"until 到底含不含当天"，
+            同一请求重放也必然得到同一个范围（服务端不允许在底层猜「现在」）。未给出时间条件时为 null。
+
+            两条入口（`since/until` 纯日期 与 `calendarDate`）解析出的这四个字段**完全一致**——
+            这正是"统一一天语义"的可核对形式。
+          properties:
+            since: { type: string, nullable: true, description: 区间起点，**含** }
+            until: { type: string, nullable: true, description: 区间终点，**含**（= 最后一毫秒）；与 since 组成闭口径写法 }
+            untilExclusive:
+              type: string
+              nullable: true
+              description: |
+                半开区间的**真值**上界（不含）。闭口径 `until` 是它减 1ms 的派生写法。
+                裸日期由"**次日本地零点**"得出，**不是** `23:59:59.999` 硬编码 —— DST 日不是 24 小时。
+                带时刻的输入则是该瞬时 + 1ms。
+            calendarTimezone: { type: string, description: 实际用于解释本地日的 IANA 时区名 }
+            calendarDate: { type: string, nullable: true, description: 仅当输入给了 calendarDate 时回显该输入 }
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              path: { type: string }
+              excerpt: { type: string }
+              sourceType: { type: string }
+              lanes: { type: array, items: { type: string, enum: [fts, vector, graph] } }
+              score: { type: number }
+              matched_by: { type: array, items: { type: string, enum: [fts, vector, graph] } }
+              graph_path: { type: array, items: { type: string } }
+              evidence_ids: { type: array, items: { type: string } }
+    JointSearchResponse:
+      description: POST /v1/search/joint 的响应。该路由是纯查询驱动的联合检索，query 必填，
+        不提供按时间枚举，因此没有 total_count/hasMore/nextCursor/resolvedRange。
+      type: object
+      properties:
+        ok: { type: boolean }
+        principal:
+          type: object
+          properties:
+            framework: { type: string }
+            agent: { type: string }
+            role: { type: string }
+        count: { type: integer }
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              path: { type: string }
+              excerpt: { type: string }
+              sourceType: { type: string }
+              lanes: { type: array, items: { type: string, enum: [fts, vector, graph] } }
+              score: { type: number }
+              matched_by: { type: array, items: { type: string, enum: [fts, vector, graph] } }
+              graph_path: { type: array, items: { type: string } }
+              evidence_ids: { type: array, items: { type: string } }
+    DateResolveResponse:
+      description: |
+        POST /v1/date/resolve 的响应。成功时有 range；**失败时没有任何 range**（这是刻意的：
+        失败绝不能被当成"检索全部内容"的默认值）。`assumptions`、`yearInferred`、`timezone`、
+        `weekStartsOn` 供审计与回放。
+      type: object
+      properties:
+        ok: { type: boolean }
+        principal:
+          type: object
+          properties:
+            framework: { type: string }
+            agent: { type: string }
+            role: { type: string }
+        sourceText: { type: string, description: 归一化后的输入（全角已转半角、空白已折叠） }
+        now: { type: string, description: 回显调用方给的锚点瞬时 }
+        timezone: { type: string, description: 归一化后的 IANA 时区名 }
+        locale: { type: string, nullable: true }
+        weekStartsOn: { type: integer }
+        grain: { type: string, enum: [day, week, month] }
+        calendarDate: { type: string, nullable: true, description: "输入就是某一天时给出 YYYY-MM-DD；周/月为 null" }
+        yearInferred: { type: boolean, description: 年份是补出来的（如 10/10）必须为 true }
+        assumptions:
+          type: array
+          items: { type: string }
+          description: 如 "year = 2026 (from now)"、"week starts on Monday"
+        ruleVersion: { type: string }
+        resolvedRange:
+          type: object
+          description: |
+            绝对时间边界。`until` 取**闭**口径（= 区间最后一毫秒），与仓库既有 since/until 一致
+            ⇒ 可**直接**透给 /v1/search 的 since/until，调用方不必自己换算。
+            区间真值仍是半开的 `[since, untilExclusive)`；`until` 是它的派生便利值。
+          properties:
+            since: { type: string }
+            until: { type: string }
+            untilExclusive: { type: string }
+            timezone: { type: string }
+        range:
+          type: object
+          description: |
+            绝对边界。真值是**半开区间** `[since, untilExclusive)`；
+            `inclusiveEnd` 只是 by-1ms 的便利派生值（供只认闭区间的既有接口使用），
+            它不是由"23:59:59.999 硬编码"或"固定 86400000 毫秒"算出来的 —— 夏令时日的窗口长度可以为 23 或 25 小时。
+          properties:
+            since: { type: string }
+            untilExclusive: { type: string }
+            inclusiveEnd: { type: string }
+        error:
+          type: object
+          description: 仅在 422 出现
+          properties:
+            code: { type: string }
+            message: { type: string }
+            detail: { type: string }
+            ambiguous:
+              type: object
+              properties:
+                candidates:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      calendarDate: { type: string }
+                      rationale: { type: string }
+                      range: { type: object }
+        reason: { type: string, description: 与 error.detail 同值，便于直接读取 }
+        message: { type: string }
+    IdentityInventoryResponse:
+      type: object
+      description: 无密身份清单；不含明文 key、prefix、secret_hash、密码 hash 或 secret 路径。
+      properties:
+        ok: { type: boolean }
+        identity:
+          type: object
+          properties:
+            groups: { type: array, items: { $ref: "#/components/schemas/IdentityGroup" } }
+            users: { type: array, items: { $ref: "#/components/schemas/IdentityUser" } }
+            roles: { type: array, items: { $ref: "#/components/schemas/IdentityRole" } }
+            api_keys: { type: array, items: { $ref: "#/components/schemas/IdentityApiKey" } }
+            frameworks: { type: array, items: { type: object } }
+            accounts: { type: array, items: { type: object } }
+    IdentityGroup:
+      type: object
+      properties: { id: { type: string }, name: { type: string }, status: { type: string }, created_at: { type: string, nullable: true } }
+    IdentityUser:
+      type: object
+      properties: { id: { type: string }, name: { type: string }, group_id: { type: string, nullable: true }, status: { type: string }, created_at: { type: string, nullable: true } }
+    IdentityRole:
+      type: object
+      properties: { id: { type: string }, name: { type: string }, user_id: { type: string, nullable: true }, group_id: { type: string, nullable: true }, status: { type: string }, created_at: { type: string, nullable: true } }
+    IdentityApiKey:
+      type: object
+      description: Key metadata only; no secret, prefix, or digest field is exposed.
+      properties: { id: { type: string }, role_id: { type: string }, role_name: { type: string, nullable: true }, user_id: { type: string, nullable: true }, group_id: { type: string, nullable: true }, created_at: { type: string, nullable: true }, revoked_at: { type: string, nullable: true }, last_used_at: { type: string, nullable: true } }
+    IssuedKeyResponse:
+      type: object
+      properties:
+        ok: { type: boolean }
+        key:
+          type: object
+          description: 明文 secret 只在签发响应出现一次；持久化仅保存 hash。
+          properties:
+            id: { type: string }
+            role_id: { type: string }
+            secret: { type: string, writeOnly: true }
+            prefix: { type: string }
+    VectorLaneStatus:
+      type: object
+      description: 只读探测的向量（语义）车道状态；ok=Ollama 可达+模型在+索引有 active 向量；down=服务/模型不可用；stale=索引不可用或无 active 向量；skipped=配置显式关闭探测
+      properties:
+        status: { type: string, enum: [ok, down, stale, skipped], example: ok }
+        reason: { type: string, example: "vector-lane ok: ollama reachable, model present, 1345 active embeddings" }
+        detail:
+          type: object
+          description: 诊断细节（仅 admin 端点返回；不含文件系统路径）
+          properties:
+            endpoint: { type: string, example: "http://127.0.0.1:11434" }
+            model: { type: string, example: nomic-embed-text }
+            request: { type: string, example: "GET /api/tags" }
+            index: { type: string, enum: [ok, missing, unreadable, missing-table, not-required] }
+            activeEmbeddings: { type: integer }
+            staleEmbeddings: { type: integer }
+  responses:
+    Unauthenticated:
+      description: 凭证缺失/错误/已撤销
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              ok: { type: boolean, example: false }
+              error:
+                type: object
+                properties:
+                  code: { type: string, example: UNAUTHENTICATED }
+                  message: { type: string }
+    Forbidden:
+      description: 身份有效但无权限（角色/action/scope）
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              ok: { type: boolean, example: false }
+              error:
+                type: object
+                properties:
+                  code: { type: string, example: FORBIDDEN }
+                  message: { type: string }
+                  detail: { type: string, example: SCOPE_DENIED }
+    NotFound:
+      description: 资源不存在（不泄漏存在性）
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              ok: { type: boolean, example: false }
+              error:
+                type: object
+                properties:
+                  code: { type: string, example: NOT_FOUND }
+                  message: { type: string }
+    IssuedKey:
+      description: 角色 key 已签发；明文 secret 仅在该响应出现一次
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/IssuedKeyResponse" }
+    BadRequest:
+      description: 请求格式错误
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              ok: { type: boolean, example: false }
+              error:
+                type: object
+                properties:
+                  code: { type: string, example: BAD_REQUEST }
+                  message: { type: string }
+  requestBodies:
+    AdminEnvelope:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AdminEnvelope"

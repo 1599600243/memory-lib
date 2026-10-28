@@ -1,0 +1,8 @@
+{
+  "name": "dsh-memory-capture",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "DSH 实时自动记忆捕获：把会话消息按统一事件契约提交给 memory-lib",
+  "main": "index.js"
+}

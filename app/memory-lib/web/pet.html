@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>记忆库宠物 · memory-lib</title>
+<style>
+  :root { --bg:#10151f; --panel:#182032; --line:#2b3550; --text:#e8edf6; --dim:#8b98b0; --acc:#6ea8ff; --bubble:#1e2a44; }
+  * { box-sizing:border-box; }
+  html, body { width:100%; height:100%; min-height:0; }
+  body { margin:0; height:100vh; height:100dvh; min-height:0; overflow:hidden; font:14px/1.6 system-ui,"Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); display:flex; flex-direction:column; }
+
+  header { flex:0 0 auto; display:flex; align-items:center; gap:12px; padding:8px 16px; border-bottom:1px solid var(--line); background:var(--panel); }
+  header .brand { font-size:15px; font-weight:700; }
+  header .sub { font-size:11.5px; color:var(--dim); }
+  #conn { margin-left:auto; display:flex; align-items:center; gap:6px; font-size:12px; color:var(--dim); }
+  .dot { width:8px; height:8px; border-radius:50%; background:#5b6b85; display:inline-block; }
+  .dot.on { background:#3ecf8e; box-shadow:0 0 6px #3ecf8e; }
+
+  /* 小宠物头像（header 内）。使用独立类名，避免与消息气泡 .msg.pet 冲突。 */
+  .pet-avatar { position:relative; width:44px; height:40px; flex:0 0 auto; cursor:pointer; margin-left:2px; }
+  .pet-avatar .body { position:absolute; inset:7px 3px 2px; background:linear-gradient(160deg,#7ec8ff,#4a8fe0); border-radius:50% 50% 46% 46%; animation:bob 3s ease-in-out infinite; }
+  .pet-avatar .ear { position:absolute; top:0; width:11px; height:11px; background:#4a8fe0; border-radius:50% 50% 20% 20%; }
+  .pet-avatar .ear.l { left:8px; transform:rotate(-18deg); } .pet-avatar .ear.r { right:8px; transform:rotate(18deg); }
+  .pet-avatar .eye { position:absolute; top:17px; width:4px; height:5px; background:#12233f; border-radius:50%; animation:eyeBlink 5s infinite; }
+  .pet-avatar .eye.l { left:14px; } .pet-avatar .eye.r { right:14px; }
+  .pet-avatar .mouth { position:absolute; top:26px; left:50%; transform:translateX(-50%); width:8px; height:4px; border-bottom:2px solid #12233f; border-radius:0 0 8px 8px; }
+  .pet-avatar.talking .body { animation:bob 0.5s ease-in-out infinite; }
+  .pet-avatar.talking .mouth { width:5px; height:5px; border-radius:50%; background:#12233f; border-bottom:none; }
+  @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+  @keyframes eyeBlink { 0%,92%,100%{transform:scaleY(1)} 95%{transform:scaleY(.1)} }
+
+  details.auth { flex:0 0 auto; background:var(--panel); border-bottom:1px solid var(--line); padding:8px 16px; }
+  details.auth summary { cursor:pointer; color:var(--acc); font-size:12.5px; }
+  .auth-row { display:flex; gap:10px; margin-top:8px; flex-wrap:wrap; }
+  .auth-row > div { flex:1; min-width:150px; }
+  label { display:block; font-size:11px; color:var(--dim); margin-bottom:3px; }
+  input, select { width:100%; padding:7px 9px; border:1px solid var(--line); border-radius:7px; background:#0e1424; color:var(--text); font-size:12.5px; }
+  .auth-actions { display:flex; gap:8px; margin-top:8px; }
+  button { padding:8px 14px; border:none; border-radius:8px; background:var(--acc); color:#fff; font-size:13px; font-weight:600; cursor:pointer; }
+  button:hover { filter:brightness(1.12); }
+  button.ghost { background:transparent; border:1px solid var(--line); color:var(--dim); font-weight:400; }
+  #msg { font-size:12px; color:#ff5c6c; min-height:15px; }
+
+  /* 聊天区：唯一主体，占据剩余全部高度 */
+  main { flex:1 1 0; min-width:0; min-height:0; display:flex; flex-direction:column; width:100%; max-width:860px; margin:0 auto; padding:0 16px; overflow:hidden; }
+  .chat { flex:1 1 0; width:100%; min-width:0; min-height:0; overflow-x:hidden; overflow-y:auto; padding:16px 2px 12px; }
+  .msg { display:block; width:max-content; max-width:80%; min-width:0; height:auto; padding:10px 14px; border-radius:14px; font-size:13.5px; line-height:1.6; white-space:pre-wrap; overflow-wrap:anywhere; word-break:normal; margin-bottom:10px; }
+  .msg.user { margin-left:auto; background:var(--acc); color:#fff; border-bottom-right-radius:4px; }
+  .msg.pet { margin-right:auto; background:var(--bubble); border:1px solid var(--line); border-bottom-left-radius:4px; }
+  .msg.err { margin-right:auto; background:rgba(255,92,108,.12); border:1px solid rgba(255,92,108,.4); color:#ff9aa4; }
+  .msg .meta { font-size:10.5px; color:var(--dim); margin-top:3px; }
+  .msg.typing { color:var(--acc); font-size:18px; letter-spacing:2px; animation:blink 1.2s infinite; }
+  @keyframes blink { 0%,100%{opacity:.2} 50%{opacity:1} }
+
+  .input-area { flex:0 0 auto; padding:8px 0 14px; border-top:1px solid var(--line); background:var(--bg); }
+  .chips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+  .chips button { padding:5px 10px; font-size:11.5px; border-radius:20px; }
+  .mode-row { display:flex; gap:8px; align-items:center; margin-bottom:8px; font-size:12px; color:var(--dim); }
+  .mode-row select { width:auto; }
+  .input-row { display:flex; gap:8px; }
+  .input-row input { flex:1; }
+  .input-row button { flex:0 0 auto; }
+</style>
+</head>
+<body>
+<header>
+  <div class="pet-avatar" id="pet" title="点我打个招呼">
+    <div class="ear l"></div><div class="ear r"></div>
+    <div class="body"></div>
+    <div class="eye l"></div><div class="eye r"></div>
+    <div class="mouth"></div>
+  </div>
+  <div>
+    <div class="brand">🐾 记忆库宠物</div>
+    <div class="sub">管家 & 学习助手 · memory-lib</div>
+  </div>
+  <span id="conn"><span class="dot" id="dot"></span><span id="connText">未连接</span></span>
+</header>
+
+<details class="auth" id="authPanel">
+  <summary>🔑 连接设置（凭证仅存于本页内存）</summary>
+  <div class="auth-row">
+    <div><label>credential_ref</label><input id="credRef" value="memory-lib/deepseek-harness" spellcheck="false"></div>
+    <div><label>secret</label><input id="secret" type="password" placeholder="粘贴 secret"></div>
+    <div><label>agent</label><select id="agent"><option value="pilot-01">pilot-01</option><option value="admin-01">admin-01</option></select></div>
+    <div><label>role</label><select id="role"><option value="pet">pet 宠物</option><option value="pet-companion">pet-companion 陪伴</option><option value="pet-assistant">pet-assistant 普通</option><option value="pet-steward">pet-steward 管家</option><option value="pet-learner">pet-learner 学习</option><option value="learner">learner 学习（兼容）</option><option value="researcher">researcher 研究（兼容）</option></select></div>
+    <div><label>短期会话 ID（仅本页）</label><input id="sessionId" value="web-pet" maxlength="256" spellcheck="false"></div>
+    <div><label>读取限制（可选）</label><select id="denyLayer"><option value="">不限制</option><option value="evidence">隐藏 evidence</option><option value="knowledge">隐藏 knowledge</option><option value="learning">隐藏 learning</option><option value="recovery">隐藏 recovery</option></select></div>
+  </div>
+  <div class="auth-actions"><button id="connectBtn">连接</button><button class="ghost" id="pingBtn">测试</button></div>
+  <div id="msg"></div>
+</details>
+
+<main>
+  <div class="chat" id="chat"></div>
+  <div class="input-area">
+    <div class="chips" id="chips">
+      <button data-cmd="/learn:topic ">📚 建学习地图</button>
+      <button data-cmd="/learn:status ">📊 学习进度</button>
+      <button data-cmd="/learn:review ">🔁 复习</button>
+      <button data-cmd="/learn:quiz ">📝 测验</button>
+      <button data-cmd="/research ">🔍 联网研究</button>
+      <button data-cmd="/help">❓ 帮助</button>
+    </div>
+    <div class="mode-row">
+      <label style="margin:0">模式：</label>
+      <select id="mode">
+        <option value="companion">💬 陪伴</option>
+        <option value="assistant">🧰 普通</option>
+        <option value="steward">🧹 管家</option>
+        <option value="learner">📚 学习</option>
+        <option value="governance">🛡️ 治理</option>
+      </select>
+      <span>（宠物大脑：本地 Ollama，可切云端）</span>
+    </div>
+    <div class="input-row">
+      <input id="input" placeholder="输入消息或 /命令，例如：/learn:topic 记忆库协议" autocomplete="off">
+      <button id="sendBtn">发送</button>
+    </div>
+  </div>
+</main>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const S = { secret:"", credRef:"", agent:"pilot-01", role:"pet", sessionId:"web-pet" };
+let busy = false;
+const history = [];
+
+function esc(s){ return String(s??"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function syncAuth(){ S.credRef=$("credRef").value.trim(); S.secret=$("secret").value; S.agent=$("agent").value; S.role=$("role").value; S.sessionId=$("sessionId").value.trim() || "web-pet"; }
+
+async function api(input, mode){
+  const layer = $("denyLayer").value;
+  const res = await fetch("/v1/pet/command", { method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({ credential_ref:S.credRef, secret:***, principal:{agent_id:S.agent, role_id:S.role}, input, mode, history: history.slice(-8), session_id:S.sessionId, pet_read_policy: layer ? { deny: [{ layer }] } : undefined }) });
+  const data = await res.json().catch(()=>({}));
+  return { status:res.status, data };
+}
+
+function addMsg(role, text, meta){
+  const el = document.createElement("div");
+  el.className = "msg " + role;
+  el.textContent = text;
+  if (meta){ const m=document.createElement("div"); m.className="meta"; m.textContent=meta; el.appendChild(m); }
+  $("chat").appendChild(el);
+  $("chat").scrollTop = $("chat").scrollHeight;
+  return el;
+}
+
+function setPet(talking){
+  $("pet").classList.toggle("talking", talking);
+  let typing = $("chat").querySelector(".typing");
+  if (talking){
+    if (!typing){ typing = document.createElement("div"); typing.className = "msg pet typing"; typing.textContent = "● ● ●"; $("chat").appendChild(typing); $("chat").scrollTop = $("chat").scrollHeight; }
+  } else if (typing){ typing.remove(); }
+}
+
+async function send(text){
+  text = String(text ?? "").trim();
+  if (!text || busy) return;
+  syncAuth();
+  if (!S.credRef || !S.secret){ addMsg("err", "请先展开上方「连接设置」填写凭证。"); return; }
+  busy = true;
+  addMsg("user", text);
+  setPet(true);
+  const mode = $("mode").value;
+  try {
+    const { status, data } = await api(text, mode);
+    if (status === 200){
+      const reply = data.reply || "(无回复)";
+      addMsg("pet", reply, metaOf(data));
+      history.push({ role:"user", content:text }, { role:"assistant", content:reply });
+    } else {
+      addMsg("err", `请求失败（${status}）：${data.error?.code ?? ""} ${data.error?.message ?? ""}`);
+    }
+  } catch (e){ addMsg("err", "网络错误：" + e.message); }
+  finally { busy = false; setPet(false); }
+}
+
+function metaOf(d){
+  const parts = [];
+  if (d.context_hits !== undefined) parts.push(`记忆命中 ${d.context_hits}`);
+  if (d.web_sources !== undefined) parts.push(`联网 ${d.web_sources}`);
+  if (d.due) parts.push(`待复习 ${d.due.length}`);
+  if (d.fetched) parts.push("已抓取核验");
+  return parts.length ? parts.join(" · ") : "";
+}
+
+$("connectBtn").onclick = async () => {
+  syncAuth();
+  const { status, data } = await api("/help", "chat").catch(()=>({status:0,data:{}}));
+  if (status === 200){ $("dot").className="dot on"; $("connText").textContent="已连接"; addMsg("pet", data.reply || "连接成功！"); }
+  else { $("dot").className="dot"; $("connText").textContent="未连接"; addMsg("err", `连接失败（${status}）：${data.error?.code ?? ""}`); }
+};
+$("pingBtn").onclick = async () => {
+  syncAuth();
+  try { const r = await fetch("/v1/health"); const d = await r.json(); $("msg").textContent = `服务健康：${d.health}`; $("msg").style.color="#3ecf8e"; }
+  catch(e){ $("msg").textContent = "无法连接服务：" + e.message; $("msg").style.color="#ff5c6c"; }
+};
+$("sendBtn").onclick = () => { send($("input").value); $("input").value=""; };
+$("input").addEventListener("keydown", e => { if (e.key==="Enter"){ send($("input").value); $("input").value=""; } });
+document.querySelectorAll("#chips button").forEach(b => b.onclick = () => { $("input").value = b.dataset.cmd; $("input").focus(); });
+$("pet").onclick = () => send("你好！");
+addMsg("pet", "你好呀，我是你的记忆管家 + 学习助手！\n试试 /learn:topic 记忆库协议 建个学习地图，或直接问我问题。");
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "memory-lib",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Standalone eight-layer memory service with zero-model direct writes, searchable file truth, and storage-only conversation evidence.",
+  "scripts": {
+    "test": "node scripts/run-tests.mjs",
+    "test:contract": "node test/contract.test.mjs",
+    "probe:parity": "node scripts/parity-probe.mjs",
+    "check:zero-write": "node scripts/zero-write-check.mjs",
+    "calibrate:retrieval": "node scripts/retrieval-calibration.mjs"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4"
+  },
+  "dependencies": {
+    "@ai-sdk/openai-compatible": "3.0.54",
+    "ai": "7.0.112",
+    "zod": "4.6.5"
+  }
+}
