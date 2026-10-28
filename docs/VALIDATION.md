@@ -56,11 +56,21 @@ install --write  →  启动服务  →  doctor 10/10 ok (1 warning)  →  写�
 - **升级路径**：数据格式变更的迁移脚本**没有**（当前版本不承诺向后兼容）；
 - **性能**：没有公开的 p95 基线数字。
 
-## 5. 怎么自己验
+## 5. CI 现状
+
+`.github/workflows/ci.yml` 在 `ubuntu-latest` / `windows-latest` 上跑两组 job：
+
+| job | 内容 | 当前结果 |
+|---|---|---|
+| `syntax` | 全部 `.mjs` 过 `node --check`（本仓库 450 个） | ✅ 两个平台都通过 |
+| `smoke` | 装 → 起 → 自检 → 写 → 搜（临时目录） | ✅ 两个平台都通过 |
+
+## 6. 怎么自己验
 
 ```bash
 node scripts/syntax-check.mjs                 # 所有 .mjs 语法
 node scripts/smoke.mjs                        # 端到端（临时目录，不碰你的数据）
 cd app/memory-lib && node scripts/run-tests.mjs   # 全量测试（Windows 上验过；Linux 未验）
 ```
+
 
