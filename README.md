@@ -19,6 +19,8 @@
 | **写回** | 两种都不改对方代码：侧车扫 transcript（jsonl / jsonl+zstd / json-object），或对方直接 POST |
 | **注入** | 有宿主扩展点时每轮自动注入（`native`）；没有时要求 agent 自己调（`on-demand`）——契约见 [`docs/INJECT-SPEC.md`](docs/INJECT-SPEC.md) |
 
+> 换一台机器从零部署？看 [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)（含 Windows/Linux 常驻、升级、故障排查、安全清单）。
+
 ## 5 分钟跑起来
 
 前置：**Node.js 24+**（用到 `zstdDecompressSync`）。可选：本机 Ollama + `bge-m3`（启用向量检索；不装也能跑，只是健康状态里向量车道为 `stale`）。
@@ -63,7 +65,7 @@ node scripts/capture-tail.mjs --agent <id> --once --backfill --verify
 ```
 app/memory-lib/    服务本体（HTTP + MCP、检索、写入、索引、控制台）
 scripts/           安装、自检、接入、写回侧车
-docs/              接入规范（AGENT-SPEC）、注入契约（INJECT-SPEC）、验证记录（VALIDATION）、版本策略
+docs/              部署手册（DEPLOYMENT）、接入规范（AGENT-SPEC）、注入契约（INJECT-SPEC）、验证记录（VALIDATION）、版本策略
 skills/            给接入方 agent 的 onboarding 技能
 ```
 
@@ -77,4 +79,5 @@ skills/            给接入方 agent 的 onboarding 技能
 ## License
 
 MIT，见 [`LICENSE`](LICENSE)。
+
 
