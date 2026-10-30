@@ -1,0 +1,134 @@
+{
+  "_说明": "RANK-1 C2 回归清单：20 条「有确定答案」的事实。每条给出源记忆 id、答案（必须逐字出现在注入文本里）、两种问法（换个问法不许退化）。答案都取自该记忆的正文首段，可逐字核对。",
+  "_数据源": "D:\\MemoryLib\\inject1-work\\copy（生产数据的副本，只读；id 与生产一致）",
+  "_问法覆盖": "5 条可数属性问法（层/项/个/天 四种量词）+ 15 条普通问法",
+  "facts": [
+    {
+      "id": "curated-shared-466787238d86faef",
+      "date": "2026-10-04",
+      "unit": "层",
+      "expected": "8层",
+      "questions": ["我们记忆库是几层？", "记忆库一共分几层"]
+    },
+    {
+      "id": "curated-shared-0ad4083a2825be26",
+      "date": "2026-09-24",
+      "unit": "项",
+      "expected": "4 项通过",
+      "questions": ["D1 复验的 5 项硬标准里通过了几项？", "D1 复验硬标准过了几个"]
+    },
+    {
+      "id": "curated-shared-0cc2cb6280e71703",
+      "date": "2026-09-24",
+      "unit": "个",
+      "expected": "≥2个「：",
+      "questions": ["分片 subject 出现几个冒号就判拼接不合格？", "subject 里几个「：」算不合格"]
+    },
+    {
+      "id": "curated-shared-173e5f0c13cedbce",
+      "date": "2026-09-24",
+      "unit": "天",
+      "expected": "180 天",
+      "questions": ["一条记忆超过多少天没被召回要标 stale？", "记忆多久没召回算 stale"],
+      "note": "该条正文还含「超 180 天」，与注入句一致"
+    },
+    {
+      "id": "curated-shared-061bd4efc1d80e65",
+      "date": "2026-10-05",
+      "unit": "项",
+      "expected": "6 通过 7 失败",
+      "questions": ["channel-equivalence 原始 13 项验收结果是多少？", "13 项 channel-equivalence 通过几项"]
+    },
+    {
+      "id": "curated-shared-09f6a7ac75a8bedf",
+      "date": "2026-10-05",
+      "expected": "53/53",
+      "questions": ["M1.4 迁移索引健康口径定为多少？", "迁移索引健康口径是多少"]
+    },
+    {
+      "id": "curated-shared-001084b09aba6497",
+      "date": "2026-10-05",
+      "expected": "dd58f3440138be836fad673356a4fe5c44ad8c96",
+      "questions": ["M1.5-FOLLOWUP 验收时的当前提交是哪个？", "M1.5-FOLLOWUP 验收基线 commit 是什么"]
+    },
+    {
+      "id": "curated-shared-083695196c2e18a0",
+      "date": "2026-09-19",
+      "expected": "12 小时滑动续期",
+      "questions": ["F11 账号密码认证的会话续期多久？", "账号密码认证会话怎么续期"]
+    },
+    {
+      "id": "curated-shared-0d488f1a6e1239ca",
+      "date": "2026-09-30",
+      "expected": "族上限 5",
+      "questions": ["合并安全参数里族上限是多少？", "不许回退的合并安全参数有哪些"]
+    },
+    {
+      "id": "curated-shared-12df67d0f4bab639",
+      "date": "2026-09-24",
+      "expected": "18 active + 4 superseded",
+      "questions": ["D3F6 跨类去重后 22 条变成什么状态？", "跨类去重结果 22 条怎么分了"]
+    },
+    {
+      "id": "curated-shared-142d7e155e85690c",
+      "date": "2026-09-24",
+      "expected": "≤2000 字",
+      "questions": ["主动召回默认摘要上限是多少字？", "主动召回摘要默认多长"]
+    },
+    {
+      "id": "curated-shared-2556cc705738d01c",
+      "date": "2026-09-20",
+      "expected": "a19182f",
+      "questions": ["R1–R11 返工的最后提交是哪个？", "返工 R1-R11 最后 commit"]
+    },
+    {
+      "id": "curated-shared-03e30a061390b8bf",
+      "date": "2026-09-24",
+      "expected": "21808e9",
+      "questions": ["D3F6 的提交号是多少？", "D3F6 提交到哪个 commit"]
+    },
+    {
+      "id": "curated-shared-2135da5c37a597b4",
+      "date": "2026-09-24",
+      "expected": "e9c4317",
+      "questions": ["D4F1 已提交为哪个 commit？", "D4F1 提交号"]
+    },
+    {
+      "id": "curated-shared-0d760be475355fa5",
+      "date": "2026-10-05",
+      "expected": "dcd0def",
+      "questions": ["M1.2 验收以哪个 commit 为验证对象？", "M1.2 验收对象 commit 是哪个"]
+    },
+    {
+      "id": "curated-shared-112a086c6c2e726a",
+      "date": "2026-09-30",
+      "expected": "21%",
+      "questions": ["用户实测的索引覆盖率是多少？", "索引覆盖率实测值"]
+    },
+    {
+      "id": "curated-shared-05f9727898286a93",
+      "date": "2026-10-19",
+      "expected": "sandbox_permissions",
+      "questions": ["验收时所有 pwsh 调用不得传什么字段？", "哪条字段一律不许传"],
+      "note": "该条正文里的下划线字段名必须原样保留（脱敏不能吃掉它）"
+    },
+    {
+      "id": "curated-shared-22c05e5d4b8bcc92",
+      "date": "2026-10-19",
+      "expected": "1598",
+      "questions": ["IN-PLUGIN-1 验证前的 evidence 基线是多少？", "IN-PLUGIN-1 之前 evidence 基线"]
+    },
+    {
+      "id": "curated-shared-0a92131ca0920403",
+      "date": "2026-10-05",
+      "expected": "上一个没通过验收不开下一个",
+      "questions": ["里程碑节奏的规矩是什么？", "里程碑能不能跳着做"]
+    },
+    {
+      "id": "curated-shared-0d1d2ebbe25bb5c5",
+      "date": "2026-10-05",
+      "expected": "graphExpand",
+      "questions": ["M1.5 发现 search() 没暴露哪个参数？", "公共客户端 search 漏了哪个参数"]
+    }
+  ]
+}

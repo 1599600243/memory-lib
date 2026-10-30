@@ -1,0 +1,14 @@
+# memory-lib 内部排除：密钥与审计绝不上传
+runtime/secrets/
+runtime/sessions.json
+runtime/audit/
+*.secret*
+*.jsonl
+.tmp-*
+
+# 构建产物与依赖（绝不入库）
+node_modules/
+pet-desktop/node_modules/
+pet-desktop/src-tauri/target/
+pet-desktop/src-tauri/gen/
+*.log

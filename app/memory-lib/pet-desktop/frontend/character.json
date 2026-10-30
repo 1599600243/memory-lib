@@ -1,0 +1,13 @@
+{
+  "schema": "memory-lib.pet.character/v1",
+  "id": "generated-companion",
+  "name": "记忆管家",
+  "renderer": "css-sprite",
+  "sprite": {
+    "type": "css",
+    "rootClass": "pet-sprite",
+    "states": ["idle", "thinking", "talking", "happy", "alert"]
+  },
+  "colors": { "body": "#65b7e8", "accent": "#f5c46b", "ink": "#17324b" },
+  "note": "仅为代码生成占位角色；将来可将 sprite.type 改为 image/canvas 并提供本地资源。"
+}

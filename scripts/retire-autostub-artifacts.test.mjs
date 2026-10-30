@@ -1,0 +1,45 @@
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+
+const script = path.join(path.dirname(new URL(import.meta.url).pathname.replace(/^\/(?:[A-Za-z]:)/u, (m) => m.slice(1))), "retire-autostub-artifacts.mjs");
+const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "retire-autostub-test-"));
+const dataRoot = path.join(tmp, "memory");
+const backupRoot = path.join(tmp, "backups");
+const curated = path.join(dataRoot, "curated", "shared");
+const evidence = path.join(dataRoot, "evidence", "conversations");
+await fs.mkdir(curated, { recursive: true });
+await fs.mkdir(evidence, { recursive: true });
+const fm = (id, tags = []) => `---\nid: ${JSON.stringify(id)}\ntags: ${JSON.stringify(tags)}\nevidence_refs: []\n---\nbody\n`;
+await fs.writeFile(path.join(curated, "tag-match.md"), fm("ordinary-id", ["auto-stub"]));
+await fs.writeFile(path.join(curated, "id-match.md"), fm("auto-stub-id-match", []));
+await fs.writeFile(path.join(curated, "blocked.md"), fm("auto-stub-blocked", []));
+await fs.writeFile(path.join(curated, "referrer.md"), `---\nid: "referrer"\nevidence_refs: ["auto-stub-blocked"]\n---\nkeep\n`);
+await fs.writeFile(path.join(evidence, "raw.md"), fm("auto-stub-evidence-must-stay", ["auto-stub"]));
+function run(extra = []) {
+  return spawnSync(process.execPath, [script, "--data-root", dataRoot, "--backup-root", backupRoot, ...extra], { encoding: "utf8" });
+}
+const dry = run();
+assert.equal(dry.status, 0, dry.stderr);
+const dryJson = JSON.parse(dry.stdout);
+assert.equal(dryJson.mode, "dry-run");
+assert.deepEqual(dryJson.movable.map((x) => x.id).sort(), ["auto-stub-id-match", "ordinary-id"]);
+assert.equal(dryJson.skipped_referenced[0].id, "auto-stub-blocked");
+const applied = run(["--apply"]);
+assert.equal(applied.status, 1, "referenced candidate must make postcondition fail loudly");
+assert.ok(await fs.stat(path.join(curated, "blocked.md")));
+assert.ok(await fs.stat(path.join(evidence, "raw.md")));
+await fs.rm(path.join(curated, "blocked.md"));
+await fs.rm(path.join(curated, "referrer.md"));
+const appliedCleanly = run(["--apply"]);
+assert.equal(appliedCleanly.status, 0, appliedCleanly.stderr);
+assert.equal(JSON.parse(appliedCleanly.stdout).moved.length, 2);
+const retry = run(["--apply"]);
+assert.equal(retry.status, 0, retry.stderr);
+const result = JSON.parse(retry.stdout);
+assert.equal(result.moved.length, 0, "already moved files make rerun idempotent");
+assert.ok(await fs.stat(path.join(evidence, "raw.md")));
+console.log(JSON.stringify({ ok: true, firstApplyFailedLoudly: true, movedAfterGateCleared: 2, rerunIdempotent: true, evidenceUntouched: true }));
+await fs.rm(tmp, { recursive: true, force: true });

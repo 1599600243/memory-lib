@@ -1,0 +1,29 @@
+# 运行时数据与产物 —— 永远不进仓库
+data/
+logs/
+state/
+indexes/
+runtime/
+backups/
+quarantine/
+snapshots/
+node_modules/
+*.log
+
+# 本地配置与密钥
+.env
+*.secret
+*.key
+config.local.*
+**/deploy.json
+
+# 编辑器/系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 运行时数据与本地路径：绝不进公开仓库（2026-10-30 发布时加的）
+app/memory-lib/runtime/
+scripts/snapshot.config.json
+*.log

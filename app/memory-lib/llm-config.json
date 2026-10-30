@@ -1,0 +1,5 @@
+{
+  "provider": "ollama",
+  "base": "http://127.0.0.1:11434",
+  "model": "gemma3:4b"
+}

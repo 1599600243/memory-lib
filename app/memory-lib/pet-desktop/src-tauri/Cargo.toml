@@ -1,0 +1,20 @@
+[package]
+name = "memory-lib-pet"
+version = "0.1.0"
+description = "记忆库宠物桌面壳（Tauri）—— 核心在 memory-lib，本壳只是原生窗口"
+authors = ["memory-lib"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

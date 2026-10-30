@@ -1,0 +1,25 @@
+{
+  "steward": {
+    "agent_id": "pilot-01",
+    "role_id": "steward",
+    "scopes": null,
+    "tools": ["submit_decisions"],
+    "outputSchema": "steward-decisions",
+    "prompt": "只判断候选与近邻的关系：duplicate=同一事实，contradict=互不相容，neither=无关。不得决定晋级或其他治理动作。每个候选必须输出一次。例：候选 c1 与近邻 c1n1 含义相同，则输出 {\"id\":\"c1\",\"relation\":\"duplicate\",\"target_id\":\"c1n1\",\"reason\":\"同一事实\"}。",
+    "batchSize": 5,
+    "decisionChunkSize": 3,
+    "contentChars": 300,
+    "neighborTopK": 3,
+    "model": {"provider":"ollama","model":"qwen3:4b","baseURL":"http://127.0.0.1:11434/v1","numCtx":8192,"maxOutputTokens":6144,"capabilities":{"structuredOutput":false,"toolCalling":true,"jsonMode":false}},
+    "stopWhen": 1
+  },
+  "learning": {
+    "agent_id": "pilot-01",
+    "role_id": "learning",
+    "scopes": [{"layer":"memory","visibility":"shared"}],
+    "tools": ["search", "get", "learning_get_plan", "learning_get_progress", "learning_list_due", "learning_get_profile"],
+    "prompt": "你是学习助手。只使用授权工具，给出每日学习计划和复习提醒。",
+    "model": {"provider":"ollama","model":"gemma3:4b","baseURL":"http://127.0.0.1:11434/v1"},
+    "stopWhen": 1
+  }
+}
