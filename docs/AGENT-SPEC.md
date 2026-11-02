@@ -15,12 +15,12 @@
 |---|---|
 | **A. 读** | 在**你自己的会话里**能调用一个名为 `memory` 的 MCP server，且 `memory_health` / `memory_recall_brief` / `memory_search` 可调通 |
 | **B. 写回** | 你的对话能进 `evidence/conversations`：要么你 **POST** `/v1/conversations/capture`，要么你在 manifest 里声明 transcript 目录**由我们 tail** |
-| **C. 自声明** | 在 `D:\MemoryLib\data\runtime\agents\<id>.json` 写一份 manifest（§1），**其中 `read.apply` 由你填**：你是用改配置、用你自己的 CLI、还是只能手工 |
+| **C. 自声明** | 在 `.\data\runtime\agents\<id>.json` 写一份 manifest（§1），**其中 `read.apply` 由你填**：你是用改配置、用你自己的 CLI、还是只能手工 |
 
 ### 0.2 一条硬规矩（不变）
 
 - 记忆库位置由**服务端**决定（`--data-root`）；你只认 **`http://127.0.0.1:8787`**（REST）或 **`…/mcp`**（MCP）；
-- **禁止**在你的配置里出现 `D:\MemoryLib\data\memory` 这类路径。
+- **禁止**在你的配置里出现 `.\data\memory` 这类路径。
 
 ### 0.3 四条自证（**验收只看这四条，不看你怎么配的**）
 
@@ -39,7 +39,7 @@
 
 ## 1. Manifest：每个 agent 一份
 
-位置：`D:\MemoryLib\data\runtime\agents\<id>.json`（`id` 用 kebab-case，如 `codex`、`claude-code`、`openclaw`）。
+位置：`.\data\runtime\agents\<id>.json`（`id` 用 kebab-case，如 `codex`、`claude-code`、`openclaw`）。
 
 ```json
 {
@@ -136,7 +136,7 @@ discovered → verified → enabled
 **抽不到就报错**，不许"尽力猜"——宁可 `discovered` 卡住等人看一眼，也不要把垃圾写进记忆库。
 
 ## 3. 幂等与去重
-- 每个文件记录**字节偏移**（`D:\MemoryLib\state\capture-tail-<id>.json`）；
+- 每个文件记录**字节偏移**（`.\state\capture-tail-<id>.json`）；
 - `event_id = <conversation_id>:<startOffset>-<endOffset>`；服务端按 `event_id` 去重；
 - **`--dry-run` 绝不前进偏移**（曾经的 bug：预览之后真跑就没内容了）。
 

@@ -21,6 +21,14 @@ export function createPlansMemory({ dataRoot } = {}) {
 
   async function atomicWrite(filePath, content) { return atomicWriteFile(filePath, content); }
 
+  // 中文主题会被 slugify 压成很短（甚至保留英文片段），文件名会撞；短于 3 个字符就用稳定哈希兜底
+  function planFileSlug(name) {
+    const slug = slugify(name);
+    if (slug && slug !== "unnamed" && slug.length >= 3) return slug;
+    const hash = crypto.createHash("sha1").update(String(name)).digest("hex").slice(0, 8);
+    return `plan-${hash}`;
+  }
+
   function validateSections(sections) {
     if (!sections || typeof sections !== "object" || Array.isArray(sections)) {
       throw new Error("sections is required (an object mapping each of the three headings to text)");
@@ -86,7 +94,7 @@ export function createPlansMemory({ dataRoot } = {}) {
     validateSections(sections);
     evidence_refs = requireEvidenceRefs(evidence_refs);
     const now = new Date().toISOString();
-    const filePath = path.join(root, `${slugify(name)}.md`);
+    const filePath = path.join(root, `${planFileSlug(name)}.md`);
     // 合并更新：若已存在，保留 created_at（计划首次创建时间），updated_at 刷新。
     let createdAt = created_at ?? now;
     const existing = await readTextFile(filePath);
@@ -100,7 +108,7 @@ export function createPlansMemory({ dataRoot } = {}) {
     } else if (status !== "draft") {
       throw new Error("a new plan must start as draft");
     }
-    const id = `plan-${slugify(name)}`;
+    const id = `plan-${planFileSlug(name)}`;
     const content = renderPlan({ id, topic: name, status, owner, created_at: createdAt, updated_at: now, supersedes, evidence_refs, principal, sections });
     await atomicWrite(filePath, content);
     return { id, topic: name, status, path: filePath, updated_at: now };
@@ -121,7 +129,7 @@ export function createPlansMemory({ dataRoot } = {}) {
 
   async function transition(topic, nextStatus, fromStatus, errorMessage, { principal = null } = {}) {
     const name = String(topic ?? "").trim();
-    const filePath = path.join(root, `${slugify(name)}.md`);
+    const filePath = path.join(root, `${planFileSlug(name)}.md`);
     const text = await readTextFile(filePath);
     if (!text) throw new Error(`plan not found: ${name}`);
     const item = itemFrom(text, filePath);
@@ -162,7 +170,7 @@ export function createPlansMemory({ dataRoot } = {}) {
 
   async function getPlan(topic, principal = null) {
     const name = String(topic ?? "").trim();
-    const filePath = path.join(root, `${slugify(name)}.md`);
+    const filePath = path.join(root, `${planFileSlug(name)}.md`);
     const text = await readTextFile(filePath);
     if (!text) return null;
     const item = itemFrom(text, filePath);

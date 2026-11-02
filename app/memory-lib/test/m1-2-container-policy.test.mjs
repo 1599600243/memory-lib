@@ -45,8 +45,12 @@ test("group sentinels retain baseline equality and missing-group compatibility",
     const normalized = ` ${sentinel.toUpperCase()} `;
     const metadata = { container: "project", visibility: "project", project: "alpha", group_id: sentinel };
     assert.equal(principalAllowsContainer({ group_id: sentinel }, metadata), true, `equal group sentinel compatibility changed for ${sentinel}`);
-    assert.equal(principalAllowsContainer({ group_id: normalized }, metadata), false, `group comparison must remain exact for ${sentinel}`);
-    assert.equal(principalAllowsContainer({ group_id: "real-g" }, metadata), false, `real principal group must not match sentinel memory group ${sentinel}`);
+    // 项目层：metadata 分组是 sentinel 时按项目作用域放行（不比较 principal 分组的书写形式）；shared 仍要求精确相等
+    assert.equal(principalAllowsContainer({ group_id: normalized }, metadata), true, `project visibility with sentinel memory group must stay readable ${sentinel}`);
+    assert.equal(principalAllowsContainer({ group_id: normalized }, { container: "long-term", visibility: "shared", group_id: sentinel }), false, `shared group comparison must remain exact ${sentinel}`);
+    // 项目层例外：历史项目记忆 group_id 常为 sentinel（未标注分组），按项目作用域放行；shared 不适用
+    assert.equal(principalAllowsContainer({ group_id: "real-g" }, metadata), true, `project visibility with sentinel memory group must stay readable ${sentinel}`);
+    assert.equal(principalAllowsContainer({ group_id: "real-g" }, { container: "long-term", visibility: "shared", group_id: sentinel }), false, `shared must stay strict for sentinel memory group ${sentinel}`);
     assert.equal(principalAllowsContainer({ group_id: sentinel }, { ...metadata, group_id: "real-g" }), false, `sentinel principal group must not match real memory group ${sentinel}`);
     assert.equal(principalAllowsContainer({ group_id: sentinel }, { container: "long-term", visibility: "shared", group_id: sentinel }), true, `shared equal group sentinel compatibility changed for ${sentinel}`);
   }

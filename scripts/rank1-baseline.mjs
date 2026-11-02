@@ -8,9 +8,9 @@
  *   node scripts/rank1-baseline.mjs
  *
  *   # 改前（先检出改前代码，用它的 recall.mjs）
- *   git -C D:\MemoryLib\app worktree add D:\MemoryLib\rank1-work\pre d03e40b
- *   node scripts/rank1-baseline.mjs --module D:\MemoryLib\rank1-work\pre\memory-lib\src\recall.mjs --label pre
- *   git -C D:\MemoryLib\app worktree remove --force D:\MemoryLib\rank1-work\pre
+ *   git -C .\app worktree add .\rank1-work\pre d03e40b
+ *   node scripts/rank1-baseline.mjs --module .\rank1-work\pre\memory-lib\src\recall.mjs --label pre
+ *   git -C .\app worktree remove --force .\rank1-work\pre
  *
  * 只读：只读 data root 下的记忆文件。
  */

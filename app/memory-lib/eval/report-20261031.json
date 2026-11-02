@@ -1,0 +1,1627 @@
+{
+  "eval": "D:\\MemoryLib\\app\\memory-lib\\eval\\retrieval-20261031.json",
+  "dataRoot": "D:/MemoryLib/data/memory",
+  "items": 24,
+  "variants": [
+    {
+      "id": "baseline",
+      "label": "基线：hybrid 但关标识符重排",
+      "rows": [
+        {
+          "id": "q01",
+          "query": "MAINT7 的独立验收结论是什么",
+          "rank": 5,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-76b7a25109f16c06.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d11bb0fe79d38f26.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-c6213c92de3c2bc0.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2408195771d9ea71.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-f0787aebb7821a55.md"
+          ]
+        },
+        {
+          "id": "q02",
+          "query": "MAINT6 专项通过了多少项",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-dea3d09cd3b7e262.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-67a11f1e5e0e4c5f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d02b68044928926f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-60abc66415868670.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-a8cf3ef27d66b2e3.md"
+          ]
+        },
+        {
+          "id": "q03",
+          "query": "时区配置 TZ-CONFIG-1 的根因在哪",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d5a72cc014d71fe6.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2d6a3faf5252bf5a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-bea417037db387dd.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2ce7a8ab6c7eef3b.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-238645aa328a15b4.md"
+          ]
+        },
+        {
+          "id": "q04",
+          "query": "NAPCAT-2 工作流 C 交付了哪些提交",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-4d622d8b0889fb41.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-91ff1dcf339477b9.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-c9ca3f2aad9ec835.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-c13d25f9afd32f6f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8d4748d90fb8269f.md"
+          ]
+        },
+        {
+          "id": "q05",
+          "query": "身份只能由服务端从凭据解析这条裁决的具体内容",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-965cac262cf2122b.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-15779eba8f6e2403.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-57121ef6545894a5.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-66401d0c536c0b88.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-98b91eec25834e27.md"
+          ]
+        },
+        {
+          "id": "q06",
+          "query": "调研 Duckling 和 chrono-node 时对资料来源的要求",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-046904c174003eff.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-83e64ef84bc0d71a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-209bc88b36963c61.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-7482b7bdaaa30484.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-074c97adeef02782.md"
+          ]
+        },
+        {
+          "id": "q07",
+          "query": "审查 agent-scaffold 时要重点看第三方密钥是否泄漏",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d7f3fb4796246a6a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9c68c6895516ebfd.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-a2b806ff2ddba0e8.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1587a897fd0cd121.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-670557d17b1b8f20.md"
+          ]
+        },
+        {
+          "id": "q08",
+          "query": "CAPTURE-ATTR-2 对无归属捕获做了什么",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2e85420e39a0456f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-842267cd605783ef.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1a1a9dece0cd60c4.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9eee118c3805d5fb.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9cee12036ff4f2d4.md"
+          ]
+        },
+        {
+          "id": "q09",
+          "query": "ATOMICWRITE-1 原子写的改动",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9fa4e06d3e1a33e7.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b4f405becec34cc6.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1ea7ab2f177823eb.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b174b31a30a255bc.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-62018afaf729a997.md"
+          ]
+        },
+        {
+          "id": "q10",
+          "query": "INDEX-2 的 p50 和 p95 性能预算是多少",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-299ec2a60d038cc0.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-6308f17996b87c9f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ee0437b16c6085de.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-573e3c88ef1a463c.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1207f0914aa7f767.md"
+          ]
+        },
+        {
+          "id": "q11",
+          "query": "VISIBILITY-UNKNOWN-1 为什么不通过",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-60f0dee4f73440a2.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2137cc04e8583a6d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-38ab9a7ab4a0fcf2.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1153a589178c272a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-91bcc6fe424a3fd9.md"
+          ]
+        },
+        {
+          "id": "q12",
+          "query": "WRITE-DENY-1 被拒绝的那次验收",
+          "rank": null,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2137cc04e8583a6d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-0fdb66292729676a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-80a5f0018f8f4a05.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-a492c3bbac3f4630.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-57cb8325babf77bd.md"
+          ]
+        },
+        {
+          "id": "q13",
+          "query": "RETRIEVAL-1 真实 capture 的原文检索问题",
+          "rank": null,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8d367f63031a4a2d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-065c7cce6a7f226d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ee5dec8392c8ea96.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9bf7bb317d1ea4cc.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8196bebcefd4f772.md"
+          ]
+        },
+        {
+          "id": "q14",
+          "query": "IN-PLUGIN-4 两处部署副本的问题",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d89a704fbacb150e.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-7bc011d95c4dfe7a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-11da8253ce63cc83.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b49a2dda7a7be588.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b6d231468450cde1.md"
+          ]
+        },
+        {
+          "id": "q15",
+          "query": "REFINE-LOOP-1 回归门为什么没过",
+          "rank": 4,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-6993fdb2697df47b.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-4d45263ccb852271.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-090ef822ae98ea6d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-3a85bb6e9c1fd42a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1d45c9c600cdc885.md"
+          ]
+        },
+        {
+          "id": "q16",
+          "query": "MAINPATH-1 产品门不通过的原因",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-e622bbc35036884a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-fbfc447f396eba8c.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ea2fb736c99e576e.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ad4d80bddcd637f9.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-00f78840ea1a2a22.md"
+          ]
+        },
+        {
+          "id": "q17",
+          "query": "M2.0 的 health 指标和巡检报告问题",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ea2fb736c99e576e.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-effd7e0eb9873a30.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8d4748d90fb8269f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-837cedf56e1f6841.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-7c48eb87de956dc1.md"
+          ]
+        },
+        {
+          "id": "q18",
+          "query": "MEM-WRITE-1 给 MCP 写入加了什么",
+          "rank": null,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-86d3dfa6788f343b.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d5db67e4d89e5847.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b56407d278802577.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-444ac3ce9cd9dc12.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-5f7ae35150fe9922.md"
+          ]
+        },
+        {
+          "id": "q19",
+          "query": "MAINT8 的 mechanical fallback 是什么",
+          "rank": 3,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d0f012a90edbfc33.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-7c5a0de2-d40a-44a7-b430-31c3e6b732b4.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d08685ebc5794a0d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-a8cf3ef27d66b2e3.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-c89b3ed605623868.md"
+          ]
+        },
+        {
+          "id": "q20",
+          "query": "D29 直接写入迁移相关记录",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-3420e672d21b41e7.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-fa5a024320d13de9.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d29d12adb6d3903b.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-32bca09ae918743d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b91806f5a9a67425.md"
+          ]
+        },
+        {
+          "id": "q21",
+          "query": "REFINE-1 capture 响应新增了什么",
+          "rank": null,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8196bebcefd4f772.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8d367f63031a4a2d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-065c7cce6a7f226d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ee5dec8392c8ea96.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9bf7bb317d1ea4cc.md"
+          ]
+        },
+        {
+          "id": "q22",
+          "query": "MEM-WRITE-1 验收通过了吗",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1e977ff2c415d835.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-bd272736527153fd.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-a492c3bbac3f4630.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-0fdb66292729676a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-c96b867de76a3319.md"
+          ]
+        },
+        {
+          "id": "q23",
+          "query": "MAINT5 的 timer 和 health 验收细节",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ab0419e2000b0843.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-76b7a25109f16c06.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-7400dc7faf9fef47.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-a41356d4d8c9cf57.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-85b0b7b0d04f623d.md"
+          ]
+        },
+        {
+          "id": "q24",
+          "query": "M1.6 增量索引和全量删除检测",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-4ea31bbf40abaa92.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b03d7ffbad56995d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-57b66d8fdb23461b.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-e5ef83af8eca6e21.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-c6ad3f6727221c4c.md"
+          ]
+        }
+      ],
+      "hit5": 20,
+      "hit10": 20,
+      "mrr": 0.7409722222222221,
+      "total": 24
+    },
+    {
+      "id": "hybrid",
+      "label": "默认 hybrid（标识符重排已开）",
+      "rows": [
+        {
+          "id": "q01",
+          "query": "MAINT7 的独立验收结论是什么",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-f0787aebb7821a55.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-a58ed2265d44cd728f1bf0cb.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-a26c6ef1b50baa54ef7cb2b3.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-76b7a25109f16c06.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d11bb0fe79d38f26.md"
+          ]
+        },
+        {
+          "id": "q02",
+          "query": "MAINT6 专项通过了多少项",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-dea3d09cd3b7e262.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d02b68044928926f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-27c58233ec302b73.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-67a11f1e5e0e4c5f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-60abc66415868670.md"
+          ]
+        },
+        {
+          "id": "q03",
+          "query": "时区配置 TZ-CONFIG-1 的根因在哪",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d5a72cc014d71fe6.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-bea417037db387dd.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9d0664b2941b51f3.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-37981cc38bf75b6a.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-a63920ce78906d4c28b135e4.md"
+          ]
+        },
+        {
+          "id": "q04",
+          "query": "NAPCAT-2 工作流 C 交付了哪些提交",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-4d622d8b0889fb41.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-91ff1dcf339477b9.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-c9ca3f2aad9ec835.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1feee28df4e17d74.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-11da8253ce63cc83.md"
+          ]
+        },
+        {
+          "id": "q05",
+          "query": "身份只能由服务端从凭据解析这条裁决的具体内容",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-965cac262cf2122b.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-15779eba8f6e2403.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-57121ef6545894a5.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-66401d0c536c0b88.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-98b91eec25834e27.md"
+          ]
+        },
+        {
+          "id": "q06",
+          "query": "调研 Duckling 和 chrono-node 时对资料来源的要求",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-046904c174003eff.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-209bc88b36963c61.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-716b86d90f07d88f1ed49755.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-98ddd966b1a427628eb1c1b8.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-83e64ef84bc0d71a.md"
+          ]
+        },
+        {
+          "id": "q07",
+          "query": "审查 agent-scaffold 时要重点看第三方密钥是否泄漏",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d7f3fb4796246a6a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9c68c6895516ebfd.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-a2b806ff2ddba0e8.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-740513101976025a.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-87e991c1a59ff790d1581c66.md"
+          ]
+        },
+        {
+          "id": "q08",
+          "query": "CAPTURE-ATTR-2 对无归属捕获做了什么",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2e85420e39a0456f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-858119b8dc9e0d96.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-a14dc06db768d958b1ba21a4.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-ff31dfaebf6aadad43649d64.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-e344483a728b7d6dd53e3ad6.md"
+          ]
+        },
+        {
+          "id": "q09",
+          "query": "ATOMICWRITE-1 原子写的改动",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9fa4e06d3e1a33e7.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2f3cbabba6a8ced4.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-0f15b3089f394a8a.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-983e6b24fe3eee5ed64f4520.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-a02dee02f53381ea612733d2.md"
+          ]
+        },
+        {
+          "id": "q10",
+          "query": "INDEX-2 的 p50 和 p95 性能预算是多少",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-299ec2a60d038cc0.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-6308f17996b87c9f.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-5233db61ab770b2957bebcf8.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-649a6bd3ffa3429a26d07c93.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-457cdce0cd43e50dcf502fc4.md"
+          ]
+        },
+        {
+          "id": "q11",
+          "query": "VISIBILITY-UNKNOWN-1 为什么不通过",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-60f0dee4f73440a2.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b3aa51a9512b4c85.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2137cc04e8583a6d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-38ab9a7ab4a0fcf2.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1153a589178c272a.md"
+          ]
+        },
+        {
+          "id": "q12",
+          "query": "WRITE-DENY-1 被拒绝的那次验收",
+          "rank": null,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9887a69eb57fe10a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d11bb0fe79d38f26.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-bc6a17e2208ae1b0.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2137cc04e8583a6d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9679f4ca743103d0.md"
+          ]
+        },
+        {
+          "id": "q13",
+          "query": "RETRIEVAL-1 真实 capture 的原文检索问题",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ad4d80bddcd637f9.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-fbaae88b396689f1.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b33783945fd93995.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-dc9c2d6ab08e8f38.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ef2450babb26644b.md"
+          ]
+        },
+        {
+          "id": "q14",
+          "query": "IN-PLUGIN-4 两处部署副本的问题",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d89a704fbacb150e.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-e8db13d147f5eba7.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-556e19a65729ce05.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-347a50ab0829d106.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2e47aaa3964d60b5.md"
+          ]
+        },
+        {
+          "id": "q15",
+          "query": "REFINE-LOOP-1 回归门为什么没过",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-3a85bb6e9c1fd42a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1d45c9c600cdc885.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-896e32d993f74bec.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-db90c30724eb8f1f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-bbb3aac85655579c.md"
+          ]
+        },
+        {
+          "id": "q16",
+          "query": "MAINPATH-1 产品门不通过的原因",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-e622bbc35036884a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-91bcc6fe424a3fd9.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-57c03666b408f990.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-4459e24de386f54c6fee3d18.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-fbfc447f396eba8c.md"
+          ]
+        },
+        {
+          "id": "q17",
+          "query": "M2.0 的 health 指标和巡检报告问题",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ea2fb736c99e576e.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-effd7e0eb9873a30.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8d4748d90fb8269f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8feef017645b1517.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-feec7f21d48b8256.md"
+          ]
+        },
+        {
+          "id": "q18",
+          "query": "MEM-WRITE-1 给 MCP 写入加了什么",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-c14e549fcf0beace.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1e977ff2c415d835.md",
+            "D:/MemoryLib/data/memory/project-state/memory-lib/decisions/project-decision-9f961186-939d-43fe-a027-4cf120271e92.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-86d3dfa6788f343b.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d5db67e4d89e5847.md"
+          ]
+        },
+        {
+          "id": "q19",
+          "query": "MAINT8 的 mechanical fallback 是什么",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d08685ebc5794a0d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ea2fb736c99e576e.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-a8cf3ef27d66b2e3.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-39c2fde75d29ba0da306befd.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8feef017645b1517.md"
+          ]
+        },
+        {
+          "id": "q20",
+          "query": "D29 直接写入迁移相关记录",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-3420e672d21b41e7.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-a492c3bbac3f4630.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-84be34ea816b38d8.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9032d9da301d3d7d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-3a85bb6e9c1fd42a.md"
+          ]
+        },
+        {
+          "id": "q21",
+          "query": "REFINE-1 capture 响应新增了什么",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-c815e51fd42dd52a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-4387f467ee4b86c2.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-bd272736527153fd.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8196bebcefd4f772.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8d367f63031a4a2d.md"
+          ]
+        },
+        {
+          "id": "q22",
+          "query": "MEM-WRITE-1 验收通过了吗",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1e977ff2c415d835.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1a0b832bbfa253b1.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2c96391c89de14aa.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b4f1874750693e92.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-05b3a74bb9512dff.md"
+          ]
+        },
+        {
+          "id": "q23",
+          "query": "MAINT5 的 timer 和 health 验收细节",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ab0419e2000b0843.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-76b7a25109f16c06.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-7400dc7faf9fef47.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-85b0b7b0d04f623d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-929aa18325645ae9.md"
+          ]
+        },
+        {
+          "id": "q24",
+          "query": "M1.6 增量索引和全量删除检测",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-4ea31bbf40abaa92.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b03d7ffbad56995d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-e5ef83af8eca6e21.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-cd1b1973b80ecebd8ae0775d.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-bb72095bcf9508ccec42ecd5.md"
+          ]
+        }
+      ],
+      "hit5": 23,
+      "hit10": 23,
+      "mrr": 0.9583333333333334,
+      "total": 24
+    },
+    {
+      "id": "no-graph",
+      "label": "hybrid 但关图扩展",
+      "rows": [
+        {
+          "id": "q01",
+          "query": "MAINT7 的独立验收结论是什么",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-f0787aebb7821a55.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-a58ed2265d44cd728f1bf0cb.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-a26c6ef1b50baa54ef7cb2b3.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-76b7a25109f16c06.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d11bb0fe79d38f26.md"
+          ]
+        },
+        {
+          "id": "q02",
+          "query": "MAINT6 专项通过了多少项",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-dea3d09cd3b7e262.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d02b68044928926f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-27c58233ec302b73.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-67a11f1e5e0e4c5f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-60abc66415868670.md"
+          ]
+        },
+        {
+          "id": "q03",
+          "query": "时区配置 TZ-CONFIG-1 的根因在哪",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d5a72cc014d71fe6.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-bea417037db387dd.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9d0664b2941b51f3.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-37981cc38bf75b6a.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-a63920ce78906d4c28b135e4.md"
+          ]
+        },
+        {
+          "id": "q04",
+          "query": "NAPCAT-2 工作流 C 交付了哪些提交",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-4d622d8b0889fb41.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-91ff1dcf339477b9.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-c9ca3f2aad9ec835.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1feee28df4e17d74.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-11da8253ce63cc83.md"
+          ]
+        },
+        {
+          "id": "q05",
+          "query": "身份只能由服务端从凭据解析这条裁决的具体内容",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-965cac262cf2122b.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-15779eba8f6e2403.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-57121ef6545894a5.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-66401d0c536c0b88.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-98b91eec25834e27.md"
+          ]
+        },
+        {
+          "id": "q06",
+          "query": "调研 Duckling 和 chrono-node 时对资料来源的要求",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-046904c174003eff.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-209bc88b36963c61.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-716b86d90f07d88f1ed49755.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-98ddd966b1a427628eb1c1b8.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-83e64ef84bc0d71a.md"
+          ]
+        },
+        {
+          "id": "q07",
+          "query": "审查 agent-scaffold 时要重点看第三方密钥是否泄漏",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d7f3fb4796246a6a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9c68c6895516ebfd.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-a2b806ff2ddba0e8.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-740513101976025a.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-87e991c1a59ff790d1581c66.md"
+          ]
+        },
+        {
+          "id": "q08",
+          "query": "CAPTURE-ATTR-2 对无归属捕获做了什么",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2e85420e39a0456f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-858119b8dc9e0d96.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-a14dc06db768d958b1ba21a4.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-ff31dfaebf6aadad43649d64.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-e344483a728b7d6dd53e3ad6.md"
+          ]
+        },
+        {
+          "id": "q09",
+          "query": "ATOMICWRITE-1 原子写的改动",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9fa4e06d3e1a33e7.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2f3cbabba6a8ced4.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-0f15b3089f394a8a.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-983e6b24fe3eee5ed64f4520.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-a02dee02f53381ea612733d2.md"
+          ]
+        },
+        {
+          "id": "q10",
+          "query": "INDEX-2 的 p50 和 p95 性能预算是多少",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-299ec2a60d038cc0.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-6308f17996b87c9f.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-5233db61ab770b2957bebcf8.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-649a6bd3ffa3429a26d07c93.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-457cdce0cd43e50dcf502fc4.md"
+          ]
+        },
+        {
+          "id": "q11",
+          "query": "VISIBILITY-UNKNOWN-1 为什么不通过",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-60f0dee4f73440a2.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b3aa51a9512b4c85.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2137cc04e8583a6d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-38ab9a7ab4a0fcf2.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1153a589178c272a.md"
+          ]
+        },
+        {
+          "id": "q12",
+          "query": "WRITE-DENY-1 被拒绝的那次验收",
+          "rank": null,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9887a69eb57fe10a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d11bb0fe79d38f26.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-bc6a17e2208ae1b0.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2137cc04e8583a6d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9679f4ca743103d0.md"
+          ]
+        },
+        {
+          "id": "q13",
+          "query": "RETRIEVAL-1 真实 capture 的原文检索问题",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ad4d80bddcd637f9.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-fbaae88b396689f1.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b33783945fd93995.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-dc9c2d6ab08e8f38.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ef2450babb26644b.md"
+          ]
+        },
+        {
+          "id": "q14",
+          "query": "IN-PLUGIN-4 两处部署副本的问题",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d89a704fbacb150e.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-e8db13d147f5eba7.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-556e19a65729ce05.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-347a50ab0829d106.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2e47aaa3964d60b5.md"
+          ]
+        },
+        {
+          "id": "q15",
+          "query": "REFINE-LOOP-1 回归门为什么没过",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-3a85bb6e9c1fd42a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1d45c9c600cdc885.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-896e32d993f74bec.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-db90c30724eb8f1f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-bbb3aac85655579c.md"
+          ]
+        },
+        {
+          "id": "q16",
+          "query": "MAINPATH-1 产品门不通过的原因",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-e622bbc35036884a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-91bcc6fe424a3fd9.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-57c03666b408f990.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-4459e24de386f54c6fee3d18.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-fbfc447f396eba8c.md"
+          ]
+        },
+        {
+          "id": "q17",
+          "query": "M2.0 的 health 指标和巡检报告问题",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ea2fb736c99e576e.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-effd7e0eb9873a30.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8d4748d90fb8269f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8feef017645b1517.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-feec7f21d48b8256.md"
+          ]
+        },
+        {
+          "id": "q18",
+          "query": "MEM-WRITE-1 给 MCP 写入加了什么",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-c14e549fcf0beace.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1e977ff2c415d835.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-86d3dfa6788f343b.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d5db67e4d89e5847.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b1b37b533d72c40a.md"
+          ]
+        },
+        {
+          "id": "q19",
+          "query": "MAINT8 的 mechanical fallback 是什么",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d08685ebc5794a0d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ea2fb736c99e576e.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-a8cf3ef27d66b2e3.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-39c2fde75d29ba0da306befd.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8feef017645b1517.md"
+          ]
+        },
+        {
+          "id": "q20",
+          "query": "D29 直接写入迁移相关记录",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-3420e672d21b41e7.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-a492c3bbac3f4630.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-84be34ea816b38d8.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9032d9da301d3d7d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-3a85bb6e9c1fd42a.md"
+          ]
+        },
+        {
+          "id": "q21",
+          "query": "REFINE-1 capture 响应新增了什么",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-c815e51fd42dd52a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-4387f467ee4b86c2.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-bd272736527153fd.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8196bebcefd4f772.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8d367f63031a4a2d.md"
+          ]
+        },
+        {
+          "id": "q22",
+          "query": "MEM-WRITE-1 验收通过了吗",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1e977ff2c415d835.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1a0b832bbfa253b1.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2c96391c89de14aa.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b4f1874750693e92.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-05b3a74bb9512dff.md"
+          ]
+        },
+        {
+          "id": "q23",
+          "query": "MAINT5 的 timer 和 health 验收细节",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ab0419e2000b0843.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-76b7a25109f16c06.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-7400dc7faf9fef47.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-85b0b7b0d04f623d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-929aa18325645ae9.md"
+          ]
+        },
+        {
+          "id": "q24",
+          "query": "M1.6 增量索引和全量删除检测",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-4ea31bbf40abaa92.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b03d7ffbad56995d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-e5ef83af8eca6e21.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-cd1b1973b80ecebd8ae0775d.md",
+            "D:/MemoryLib/data/memory/evidence/conversations/conversation-bb72095bcf9508ccec42ecd5.md"
+          ]
+        }
+      ],
+      "hit5": 23,
+      "hit10": 23,
+      "mrr": 0.9583333333333334,
+      "total": 24
+    },
+    {
+      "id": "memories",
+      "label": "只看正式记忆（searchMode=memories）",
+      "rows": [
+        {
+          "id": "q01",
+          "query": "MAINT7 的独立验收结论是什么",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-f0787aebb7821a55.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-76b7a25109f16c06.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d11bb0fe79d38f26.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-c6213c92de3c2bc0.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2408195771d9ea71.md"
+          ]
+        },
+        {
+          "id": "q02",
+          "query": "MAINT6 专项通过了多少项",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-dea3d09cd3b7e262.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d02b68044928926f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-27c58233ec302b73.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-67a11f1e5e0e4c5f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-60abc66415868670.md"
+          ]
+        },
+        {
+          "id": "q03",
+          "query": "时区配置 TZ-CONFIG-1 的根因在哪",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d5a72cc014d71fe6.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-bea417037db387dd.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9d0664b2941b51f3.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-37981cc38bf75b6a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2d6a3faf5252bf5a.md"
+          ]
+        },
+        {
+          "id": "q04",
+          "query": "NAPCAT-2 工作流 C 交付了哪些提交",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-4d622d8b0889fb41.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-91ff1dcf339477b9.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-c9ca3f2aad9ec835.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1feee28df4e17d74.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-11da8253ce63cc83.md"
+          ]
+        },
+        {
+          "id": "q05",
+          "query": "身份只能由服务端从凭据解析这条裁决的具体内容",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-965cac262cf2122b.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-15779eba8f6e2403.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-57121ef6545894a5.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-66401d0c536c0b88.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-98b91eec25834e27.md"
+          ]
+        },
+        {
+          "id": "q06",
+          "query": "调研 Duckling 和 chrono-node 时对资料来源的要求",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-046904c174003eff.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-209bc88b36963c61.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-83e64ef84bc0d71a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-7482b7bdaaa30484.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-074c97adeef02782.md"
+          ]
+        },
+        {
+          "id": "q07",
+          "query": "审查 agent-scaffold 时要重点看第三方密钥是否泄漏",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d7f3fb4796246a6a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9c68c6895516ebfd.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-a2b806ff2ddba0e8.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-740513101976025a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-c0e58fdee7316840.md"
+          ]
+        },
+        {
+          "id": "q08",
+          "query": "CAPTURE-ATTR-2 对无归属捕获做了什么",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2e85420e39a0456f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-858119b8dc9e0d96.md",
+            "D:/MemoryLib/data/memory/project-state/memory-lib/decisions/project-decision-9f961186-939d-43fe-a027-4cf120271e92.md",
+            "D:/MemoryLib/data/memory/project-state/memory-system/refinement-inspection.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-842267cd605783ef.md"
+          ]
+        },
+        {
+          "id": "q09",
+          "query": "ATOMICWRITE-1 原子写的改动",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9fa4e06d3e1a33e7.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2f3cbabba6a8ced4.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-0f15b3089f394a8a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b4f405becec34cc6.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1ea7ab2f177823eb.md"
+          ]
+        },
+        {
+          "id": "q10",
+          "query": "INDEX-2 的 p50 和 p95 性能预算是多少",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-299ec2a60d038cc0.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-6308f17996b87c9f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ee0437b16c6085de.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1207f0914aa7f767.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-96a7b596dcae29ce.md"
+          ]
+        },
+        {
+          "id": "q11",
+          "query": "VISIBILITY-UNKNOWN-1 为什么不通过",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-60f0dee4f73440a2.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b3aa51a9512b4c85.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2137cc04e8583a6d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-38ab9a7ab4a0fcf2.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1153a589178c272a.md"
+          ]
+        },
+        {
+          "id": "q12",
+          "query": "WRITE-DENY-1 被拒绝的那次验收",
+          "rank": null,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9887a69eb57fe10a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d11bb0fe79d38f26.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-bc6a17e2208ae1b0.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2137cc04e8583a6d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9679f4ca743103d0.md"
+          ]
+        },
+        {
+          "id": "q13",
+          "query": "RETRIEVAL-1 真实 capture 的原文检索问题",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ad4d80bddcd637f9.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-fbaae88b396689f1.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b33783945fd93995.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8ea11034a107641a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-feec7f21d48b8256.md"
+          ]
+        },
+        {
+          "id": "q14",
+          "query": "IN-PLUGIN-4 两处部署副本的问题",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d89a704fbacb150e.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-e8db13d147f5eba7.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-556e19a65729ce05.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-347a50ab0829d106.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2e47aaa3964d60b5.md"
+          ]
+        },
+        {
+          "id": "q15",
+          "query": "REFINE-LOOP-1 回归门为什么没过",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-3a85bb6e9c1fd42a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1d45c9c600cdc885.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-896e32d993f74bec.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-db90c30724eb8f1f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-bbb3aac85655579c.md"
+          ]
+        },
+        {
+          "id": "q16",
+          "query": "MAINPATH-1 产品门不通过的原因",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-e622bbc35036884a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-91bcc6fe424a3fd9.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-57c03666b408f990.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-fbfc447f396eba8c.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ea2fb736c99e576e.md"
+          ]
+        },
+        {
+          "id": "q17",
+          "query": "M2.0 的 health 指标和巡检报告问题",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ea2fb736c99e576e.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-effd7e0eb9873a30.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8d4748d90fb8269f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8feef017645b1517.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-feec7f21d48b8256.md"
+          ]
+        },
+        {
+          "id": "q18",
+          "query": "MEM-WRITE-1 给 MCP 写入加了什么",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-c14e549fcf0beace.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1e977ff2c415d835.md",
+            "D:/MemoryLib/data/memory/project-state/memory-lib/decisions/project-decision-9f961186-939d-43fe-a027-4cf120271e92.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-fd67361de497fa9b.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-86d3dfa6788f343b.md"
+          ]
+        },
+        {
+          "id": "q19",
+          "query": "MAINT8 的 mechanical fallback 是什么",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d08685ebc5794a0d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ea2fb736c99e576e.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-a8cf3ef27d66b2e3.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8feef017645b1517.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b538d7c7408d114a.md"
+          ]
+        },
+        {
+          "id": "q20",
+          "query": "D29 直接写入迁移相关记录",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-3420e672d21b41e7.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-a492c3bbac3f4630.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-84be34ea816b38d8.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9032d9da301d3d7d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-3a85bb6e9c1fd42a.md"
+          ]
+        },
+        {
+          "id": "q21",
+          "query": "REFINE-1 capture 响应新增了什么",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-c815e51fd42dd52a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-4387f467ee4b86c2.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-bd272736527153fd.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8196bebcefd4f772.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8d367f63031a4a2d.md"
+          ]
+        },
+        {
+          "id": "q22",
+          "query": "MEM-WRITE-1 验收通过了吗",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1e977ff2c415d835.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1a0b832bbfa253b1.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2c96391c89de14aa.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b4f1874750693e92.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-05b3a74bb9512dff.md"
+          ]
+        },
+        {
+          "id": "q23",
+          "query": "MAINT5 的 timer 和 health 验收细节",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ab0419e2000b0843.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-76b7a25109f16c06.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-7400dc7faf9fef47.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-85b0b7b0d04f623d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-929aa18325645ae9.md"
+          ]
+        },
+        {
+          "id": "q24",
+          "query": "M1.6 增量索引和全量删除检测",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-4ea31bbf40abaa92.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b03d7ffbad56995d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-e5ef83af8eca6e21.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-57b66d8fdb23461b.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-fc71229a6b10e6cd.md"
+          ]
+        }
+      ],
+      "hit5": 23,
+      "hit10": 23,
+      "mrr": 0.9583333333333334,
+      "total": 24
+    },
+    {
+      "id": "no-evidence",
+      "label": "正式记忆 + 禁证据/文档配额",
+      "rows": [
+        {
+          "id": "q01",
+          "query": "MAINT7 的独立验收结论是什么",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-f0787aebb7821a55.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-76b7a25109f16c06.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d11bb0fe79d38f26.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-c6213c92de3c2bc0.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2408195771d9ea71.md"
+          ]
+        },
+        {
+          "id": "q02",
+          "query": "MAINT6 专项通过了多少项",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-dea3d09cd3b7e262.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d02b68044928926f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-27c58233ec302b73.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-67a11f1e5e0e4c5f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-60abc66415868670.md"
+          ]
+        },
+        {
+          "id": "q03",
+          "query": "时区配置 TZ-CONFIG-1 的根因在哪",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d5a72cc014d71fe6.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-bea417037db387dd.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9d0664b2941b51f3.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-37981cc38bf75b6a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2d6a3faf5252bf5a.md"
+          ]
+        },
+        {
+          "id": "q04",
+          "query": "NAPCAT-2 工作流 C 交付了哪些提交",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-4d622d8b0889fb41.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-91ff1dcf339477b9.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-c9ca3f2aad9ec835.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1feee28df4e17d74.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-11da8253ce63cc83.md"
+          ]
+        },
+        {
+          "id": "q05",
+          "query": "身份只能由服务端从凭据解析这条裁决的具体内容",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-965cac262cf2122b.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-15779eba8f6e2403.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-57121ef6545894a5.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-66401d0c536c0b88.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-98b91eec25834e27.md"
+          ]
+        },
+        {
+          "id": "q06",
+          "query": "调研 Duckling 和 chrono-node 时对资料来源的要求",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-046904c174003eff.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-209bc88b36963c61.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-83e64ef84bc0d71a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-7482b7bdaaa30484.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-074c97adeef02782.md"
+          ]
+        },
+        {
+          "id": "q07",
+          "query": "审查 agent-scaffold 时要重点看第三方密钥是否泄漏",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d7f3fb4796246a6a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9c68c6895516ebfd.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-a2b806ff2ddba0e8.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-740513101976025a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-c0e58fdee7316840.md"
+          ]
+        },
+        {
+          "id": "q08",
+          "query": "CAPTURE-ATTR-2 对无归属捕获做了什么",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2e85420e39a0456f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-858119b8dc9e0d96.md",
+            "D:/MemoryLib/data/memory/project-state/memory-lib/decisions/project-decision-9f961186-939d-43fe-a027-4cf120271e92.md",
+            "D:/MemoryLib/data/memory/project-state/memory-system/refinement-inspection.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-842267cd605783ef.md"
+          ]
+        },
+        {
+          "id": "q09",
+          "query": "ATOMICWRITE-1 原子写的改动",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9fa4e06d3e1a33e7.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2f3cbabba6a8ced4.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-0f15b3089f394a8a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b4f405becec34cc6.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1ea7ab2f177823eb.md"
+          ]
+        },
+        {
+          "id": "q10",
+          "query": "INDEX-2 的 p50 和 p95 性能预算是多少",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-299ec2a60d038cc0.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-6308f17996b87c9f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ee0437b16c6085de.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1207f0914aa7f767.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-96a7b596dcae29ce.md"
+          ]
+        },
+        {
+          "id": "q11",
+          "query": "VISIBILITY-UNKNOWN-1 为什么不通过",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-60f0dee4f73440a2.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b3aa51a9512b4c85.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2137cc04e8583a6d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-38ab9a7ab4a0fcf2.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1153a589178c272a.md"
+          ]
+        },
+        {
+          "id": "q12",
+          "query": "WRITE-DENY-1 被拒绝的那次验收",
+          "rank": null,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9887a69eb57fe10a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d11bb0fe79d38f26.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-bc6a17e2208ae1b0.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2137cc04e8583a6d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9679f4ca743103d0.md"
+          ]
+        },
+        {
+          "id": "q13",
+          "query": "RETRIEVAL-1 真实 capture 的原文检索问题",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ad4d80bddcd637f9.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-fbaae88b396689f1.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b33783945fd93995.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8ea11034a107641a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-feec7f21d48b8256.md"
+          ]
+        },
+        {
+          "id": "q14",
+          "query": "IN-PLUGIN-4 两处部署副本的问题",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d89a704fbacb150e.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-e8db13d147f5eba7.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-556e19a65729ce05.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-347a50ab0829d106.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2e47aaa3964d60b5.md"
+          ]
+        },
+        {
+          "id": "q15",
+          "query": "REFINE-LOOP-1 回归门为什么没过",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-3a85bb6e9c1fd42a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1d45c9c600cdc885.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-896e32d993f74bec.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-db90c30724eb8f1f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-bbb3aac85655579c.md"
+          ]
+        },
+        {
+          "id": "q16",
+          "query": "MAINPATH-1 产品门不通过的原因",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-e622bbc35036884a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-91bcc6fe424a3fd9.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-57c03666b408f990.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-fbfc447f396eba8c.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ea2fb736c99e576e.md"
+          ]
+        },
+        {
+          "id": "q17",
+          "query": "M2.0 的 health 指标和巡检报告问题",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ea2fb736c99e576e.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-effd7e0eb9873a30.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8d4748d90fb8269f.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8feef017645b1517.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-feec7f21d48b8256.md"
+          ]
+        },
+        {
+          "id": "q18",
+          "query": "MEM-WRITE-1 给 MCP 写入加了什么",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-c14e549fcf0beace.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1e977ff2c415d835.md",
+            "D:/MemoryLib/data/memory/project-state/memory-lib/decisions/project-decision-9f961186-939d-43fe-a027-4cf120271e92.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-fd67361de497fa9b.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-86d3dfa6788f343b.md"
+          ]
+        },
+        {
+          "id": "q19",
+          "query": "MAINT8 的 mechanical fallback 是什么",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-d08685ebc5794a0d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ea2fb736c99e576e.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-a8cf3ef27d66b2e3.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8feef017645b1517.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b538d7c7408d114a.md"
+          ]
+        },
+        {
+          "id": "q20",
+          "query": "D29 直接写入迁移相关记录",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-3420e672d21b41e7.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-a492c3bbac3f4630.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-84be34ea816b38d8.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-9032d9da301d3d7d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-3a85bb6e9c1fd42a.md"
+          ]
+        },
+        {
+          "id": "q21",
+          "query": "REFINE-1 capture 响应新增了什么",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-c815e51fd42dd52a.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-4387f467ee4b86c2.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-bd272736527153fd.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8196bebcefd4f772.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-8d367f63031a4a2d.md"
+          ]
+        },
+        {
+          "id": "q22",
+          "query": "MEM-WRITE-1 验收通过了吗",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1e977ff2c415d835.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-1a0b832bbfa253b1.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-2c96391c89de14aa.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b4f1874750693e92.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-05b3a74bb9512dff.md"
+          ]
+        },
+        {
+          "id": "q23",
+          "query": "MAINT5 的 timer 和 health 验收细节",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-ab0419e2000b0843.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-76b7a25109f16c06.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-7400dc7faf9fef47.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-85b0b7b0d04f623d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-929aa18325645ae9.md"
+          ]
+        },
+        {
+          "id": "q24",
+          "query": "M1.6 增量索引和全量删除检测",
+          "rank": 1,
+          "top5": [
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-4ea31bbf40abaa92.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-b03d7ffbad56995d.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-e5ef83af8eca6e21.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-57b66d8fdb23461b.md",
+            "D:/MemoryLib/data/memory/curated/shared/curated-shared-fc71229a6b10e6cd.md"
+          ]
+        }
+      ],
+      "hit5": 23,
+      "hit10": 23,
+      "mrr": 0.9583333333333334,
+      "total": 24
+    },
+    {
+      "id": "rerank50",
+      "label": "候选 50 + 标识符重排",
+      "rows": [
+        {
+          "id": "q01",
+          "query": "MAINT7 的独立验收结论是什么",
+          "rank": 1
+        },
+        {
+          "id": "q02",
+          "query": "MAINT6 专项通过了多少项",
+          "rank": 1
+        },
+        {
+          "id": "q03",
+          "query": "时区配置 TZ-CONFIG-1 的根因在哪",
+          "rank": 1
+        },
+        {
+          "id": "q04",
+          "query": "NAPCAT-2 工作流 C 交付了哪些提交",
+          "rank": 1
+        },
+        {
+          "id": "q05",
+          "query": "身份只能由服务端从凭据解析这条裁决的具体内容",
+          "rank": 1
+        },
+        {
+          "id": "q06",
+          "query": "调研 Duckling 和 chrono-node 时对资料来源的要求",
+          "rank": 1
+        },
+        {
+          "id": "q07",
+          "query": "审查 agent-scaffold 时要重点看第三方密钥是否泄漏",
+          "rank": 1
+        },
+        {
+          "id": "q08",
+          "query": "CAPTURE-ATTR-2 对无归属捕获做了什么",
+          "rank": 1
+        },
+        {
+          "id": "q09",
+          "query": "ATOMICWRITE-1 原子写的改动",
+          "rank": 1
+        },
+        {
+          "id": "q10",
+          "query": "INDEX-2 的 p50 和 p95 性能预算是多少",
+          "rank": 1
+        },
+        {
+          "id": "q11",
+          "query": "VISIBILITY-UNKNOWN-1 为什么不通过",
+          "rank": 1
+        },
+        {
+          "id": "q12",
+          "query": "WRITE-DENY-1 被拒绝的那次验收",
+          "rank": null
+        },
+        {
+          "id": "q13",
+          "query": "RETRIEVAL-1 真实 capture 的原文检索问题",
+          "rank": 1
+        },
+        {
+          "id": "q14",
+          "query": "IN-PLUGIN-4 两处部署副本的问题",
+          "rank": 1
+        },
+        {
+          "id": "q15",
+          "query": "REFINE-LOOP-1 回归门为什么没过",
+          "rank": 1
+        },
+        {
+          "id": "q16",
+          "query": "MAINPATH-1 产品门不通过的原因",
+          "rank": 1
+        },
+        {
+          "id": "q17",
+          "query": "M2.0 的 health 指标和巡检报告问题",
+          "rank": 1
+        },
+        {
+          "id": "q18",
+          "query": "MEM-WRITE-1 给 MCP 写入加了什么",
+          "rank": 1
+        },
+        {
+          "id": "q19",
+          "query": "MAINT8 的 mechanical fallback 是什么",
+          "rank": 1
+        },
+        {
+          "id": "q20",
+          "query": "D29 直接写入迁移相关记录",
+          "rank": 1
+        },
+        {
+          "id": "q21",
+          "query": "REFINE-1 capture 响应新增了什么",
+          "rank": 1
+        },
+        {
+          "id": "q22",
+          "query": "MEM-WRITE-1 验收通过了吗",
+          "rank": 1
+        },
+        {
+          "id": "q23",
+          "query": "MAINT5 的 timer 和 health 验收细节",
+          "rank": 1
+        },
+        {
+          "id": "q24",
+          "query": "M1.6 增量索引和全量删除检测",
+          "rank": 1
+        }
+      ],
+      "hit5": 23,
+      "hit10": 23,
+      "mrr": 0.9583333333333334,
+      "total": 24
+    }
+  ]
+}

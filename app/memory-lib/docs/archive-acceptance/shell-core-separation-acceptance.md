@@ -7,7 +7,7 @@
 
 | 文件 | 改动 | 影响 |
 |---|---|---|
-| `service.ts:27` | `WORKSPACE_ROOT`：`C:\Users\admin\.openclaw\workspace` → `I:\OpenClaw\memory-data` | 派生修正：dataRoot（L28）、OPENCLAW_MEMORY_ROOT（L30）、knowledge/evidence/project-state 的 legacy fallback 路径（L1304/1319/1334/1653/1679）全部指向 I 盘真实位置（均已验证存在） |
+| `service.ts:27` | `WORKSPACE_ROOT`：`~\.openclaw\workspace` → `I:\OpenClaw\memory-data` | 派生修正：dataRoot（L28）、OPENCLAW_MEMORY_ROOT（L30）、knowledge/evidence/project-state 的 legacy fallback 路径（L1304/1319/1334/1653/1679）全部指向 I 盘真实位置（均已验证存在） |
 | `index.ts:52` | `DEFAULT_DATA_ROOT`：旧 C: 路径 → `I:\OpenClaw\memory-data\memory` | 控制中心 fallback 路径正确 |
 
 备份：`service.ts.bak-pre-pathfix-20260823-020457`、`index.ts.bak-pre-pathfix-20260823-020457`（插件 src 目录内，可随时回滚）

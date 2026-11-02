@@ -9,7 +9,7 @@
 // 安全边界（红线）：
 //   - **只读**：只用 search/get 身份的读路径；不调用任何写方法；不建索引、不落盘、不调模型。
 //   - 以生产身份注册表里**真实存在的只读角色**（默认 pilot-01/reader，actions 只有 search/get）构造 principal。
-//   - 默认数据根 = 生产 `D:\MemoryLib\data\memory`；可用 `--data-root` 指向副本。
+//   - 默认数据根 = 生产 `.\data\memory`；可用 `--data-root` 指向副本。
 //
 // 用法：
 //   node scripts/m2-1-b1-live-evidence.mjs

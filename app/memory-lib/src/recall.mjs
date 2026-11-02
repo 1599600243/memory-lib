@@ -158,7 +158,7 @@ export function createRecall({ dataRoot, workspaceRoot } = {}) {
   //   这里刻意不走向量：brief 在每次对话前都会被调一次，要便宜、要确定、要能被单测钉死。
   //   相关度不够的条目不进段——范围单明确禁止"为了看起来命中而放宽到返噪"。
   // 可见性：沿用本模块同一套 container-policy 判据（visible()），不另写一套。
-  async function recentMemories({ query = null, principal = null, days = 7, max = MEMORY_TOP_DEFAULT, budgetChars = MEMORY_BUDGET_CHARS } = {}) {
+  async function recentMemories({ query = null, principal = null, days = 7, max = MEMORY_TOP_DEFAULT, budgetChars = MEMORY_BUDGET_CHARS, filterTags = null } = {}) {
     const wanted = Math.max(1, Math.min(MEMORY_TOP_MAX, Number(max) || MEMORY_TOP_DEFAULT));
     const budget = Math.max(80, Number(budgetChars) || MEMORY_BUDGET_CHARS);
     // CJK-FILLER-1：自然问句（"我上次说我对什么过敏来着"）切出来的 bigram 里混着
@@ -182,7 +182,9 @@ export function createRecall({ dataRoot, workspaceRoot } = {}) {
     // 现在先用增量索引的 `fts_chunks` 把"要从哪些文件里找"缩下来（≥3 字片段 OR，按命中数降序，≤800），
     // 再把这批**候选文件**交给下面一模一样的取值/打分/排序/打包逻辑。
     // 索引缺失/损坏/查询报错/候选为空/候选填不满注入位数/新文件过多 ⇒ `mode:"full"`，**退回改前的全量扫描**。
-    let scan = await selectCandidates({ dataRoot, memoriesRoot, query, wanted });
+    // SHORT-Q-1：无 token 的混合问句（"8层 在 哪"）必须走全量扫描；
+    // 否则 FTS 候选选择拿到空 token 会返回空集合，把 fallback 也一起饿死。
+    let scan = tokens.length ? await selectCandidates({ dataRoot, memoriesRoot, query, wanted }) : { mode: "full", source: "full", paths: null, reason: "tokenless-full-scan" };
     // CJK-FILLER-3：多 token 的自然问句（"我上次说我我对什么过敏来着"）用 FTS 预筛
     // 会把正确答案筛在外面（实测只剩 43 个候选、目标文件不在其中），而全量扫描
     // 实测只要 ~14ms（1600 个文件）。少给一次错误答案远比省 14ms 重要 ⇒ 直接全量。
@@ -200,7 +202,6 @@ export function createRecall({ dataRoot, workspaceRoot } = {}) {
     const candidatePaths = scan.mode === "candidates" ? scan.paths : await walkFiles(memoriesRoot);
     const filePaths = candidatePaths.filter((filePath) => filePath.endsWith(".md"));
     const texts = await readTextsPooled(filePaths, MEMORY_READ_CONCURRENCY);
-
     const rows = [];
     for (let i = 0; i < filePaths.length; i += 1) {
       const filePath = filePaths[i];
@@ -212,10 +213,12 @@ export function createRecall({ dataRoot, workspaceRoot } = {}) {
       if (!visible(principal, frontmatter, container)) continue;
       const fact = memoryFactOf(body);
       if (!fact) continue;
+    const tags = Array.isArray(frontmatter.tags) ? frontmatter.tags.map(String) : [];
+    if (Array.isArray(filterTags) && filterTags.length && !filterTags.every((tag) => tags.includes(tag))) continue;
       const calendarDate = String(frontmatter.calendarDate ?? frontmatter.valid_from ?? frontmatter.occurred_at ?? "").slice(0, 10);
       const id = frontmatter.id ?? path.basename(filePath, ".md");
       if (!tokens.length && calendarDate && calendarDate < cutoffDay) continue; // 没有 query 就只给近 N 天
-      rows.push({ id, calendarDate, fact });
+    rows.push({ id, calendarDate, fact, tags });
     }
 
     // RANK-1 第 2 阶段：算每个 query token 的**区分度**（df：这条词在多少条记忆里出现过）。
@@ -261,8 +264,9 @@ export function createRecall({ dataRoot, workspaceRoot } = {}) {
     // CJK-FILLER-4：门槛按**过滤后的实词**判定，而不是原始问句长度。
     // "我对什么过敏" 原始 6 字（旧判据 → 非短问句），但它过滤后只剩「过敏」一个实词，
     // 就该按短问句（命中 ≥1 即可）来判；否则自然问句永远够不着门槛。
-    const isShortQuery = scoredTokens.length > 0 && scoredTokens.length <= 2 && longestScored <= 2;
-
+    // SHORT-Q-1：短问句判定看**原始查询**（去空白后的字符数），不能只看去重后的 token 数；
+    // 否则「验收 验收」这种 4 字长问句会被去重成 1 个 token 而误判成短问句。
+    const isShortQuery = queryCharacterCount <= 2 && scoredTokens.length > 0 && scoredTokens.length <= 2 && longestScored <= 2;
     const candidates = [];
     for (const row of rows) {
       if (scoredTokens.length) {
@@ -277,10 +281,10 @@ export function createRecall({ dataRoot, workspaceRoot } = {}) {
         const answersCount = countUnit ? factAnswersCount(row.fact, countUnit, tokens) : false;
         const answersCountAny = countUnit && !answersCount ? Boolean(anyUnitAnswerSentence(row.fact, tokens, { unit: countUnit })) : false;
         const answerTier = answersCount ? 2 : answersCountAny ? 1 : 0;
-        candidates.push({ id: row.id, calendarDate: row.calendarDate, fact: row.fact, score: weight, answersCount, answersCountAny, answerTier });
+        candidates.push({ id: row.id, calendarDate: row.calendarDate, fact: row.fact, tags: Array.isArray(row.tags) ? row.tags : [], score: weight, answersCount, answersCountAny, answerTier });
       } else if (!hasQuery || queryCharacterCount > 1) {
         // 单字噪声不放行；多字符但因空格切分而无 token 的旧问法继续沿用近期记忆兜底。
-        candidates.push({ id: row.id, calendarDate: row.calendarDate, fact: row.fact, score: 0, answersCount: false, answersCountAny: false, answerTier: 0 });
+        candidates.push({ id: row.id, calendarDate: row.calendarDate, fact: row.fact, tags: Array.isArray(row.tags) ? row.tags : [], score: 0, answersCount: false, answersCountAny: false, answerTier: 0 });
       }
     }
 
@@ -332,6 +336,7 @@ export function createRecall({ dataRoot, workspaceRoot } = {}) {
       included.push({
         id: item.id,
         calendarDate: item.calendarDate || null,
+      tags: Array.isArray(item.tags) ? item.tags : [],
         excerpt,
         rank,
         chars: line.length,
@@ -375,14 +380,14 @@ export function createRecall({ dataRoot, workspaceRoot } = {}) {
     return notes.map((n) => `[${n.kind}] ${n.sections?.["经验"] ?? ""}`).join("\n");
   }
 
-  async function recallBrief({ project = null, days = 7, limit_chars = 2000, agent_id = null, role_id = null, format = "markdown", principal = null, query = null, memories = MEMORY_TOP_DEFAULT, memory_limit_chars = MEMORY_BUDGET_CHARS, memory_only = false } = {}) {
+  async function recallBrief({ project = null, days = 7, limit_chars = 2000, agent_id = null, role_id = null, format = "markdown", principal = null, query = null, memories = MEMORY_TOP_DEFAULT, memory_limit_chars = MEMORY_BUDGET_CHARS, memory_only = false, tags = null } = {}) {
     const [state, plans, tool, ep, experience, memoryBlock] = await Promise.all([
       projectStates(project, principal),
       activePlans(principal),
       tools(principal),
       recentEpisodes(days),
       myExperience(agent_id, role_id, principal),
-      recentMemories({ query, principal, days, max: memories, budgetChars: memory_limit_chars }),
+      recentMemories({ query, principal, days, max: memories, budgetChars: memory_limit_chars, filterTags: Array.isArray(tags) && tags.length ? tags.map(String) : null }),
     ]);
     const episodes = ep.text;
     // 未决与风险：项目阻塞 + 计划卡点 + 经历未决项

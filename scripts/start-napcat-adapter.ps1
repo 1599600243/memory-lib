@@ -2,8 +2,8 @@
 # 也可手工前台运行。日志写到 logs\napcat-service.log。
 
 $ErrorActionPreference = 'Stop'
-$root = 'D:\MemoryLib'
-$node = 'F:\ZHONGYAO\nodejs\node.exe'
+$root = '.'
+$node = 'node'
 $entry = Join-Path $root 'adapters\napcat\serve.mjs'
 $logDir = Join-Path $root 'logs'
 $log = Join-Path $logDir 'napcat-service.log'

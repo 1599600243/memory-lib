@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
-import { walkFiles } from "./read-only-core.mjs";
+import { walkFiles, parseFrontmatter } from "./read-only-core.mjs";
 import { chunkDocument } from "./chunker.mjs";
 import {
   deleteRecallDfDocument,
@@ -23,6 +23,66 @@ function sha(value) { return crypto.createHash("sha256").update(value).digest("h
 function id(prefix, value) { return `${prefix}_${sha(value).slice(0, 24)}`; }
 function posix(value) { return String(value).split(path.sep).join("/"); }
 
+// ── 检索前置过滤：从路径 + frontmatter 抽出主体维度 ──────────────────────
+// 与 src/visibility.mjs::canSeePath 的判定语义保持一一对应（缺省可见性按 container 推导）。
+function containerForRel(rel) {
+  const p = posix(rel);
+  if (p.startsWith("curated/shared/")) return "long-term";
+  if (p.startsWith("curated/agents/")) return "role";
+  if (p.startsWith("project-state/")) return "project";
+  if (p.startsWith("tools-memory/")) return "tool";
+  if (p.startsWith("plans/")) return "plan";
+  if (p.startsWith("profile/")) return "long-term";
+  if (p.startsWith("evidence/documents/")) return "knowledge";
+  if (p.startsWith("evidence/conversations/")) return "evidence";
+  return null;
+}
+
+function unquote(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return null;
+  try {
+    const parsed = JSON.parse(text);
+    return typeof parsed === "string" ? parsed : text;
+  } catch {
+    return text;
+  }
+}
+
+function defaultVisibilityForContainer(container) {
+  if (container === "project") return "project";
+  if (container === "tool" || container === "knowledge") return "platform";
+  if (container === "role") return "role";
+  return "private";
+}
+
+export function principalRowFromText(rel, text) {
+  const container = containerForRel(rel);
+  if (!container) return null;
+  let frontmatter = {};
+  try { frontmatter = parseFrontmatter(String(text ?? "")).frontmatter ?? {}; } catch { frontmatter = {}; }
+  return {
+    path: posix(rel),
+    container,
+    visibility: unquote(frontmatter.visibility) ?? defaultVisibilityForContainer(container),
+    // 兼容 camelCase：对话证据文件用的是 groupId/userId/agentId（canSeePath 也认这两种写法）
+    group_id: unquote(frontmatter.group_id ?? frontmatter.groupId),
+    user_id: unquote(frontmatter.user_id ?? frontmatter.userId),
+    agent_id: unquote(frontmatter.agent_id ?? frontmatter.agentId),
+    role_id: unquote(frontmatter.role_id ?? frontmatter.roleId),
+    project: unquote(frontmatter.project ?? frontmatter.project_id),
+    tenant_id: unquote(frontmatter.tenant_id ?? frontmatter.tenantId),
+  };
+}
+
+function upsertFilePrincipal(db, row) {
+  if (!row) return;
+  db.prepare(`INSERT INTO file_principals(path,container,visibility,group_id,user_id,agent_id,role_id,project,tenant_id)
+    VALUES(?,?,?,?,?,?,?,?,?)
+    ON CONFLICT(path) DO UPDATE SET container=excluded.container,visibility=excluded.visibility,group_id=excluded.group_id,user_id=excluded.user_id,agent_id=excluded.agent_id,role_id=excluded.role_id,project=excluded.project,tenant_id=excluded.tenant_id`)
+    .run(row.path, row.container, row.visibility, row.group_id, row.user_id, row.agent_id, row.role_id, row.project, row.tenant_id);
+}
+
 export function indexPathFor(dataRoot) { return path.join(dataRoot, INDEX_REL); }
 
 function ensureSchema(db) {
@@ -33,7 +93,15 @@ function ensureSchema(db) {
     CREATE INDEX IF NOT EXISTS idx_files_status ON files(status);
     CREATE INDEX IF NOT EXISTS idx_chunks_file ON chunks(file_id);
     CREATE INDEX IF NOT EXISTS idx_embeddings_status ON embeddings(vector_status);
-    CREATE TABLE IF NOT EXISTS index_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);`);
+    CREATE TABLE IF NOT EXISTS index_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+    -- 检索前置过滤用的主体维度：路径根只回答"在哪个目录"，回答不了"这条记录属于谁"。
+    -- 值在索引时从 frontmatter 抽出来，检索 SQL 先按它筛，返回后仍由 canSeePath 复核。
+    CREATE TABLE IF NOT EXISTS file_principals (path TEXT PRIMARY KEY, container TEXT, visibility TEXT, group_id TEXT, user_id TEXT, agent_id TEXT, role_id TEXT, project TEXT, tenant_id TEXT);
+    CREATE INDEX IF NOT EXISTS idx_fp_visibility ON file_principals(visibility);
+    CREATE INDEX IF NOT EXISTS idx_fp_container ON file_principals(container);
+    CREATE INDEX IF NOT EXISTS idx_fp_user ON file_principals(user_id);
+    CREATE INDEX IF NOT EXISTS idx_fp_agent ON file_principals(agent_id);
+    CREATE INDEX IF NOT EXISTS idx_fp_role ON file_principals(role_id);`);
   const fts = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='fts_chunks'").get();
   const migrated = Boolean(fts && !/tokenize\s*=\s*["']trigram["']/iu.test(String(fts.sql)));
   if (migrated) db.exec("DROP TABLE fts_chunks");
@@ -127,6 +195,7 @@ export function createIndexStore({ dataRoot, ollama = {}, fetchImpl = globalThis
                 db.exec("COMMIT");
               } catch (error) { db.exec("ROLLBACK"); throw error; }
             }
+            upsertFilePrincipal(db, principalRowFromText(entry.rel, text));
             continue;
           }
           const stat = await fs.stat(entry.path);
@@ -156,6 +225,7 @@ export function createIndexStore({ dataRoot, ollama = {}, fetchImpl = globalThis
             db.prepare(`INSERT INTO files(id,path,sha256,size_bytes,mtime,status,updated_at) VALUES(?,?,?,?,?,'active',?)
               ON CONFLICT(path) DO UPDATE SET id=excluded.id,sha256=excluded.sha256,size_bytes=excluded.size_bytes,mtime=excluded.mtime,status='active',updated_at=excluded.updated_at`)
               .run(fileId, entry.rel, digest, stat.size, stat.mtimeMs, now);
+            upsertFilePrincipal(db, principalRowFromText(entry.rel, text));
             upsertRecallDfDocument(db, {
               fileId,
               relativePath: entry.rel,
@@ -184,12 +254,31 @@ export function createIndexStore({ dataRoot, ollama = {}, fetchImpl = globalThis
         if (fileSkipped) result.skippedSensitivePaths.push(entry.rel);
       }
 
+      // 自愈：上一轮因重启/ollama 抖动被记为 failed 的向量，每轮索引重试一次，成功就转回 active。
+      // 否则一次瞬时失败（例如服务重启掐断请求）会让 health 永久 degraded，只能手动跑 repair 脚本。
+      let retriedFailed = 0;
+      let recoveredFailed = 0;
+      if (process.env.MEMORY_INDEX_NO_RETRY !== "1") {
+        const failedRows = db.prepare("SELECT e.chunk_id AS chunk_id, c.text AS text FROM embeddings e JOIN chunks c ON c.id = e.chunk_id WHERE e.vector_status = 'failed' LIMIT 200").all();
+        for (const row of failedRows) {
+          retriedFailed += 1;
+          try {
+            const vector = await embed(row.text, { ...embeddingConfig, fetchImpl });
+            db.prepare("UPDATE embeddings SET vector_blob=?, vector_status='active', indexed_at=?, stale_reason=NULL WHERE chunk_id=?").run(vector, new Date().toISOString(), row.chunk_id);
+            recoveredFailed += 1;
+          } catch (error) { onError?.({ chunk_id: row.chunk_id, error, phase: "retry_failed" }); }
+        }
+      }
+      result.retriedFailed = retriedFailed;
+      result.recoveredFailed = recoveredFailed;
+
       const deleted = seen ? previousRows.filter((old) => !seen.has(old.path) && old.status !== "deleted") : [];
       if (deleted.length) {
         db.exec("BEGIN IMMEDIATE");
         try {
           for (const old of deleted) {
             if (old.status !== "deleted") db.prepare("UPDATE files SET status='deleted',updated_at=? WHERE id=?").run(now, old.id);
+            db.prepare("DELETE FROM file_principals WHERE path=?").run(old.path);
             deleteRecallDfDocument(db, old.id);
             const oldChunks = db.prepare("SELECT id FROM chunks WHERE file_id=?").all(old.id);
             for (const row of oldChunks) {

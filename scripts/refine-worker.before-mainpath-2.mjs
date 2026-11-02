@@ -14,16 +14,16 @@
 //   node refine-worker.mjs --status --json     # 同一份结论的机器可读版
 //
 // 关键开关（全部可注入，默认指生产）：
-//   --evidence <dir>   证据目录        默认 D:\MemoryLib\data\memory\evidence\conversations
-//   --data-root <dir>  记忆库根         默认 D:\MemoryLib\data\memory
-//   --state <file>     状态文件         默认 D:\MemoryLib\state\refine-state.json
+//   --evidence <dir>   证据目录        默认 .\data\memory\evidence\conversations
+//   --data-root <dir>  记忆库根         默认 .\data\memory
+//   --state <file>     状态文件         默认 .\state\refine-state.json
 //   --api <url>        记忆服务          默认 http://127.0.0.1:8787
 //   --since <date>     只处理该日期及以后
 //   --max-attempts <n> 重试上限        默认 3（超限进死信 dead）
 //   --visibility <v>   写出的可见性     默认 platform（见下方 VISIBILITY 说明）
 //   --patch <file>     凭据来源 A：DSH MCP patch（X-MCP-Credential-Ref / X-MCP-Secret）
 //   --secret-file <f>  凭据来源 B：直接给一段 secret（只用于副本/测试，绝不入仓库）
-//   --model-key-file <f> 模型 key 来源  默认 C:\Users\admin\.dsh\.credentials.yaml
+//   --model-key-file <f> 模型 key 来源  默认 ~\.dsh\.credentials.yaml
 //
 // VISIBILITY 为什么默认 platform：
 //   提炼出来的记忆是给别的 agent 查的。本机 registry 里 admin 账号没有 group_id，

@@ -86,7 +86,7 @@
 
 - 修正 fixtures 后连续两次完整 `npm test` 均输出 `ALL TEST FILES PASSED`，两轮之间无代码修改。
 - strict production zero-write：对 `curated`、`project-state`、`tools-memory`、`plans`、`profile`、`evidence/conversations`、`inbox` 共 7 roots / 2595 文件执行 health/search/get 前后 SHA-256 对比，0 changes，`ZERO_WRITE_OK`。
-- `OpenClaw Agent Memory Reconciler` 保持 Disabled；`C:\Users\admin\.dsh\settings.yaml` 默认模型保持 `gpt-5.6-sol`；未修改 identity、端口、DSH 或用户验收脚本，未重启 DSH。
+- `OpenClaw Agent Memory Reconciler` 保持 Disabled；`~\.dsh\settings.yaml` 默认模型保持 `gpt-5.6-sol`；未修改 identity、端口、DSH 或用户验收脚本，未重启 DSH。
 
 ## 环境记录
 

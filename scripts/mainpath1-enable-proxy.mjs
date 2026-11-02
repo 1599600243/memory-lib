@@ -2,7 +2,7 @@
 /**
  * MAINPATH-1 投用脚本：把 DSH 的默认对话路由指向本地捕获代理。
  *
- * ⚠️ 本脚本必须由**有 C:\Users\admin\.dsh\ 写权限**的角色执行（开发岗会话被沙箱限制为 workspace-write，
+ * ⚠️ 本脚本必须由**有 ~\.dsh\ 写权限**的角色执行（开发岗会话被沙箱限制为 workspace-write，
  *    实测该目录全部 DENY，见 reports/MAINPATH-1-dev-report.md「未覆盖什么」）。
  *
  * 用法：

@@ -5,10 +5,10 @@
 $ErrorActionPreference = 'Stop'
 
 $dshRoot = 'D:\AI\deepseek-harness'
-$node = 'F:\ZHONGYAO\nodejs\node.exe'
+$node = 'node'
 $bin = Join-Path $dshRoot 'node_modules\@deepseek-ai\dsh\lib\bin.js'
 $patch = Join-Path $env:USERPROFILE '.dsh\profiles\qqbot\cordis.patch.yml'
-$logDir = 'D:\MemoryLib\logs'
+$logDir = '.\logs'
 $log = Join-Path $logDir 'qqbot-service.log'
 
 if (-not (Test-Path $bin)) { throw "找不到 dsh bin: $bin" }

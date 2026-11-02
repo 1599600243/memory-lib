@@ -1,6 +1,6 @@
 // VISIBILITY-FIX-1-REJECT3 —— 「这次改动可能影响的既有行为」探针（按机制穷举，修前/修后同型对读）。
 //
-// 只读：起临时夹具（mkdtemp + port 0），真实入口逐条量读数；不碰生产 8787、不写 D:\MemoryLib\data。
+// 只读：起临时夹具（mkdtemp + port 0），真实入口逐条量读数；不碰生产 8787、不写 .\data。
 // 每条读数都含**具体值**（状态码 / 条数 / 落盘 role_id / pet_mode），表由 probe-visfix1r3-table.mjs 生成。
 //
 // 用法：node scripts/probe-visfix1r3-impact.mjs <outJson>

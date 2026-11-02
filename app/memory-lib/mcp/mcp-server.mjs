@@ -99,15 +99,41 @@ const TOOLS = [
 
 
 
-  { name: "memory_tool_list", description: "列出工具记忆（tools-memory），可按 env 过滤。", inputSchema: { type: "object", properties: { env: { type: "string" } } } },
+    { name: "memory_tool_note", description: "记录一条工具记忆（tools-memory/<工具名>.md）。五段固定：用途/接入方式/关键参数/已知坑/验证方式；同工具名合并更新。需要 evidence_refs，写入 platform 可见性（需 admin）。", inputSchema: { type: "object", properties: {
+    tool_name: { type: "string", description: "工具名（文件名会用它，如 graphify、dbx、xray）" },
+    kind: { type: "string", enum: ["tool", "service", "cli", "api"], description: "默认 tool" },
+    env: { type: "string", description: "运行环境，默认 win-local" },
+    sections: { type: "object", description: "五段正文：{ 用途, 接入方式, 关键参数, 已知坑, 验证方式 }（缺一不可）" },
+    evidence_refs: { type: "array", items: { type: "string" }, description: "非空证据 id 数组" },
+  }, required: ["tool_name", "sections", "evidence_refs"] } },
+{ name: "memory_tool_list", description: "列出工具记忆（tools-memory），可按 env 过滤。", inputSchema: { type: "object", properties: { env: { type: "string" } } } },
 
   { name: "memory_plan_confirm", description: "人工确认：把 draft 计划升为 active。", inputSchema: { type: "object", properties: { topic: { type: "string" } }, required: ["topic"] } },
   { name: "memory_plan_done", description: "把 active 计划标记为 done（默认视图隐藏但可检索）。", inputSchema: { type: "object", properties: { topic: { type: "string" } }, required: ["topic"] } },
-  { name: "memory_plan_list", description: "列出计划（plans）；done 默认隐藏。", inputSchema: { type: "object", properties: { include_done: { type: "boolean" } } } },
+    { name: "memory_plan_note", description: "写一条计划记忆（plans/<topic>.md）。三段固定：目标/步骤/当前卡点；步骤必须含 - [ ] 或 - [x] 勾选行；需要 evidence_refs。", inputSchema: { type: "object", properties: {
+    topic: { type: "string", description: "计划主题（决定文件名）" },
+    sections: { type: "object", description: "{ 目标, 步骤, 当前卡点 }；步骤里必须至少一行 '- [ ]' 或 '- [x]'" },
+    status: { type: "string", enum: ["draft", "active", "done"], description: "默认 draft" },
+    evidence_refs: { type: "array", items: { type: "string" }, description: "非空证据 id 数组" },
+  }, required: ["topic", "sections", "evidence_refs"] } },
+  { name: "memory_profile_note", description: "写一条画像记忆（profile/<id>.md）：偏好/习惯/忌讳/已知事实。需要 evidence_refs。", inputSchema: { type: "object", properties: {
+    id: { type: "string", description: "画像条目 id（决定文件名），如 user-prefers-chinese" },
+    body: { type: "string", description: "画像正文（一段话）" },
+    tags: { type: "array", items: { type: "string" }, description: "可选标签" },
+    evidence_refs: { type: "array", items: { type: "string" }, description: "非空证据 id 数组" },
+  }, required: ["id", "body", "evidence_refs"] } },
+{ name: "memory_plan_list", description: "列出计划（plans）；done 默认隐藏。", inputSchema: { type: "object", properties: { include_done: { type: "boolean" } } } },
 
-  { name: "memory_recall_brief", description: "主动召回：返回有界摘要（默认 ≤2000 字，format=prompt 时 ≤1500 字），固定五板块 + 「近期记忆」 + 「我的经验」；format=prompt 可直接注入系统提示。INJECT-1 起「近期记忆」会读 curated/shared：带 query 时按相关度取、否则取近 days 天，并在 included 里回执 {id, calendarDate, excerpt}。", inputSchema: { type: "object", properties: { project: { type: "string" }, days: { type: "number", description: "近期经历天数，默认 7" }, limit_chars: { type: "number", description: "总长度上限" }, format: { type: "string", description: "markdown（默认）| prompt" }, query: { type: "string", description: "有 query 时「近期记忆」按相关度取（自动注入用最近几条对话文本）" }, memories: { type: "number", description: "「近期记忆」最多几条，默认 6，上限 8" }, memory_limit_chars: { type: "number", description: "「近期记忆」字数上限，默认 600" }, memory_only: { type: "boolean", description: "true 时只渲染「近期记忆」段（给自动注入用）" } } } },
+  { name: "memory_recall_brief", description: "主动召回：返回有界摘要（默认 ≤2000 字，format=prompt 时 ≤1500 字），固定五板块 + 「近期记忆」 + 「我的经验」；format=prompt 可直接注入系统提示。INJECT-1 起「近期记忆」会读 curated/shared：带 query 时按相关度取、否则取近 days 天，并在 included 里回执 {id, calendarDate, excerpt}。", inputSchema: { type: "object", properties: { project: { type: "string" }, days: { type: "number", description: "近期经历天数，默认 7" }, limit_chars: { type: "number", description: "总长度上限" }, format: { type: "string", description: "markdown（默认）| prompt" }, query: { type: "string", description: "有 query 时「近期记忆」按相关度取（自动注入用最近几条对话文本）" }, memories: { type: "number", description: "「近期记忆」最多几条，默认 6，上限 8" }, tags: { type: "array", items: { type: "string" }, description: "按 tag 过滤「近期记忆」（AND 语义，例如 place:group:1000000）" }, memory_limit_chars: { type: "number", description: "「近期记忆」字数上限，默认 600" }, memory_only: { type: "boolean", description: "true 时只渲染「近期记忆」段（给自动注入用）" } } } },
 
-  { name: "memory_role_list", description: "列出角色记忆；可按 agent_id/role_id 过滤。", inputSchema: { type: "object", properties: { agent_id: { type: "string" }, role_id: { type: "string" } } } },
+    { name: "memory_role_note", description: "写一条角色记忆（curated/agents/<agent>/role-*.md）：三段固定 经验/适用场景/边界；经验 ≥15 字；属于经验而非用户偏好（偏好写 profile）。需要 evidence_refs。", inputSchema: { type: "object", properties: {
+    kind: { type: "string", enum: ["lesson", "capability", "boundary", "preference"], description: "默认 lesson" },
+    confidence: { type: "string", enum: ["low", "medium", "high"], description: "默认 medium" },
+    sections: { type: "object", description: "{ 经验, 适用场景, 边界 }（三段都非空，经验 ≥15 字）" },
+    tags: { type: "array", items: { type: "string" } },
+    evidence_refs: { type: "array", items: { type: "string" }, description: "非空证据 id 数组" },
+  }, required: ["sections", "evidence_refs"] } },
+{ name: "memory_role_list", description: "列出角色记忆；可按 agent_id/role_id 过滤。", inputSchema: { type: "object", properties: { agent_id: { type: "string" }, role_id: { type: "string" } } } },
 ];
 
 // ---- tool dispatch: tool name -> (core, args) => {status, data} -----------------
@@ -162,11 +188,15 @@ const DISPATCH = {
   admin_registry_activate: (c, a) => c.adminActivate(a.framework_id),
   admin_maintenance_purge: (c, a) => c.adminMaintenancePurge(a.ids, a.reason, a.dry_run),
   memory_tool_list: (c, a) => c.toolList(a),
+  memory_tool_note: (c, a) => c.toolNote(a),
+  memory_plan_note: (c, a) => c.planNote(a),
+  memory_profile_note: (c, a) => c.write({ ...a, layer: "profile" }),
   memory_plan_confirm: (c, a) => c.planConfirm(a.topic),
   memory_plan_done: (c, a) => c.planDone(a.topic),
   memory_plan_list: (c, a) => c.planList(a),
   memory_recall_brief: (c, a) => c.recallBrief(a),
   memory_role_list: (c, a) => c.roleList(a),
+  memory_role_note: (c, a) => c.roleNote(a),
 };
 
 // ---- stdio (HTTP) core client --------------------------------------------------
@@ -414,8 +444,10 @@ export function coreFromLib(services, principal, { allowPropose = true, allowPet
       // DAYRECALL-1：calendarDate 与 since/until 一样是「时间范围」入口，单独给出即合法。
       if (!String(query ?? "").trim() && !since && !until && !calendarDate) return { status: 400, data: { error: { code: "BAD_REQUEST", message: "query or time range is required" } } };
       if (!String(query ?? "").trim()) return { status: 200, data: { ok: true, principal, ...await lib.timeline({ limit, offset, cursor, calendarDate, ...(calendarTimezone ? { calendarTimezone } : {}), workspace, tags, since, until, include_superseded }) } };
-      const results = await lib.search({ query, limit, documentQuota, rawQuota, searchMode, as_of, include_superseded, workspace, tags, since, until, graphExpand, calendarDate, calendarTimezone: calendarTimezone ?? deploymentTimezone });
-      return { status: 200, data: { ok: true, principal, count: results.length, results } };
+      // 2026-11-02：返回检索元信息（prefiltered / lanes），排查"为什么没召回"。
+      const searchOptions = { query, limit, documentQuota, rawQuota, searchMode, as_of, include_superseded, workspace, tags, since, until, graphExpand, calendarDate, calendarTimezone: calendarTimezone ?? deploymentTimezone };
+      const out = (typeof lib.searchWithMeta === "function") ? await lib.searchWithMeta(searchOptions) : { results: await lib.search(searchOptions), meta: null };
+      return { status: 200, data: { ok: true, principal, count: out.results.length, results: out.results, meta: out.meta ?? null } };
     },
     graphQuery: async (projectId) => wrap(async () => ({ ok: true, principal: { framework: principal.framework_id, agent: principal.agent_id, role: principal.role_id }, graph: await lib.graph({ tenantId: principal.tenant_id ?? "default", projectId, principal }) })),
     memoryList: async (limit, workspace, tags, since, until) => allowSearch ? (async () => { const items = await lib.listMemories({ limit, workspace, tags, since, until }); return { status: 200, data: { ok: true, principal, count: items.length, items } }; })() : { status: 403, data: { error: { code: "FORBIDDEN", message: "memory list requires the search action", detail: "ACTION_DENIED" } } },
@@ -475,6 +507,8 @@ export function coreFromLib(services, principal, { allowPropose = true, allowPet
     toolNote: (payload) => wrap(() => { writeGate({ ...payload, layer: "tool", visibility: resultingWriteTarget({ layer: "tool" })?.visibility ?? "platform" }, "/mcp memory_tool_note"); return tools.putToolNote(authenticatedWrite(payload)); }),
     toolList: (payload) => wrap(() => tools.listTools({ ...payload, principal })),
     planPut: (payload) => wrap(() => plans.writePlan(authenticatedWrite(payload))),
+    planNote: (payload) => wrap(() => plans.writePlan(authenticatedWrite({ ...payload, layer: "plan" }))),
+    profileNote: (payload) => wrap(() => write({ ...payload, layer: "profile" })),
     planConfirm: (topic) => wrap(() => plans.confirm(topic, { principal })),
     planDone: (topic) => wrap(() => plans.markDone(topic, { principal })),
     planList: (payload) => wrap(() => plans.listPlans({ ...payload, principal })),
@@ -491,6 +525,7 @@ export function coreFromLib(services, principal, { allowPropose = true, allowPet
     }),
     roleNote: (payload) => wrap(() => roleMemory.putRoleNote({ ...authenticatedWrite(payload), agent_id: principal.agent_id, role_id: principal.role_id })),
     roleList: (payload) => wrap(() => roleMemory.listRoleNotes({ ...payload, principal })),
+    roleNote: (payload) => wrap(() => roleMemory.putRoleNote({ agent_id: principal.agent_id, role_id: principal.role_id, ...payload })),
   }, grantedActions);
 }
 

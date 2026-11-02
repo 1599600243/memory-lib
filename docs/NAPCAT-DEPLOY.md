@@ -1,7 +1,7 @@
 # NapCat 部署（QQ 个人号 → 记忆库 8787）
 
 > 一页纸部署文档。配套文件：`deploy/napcat/docker-compose.yml`、`.env.example`、`start.ps1`、`stop.ps1`、`precheck.ps1`。
-> **所有命令都在仓库根目录 `D:\MemoryLib` 执行**（PowerShell 7，即 `pwsh`）。
+> **所有命令都在仓库根目录 `.` 执行**（PowerShell 7，即 `pwsh`）。
 >
 > 全流程只有 3 个动作必须人工（脚本/agent 都不代做）：
 > **① 用手机 QQ 扫码登录（🔴 本文件第 3 步）**；② 在 WebUI 里确认 WebSocket 服务器配置；③ 首次私聊测试。
@@ -176,7 +176,7 @@ notepad adapters\napcat\config.json
 | `napcat.accessToken` | 与 `.env` 的 `NAPCAT_TOKEN` 相同 |
 | `bot.selfId` | 可留空（适配器会从连接事件里自动取）；也可填第 3 步的 QQ 号 |
 | `memory.baseUrl` | `http://127.0.0.1:8787` |
-| `model.keyFile` / `memory.credentialPatch` | 指向本机密钥文件（模板里是 `C:\Users\admin\...`，按实际路径改） |
+| `model.keyFile` / `memory.credentialPatch` | 指向本机密钥文件（模板里是 `~\...`，按实际路径改） |
 
 6.2 启动（前台运行，`Ctrl+C` 停）：
 

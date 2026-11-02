@@ -6,7 +6,7 @@
 ## 一、vector 生产启用 ✅
 
 详见 `vector-production-acceptance.md`。要点：
-- 生产配置首次定位：`C:\Users\admin\.openclaw\openclaw.json`（vector.enabled=true，Ollama 127.0.0.1:11434 / nomic-embed-text / 768）
+- 生产配置首次定位：`~\.openclaw\openclaw.json`（vector.enabled=true，Ollama 127.0.0.1:11434 / nomic-embed-text / 768）
 - 数据：1361 embeddings / 1345 active
 - 插件自带 5 项 smoke 全 pass（hybrid-routing / ollama-boundary / ledger-health / vector-store / graph-store）
 - **真实 hybrid 检索**（生产 ledger 副本 + 真实 Ollama）："记忆库" hybrid=5/FTS=0、"审批" hybrid=5/FTS=0 —— vector lane 端到端生效，补充 FTS 语义召回

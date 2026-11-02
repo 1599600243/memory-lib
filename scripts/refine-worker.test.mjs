@@ -1,5 +1,5 @@
 // REFINE-LOOP-1 单元测试：去重 / 状态机 / 重试上限 / 死信 / 首败不整队 / status 可查
-// 运行：node --test D:\MemoryLib\scripts\refine-worker.test.mjs
+// 运行：node --test .\scripts\refine-worker.test.mjs
 // 全部用注入的假 extract/write，不联网、不碰生产 data。
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";

@@ -2,7 +2,7 @@
 // 说明：本会话读取原文时未先备份就直接改写了 refine-worker.mjs，
 //       这份文件是**按当时读到的原文逐字重建**的备份，用于回滚。
 // 回滚：Copy-Item scripts\refine-worker.prototype-before-refine-loop-1.mjs scripts\refine-worker.mjs -Force
-// 注意：D:\MemoryLib\scripts 不在任何 git 仓内（仓根是 D:\MemoryLib\app），所以只能靠文件备份回滚。
+// 注意：.\scripts 不在任何 git 仓内（仓根是 .\app），所以只能靠文件备份回滚。
 
 // 提炼 worker：把 evidence 原文 → 可检索的正式记忆（服务端调模型，红线已撤）
 // 用法：

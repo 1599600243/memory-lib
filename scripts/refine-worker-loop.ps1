@@ -7,25 +7,25 @@
 #
 # 关键性质与计划任务一致：
 #   · 每个 tick 都是**全新进程**（cmd -> node 各起一个新 PID），worker 自身无状态
-#   · 进度只存在于 D:\MemoryLib\state\refine-state.json
+#   · 进度只存在于 .\state\refine-state.json
 #   · 重叠由 worker 自己的 .lock 挡住（上一轮没跑完，这一轮直接跳过）
 #
 # 用法：
-#   powershell -NoProfile -ExecutionPolicy Bypass -File D:\MemoryLib\scripts\refine-worker-loop.ps1
+#   powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\refine-worker-loop.ps1
 #   powershell ... -File ... -IntervalSeconds 60          # 改间隔
 #   powershell ... -File ... -WorkerArgs "--limit 1"      # 给 worker 传额外参数（自检用）
 # 停止：
-#   New-Item -ItemType File D:\MemoryLib\logs\refine-worker-loop.stop -Force
+#   New-Item -ItemType File .\logs\refine-worker-loop.stop -Force
 # 查活：
-#   Get-Content D:\MemoryLib\logs\refine-worker-loop.pid; Get-Content D:\MemoryLib\logs\refine-worker-loop.log -Tail 10
+#   Get-Content .\logs\refine-worker-loop.pid; Get-Content .\logs\refine-worker-loop.log -Tail 10
 
 param(
   [int]$IntervalSeconds = 300,
-  [string]$WorkerCmd = "D:\MemoryLib\scripts\refine-worker-run.cmd",
+  [string]$WorkerCmd = ".\scripts\refine-worker-run.cmd",
   [string]$WorkerArgs = ""
 )
 
-$logDir = "D:\MemoryLib\logs"
+$logDir = ".\logs"
 if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir -Force | Out-Null }
 $pidFile = Join-Path $logDir "refine-worker-loop.pid"
 $stopFile = Join-Path $logDir "refine-worker-loop.stop"

@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>记忆库概览 · 方案 B（Geist 风）</title>
+<style>
+/* ===== 方案 B：Vercel Geist 风格 =====
+   关键词：黑白极简、大留白、细边框、小圆角、单一黑色强调、字号偏大 */
+:root{
+  --bg:#ffffff; --fg:#000000; --fg-2:#666666; --fg-3:#999999;
+  --border:#eaeaea; --border-strong:#d9d9d9; --fill:#fafafa;
+  --radius:8px; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC",Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:920px;margin:0 auto;padding:48px 24px 80px}
+header{margin-bottom:40px}
+h1{font-size:32px;font-weight:600;letter-spacing:-.02em;margin:0 0 8px}
+.sub{color:var(--fg-2);font-size:14px}
+.nav{display:flex;gap:24px;margin-top:28px;border-bottom:1px solid var(--border)}
+.nav a{color:var(--fg-2);text-decoration:none;font-size:14px;padding:0 0 12px;border-bottom:2px solid transparent}
+.nav a[aria-current]{color:var(--fg);border-bottom-color:var(--fg);font-weight:500}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:40px}
+.card{background:var(--fill);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.card .label{color:var(--fg-2);font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
+.card .num{font-size:30px;font-weight:600;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums}
+.card .hint{color:var(--fg-3);font-size:12px;margin-top:10px}
+.section{margin-bottom:40px}
+.section>h2{font-size:13px;font-weight:500;color:var(--fg-2);text-transform:uppercase;letter-spacing:.06em;
+  margin:0 0 16px;padding-bottom:0}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
+th,td{text-align:left;padding:14px 0;border-bottom:1px solid var(--border)}
+th{color:var(--fg-2);font-weight:400;font-size:13px}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+tr:last-child td{border-bottom:none}
+code{font-family:var(--mono);font-size:12.5px;color:var(--fg-2)}
+.badge{display:inline-block;font-size:12px;padding:2px 8px;border:1px solid var(--border-strong);
+  border-radius:999px;color:var(--fg-2)}
+.badge.solid{background:#000;color:#fff;border-color:#000}
+.toolbar{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
+input[type=search]{flex:1;min-width:220px;padding:10px 14px;border:1px solid var(--border-strong);
+  border-radius:var(--radius);font:14px inherit;color:var(--fg)}
+input[type=search]:focus{outline:none;border-color:#000;box-shadow:0 0 0 3px rgba(0,0,0,.08)}
+select{padding:10px 12px;border:1px solid var(--border-strong);border-radius:var(--radius);background:#fff;font-size:14px}
+.item{padding:20px 0;border-bottom:1px solid var(--border)}
+.item:last-child{border-bottom:none}
+.item .id{font-family:var(--mono);font-size:12px;color:var(--fg-3)}
+.item .body{font-size:15px;line-height:1.65;margin:8px 0 10px}
+.item .meta{display:flex;gap:12px;align-items:center;font-size:12px;color:var(--fg-3);flex-wrap:wrap}
+.empty{padding:48px 0;text-align:center;color:var(--fg-3)}
+footer{margin-top:56px;padding-top:24px;border-top:1px solid var(--border);color:var(--fg-3);font-size:12px}
+@media(max-width:760px){h1{font-size:26px}.cards{grid-template-columns:repeat(2,1fr)}.wrap{padding:32px 20px 56px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>记忆库概览</h1>
+    <div class="sub">2026-10-30 · 只读视图 · 数据来源 /v1/memory/stats</div>
+    <nav class="nav">
+      <a href="#" aria-current="page">概览</a>
+      <a href="#">记忆浏览</a>
+      <a href="#">记忆搜索</a>
+      <a href="#">健康</a>
+      <a href="#">审计</a>
+    </nav>
+  </header>
+
+  <section class="cards">
+    <div class="card"><div class="label">长期记忆</div><div class="num">1,880</div><div class="hint">curated/shared</div></div>
+    <div class="card"><div class="label">原始证据</div><div class="num">2,186</div><div class="hint">evidence/conversations</div></div>
+    <div class="card"><div class="label">已索引</div><div class="num">4,078</div><div class="hint">fts + vector</div></div>
+    <div class="card"><div class="label">索引失败</div><div class="num">0</div><div class="hint">healthy</div></div>
+  </section>
+
+  <section class="section">
+    <h2>按身份分布</h2>
+    <table>
+      <thead><tr><th>user_id</th><th>归属</th><th class="num">库里</th><th class="num">可见</th><th>状态</th></tr></thead>
+      <tbody>
+        <tr><td><code>user-owner</code></td><td>我（DSH 开发会话）</td><td class="num">1,749</td><td class="num">1,749</td><td><span class="badge">一致</span></td></tr>
+        <tr><td><code>u-owner</code></td><td>米汐（QQ 主人）</td><td class="num">98</td><td class="num">98</td><td><span class="badge">一致</span></td></tr>
+        <tr><td><code>u_group_1000000</code></td><td>群线</td><td class="num">33</td><td class="num">33</td><td><span class="badge">一致</span></td></tr>
+        <tr><td><code>u_2b53219729</code></td><td>小号（测试）</td><td class="num">4</td><td class="num">4</td><td><span class="badge">一致</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="section">
+    <h2>记忆浏览 <span class="badge solid" style="margin-left:8px">u-owner</span></h2>
+    <div class="toolbar">
+      <select><option>身份：u-owner</option><option>身份：全部（仅管理员）</option></select>
+      <input type="search" placeholder="搜索正文、id 或标签" value="白米饭">
+      <span class="badge">3 条</span>
+    </div>
+    <div class="item">
+      <div class="id">soul-qq-bot-cbdb560d81d0</div>
+      <div class="body">米汐认定白米饭是主食。</div>
+      <div class="meta"><span>2026-10-30</span><span class="badge">soul</span><span>出处：聊天记录 L123</span></div>
+    </div>
+    <div class="item">
+      <div class="id">soul-qq-bot-4b71ec749feefaf8</div>
+      <div class="body">米汐被叫「大肥鱼」会立刻炸毛、拍水、要求再说一遍试试。</div>
+      <div class="meta"><span>2026-10-30</span><span class="badge">soul</span><span>出处：聊天记录 L427</span></div>
+    </div>
+    <div class="item">
+      <div class="id">group-turn-1000000-…</div>
+      <div class="body">[群友 ZERO]：我养了一只橘猫　米汐：橘猫？那本小姐记下了。</div>
+      <div class="meta"><span>2026-10-30</span><span class="badge">group</span><span>出处：群聊会话</span></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>异常检查</h2>
+    <table>
+      <tbody>
+        <tr><td>user_id 为空</td><td class="num">0</td><td><span class="badge">通过</span></td></tr>
+        <tr><td>非法 visibility</td><td class="num">0</td><td><span class="badge">通过</span></td></tr>
+        <tr><td>缺 evidence_refs</td><td class="num">423</td><td><span class="badge">可接受</span></td></tr>
+        <tr><td>索引失败文件</td><td class="num">0</td><td><span class="badge">通过</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <footer>方案 B · Geist 风：14–15px 字号、8px 圆角、极细边框、大留白、黑色单一强调。最耐看但占空间。</footer>
+</div>
+</body>
+</html>

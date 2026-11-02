@@ -70,7 +70,13 @@ export function principalAllowsContainer(principal, metadata = {}) {
   if (scope.visibility === "platform") return true;
   const groupCompatible = () => !group || !p.group_id || group === p.group_id;
   if (scope.visibility === "shared") return groupCompatible();
-  if (scope.visibility === "project") return Boolean(scope.project && (scope.project === "*" || scope.project === metadata.project) && groupCompatible());
+  // 项目可见性：项目记忆历史上有大量 group_id="unknown"（未标注分组）的写入，
+  // 这类文件按项目作用域判定即可；若把 "unknown" 当成真实分组比较，给 principal
+  // 补上真实 group_id 后这些项目记忆会整批不可见。shared 分支仍保持严格比较。
+  if (scope.visibility === "project") {
+    const groupAllows = isIdentitySentinel(group) || groupCompatible();
+    return Boolean(scope.project && (scope.project === "*" || scope.project === metadata.project) && groupAllows);
+  }
   if (scope.container === "project") return Boolean(metadata.project && groupCompatible() && (scope.project === "*" || scope.project === metadata.project));
   if (scope.visibility === "role" || scope.container === "role") return Boolean(identitiesMatch(p.role_id, role));
   if (scope.visibility === "user") return Boolean(identitiesMatch(p.user_id, user));
@@ -96,4 +102,18 @@ export function safeTemporaryKey(value) {
   const key = String(value ?? "").trim();
   if (!key || key.length > 160 || /[\\/\0\r\n]/u.test(key)) throw new Error("temporary key is invalid");
   return key;
+}
+
+// ── 可见性 → 该可见性赖以成立的身份位（唯一一张表）──────────────────
+// 写侧（write-authorization）与读侧判定都从这里取，禁止各自再写一份。
+export const VISIBILITY_SLOT = Object.freeze({
+  user: "user_id",
+  role: "role_id",
+  agent: "agent_id",
+  shared: "group_id",
+});
+
+/** 身份类可见性需要哪个身份位；private/daily 返回 null（需要 owner，单独判）。 */
+export function identitySlotForVisibility(visibility) {
+  return VISIBILITY_SLOT[String(visibility ?? "").trim()] ?? null;
 }

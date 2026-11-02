@@ -21,7 +21,7 @@ No deployment, production service restart, production data access, visibility-po
 ### Baseline
 
 ```text
-Repository: D:\MemoryLib\app\memory-lib
+Repository: app/memory-lib
 Baseline HEAD: 5cbbebcff29e2e56f5cffcaf27e9513bb75fbd60
 Baseline worktree: clean (`git status --short` produced no output)
 Node.js: v24.18.0

@@ -14,8 +14,8 @@ NapCat      docker 容器 memorylib-napcat     Up 31 小时  restart: unless-sto
 记忆服务    http://127.0.0.1:8787            healthy，indexed≈3866，failed=0
 看门狗      计划任务 napcat-watchdog         每 5 分钟，异常弹窗 + logs/ALERT.log
 身份表      data/runtime/identities.json     14 条（主人 1 / 小号 1 / 群线 1 / 群友 11）
-她的记忆    curated/shared 里 user_id=u_napcat_owner        99 条
-群线记忆    curated/shared 里 user_id=u_group_478901737     33 条
+她的记忆    curated/shared 里 user_id=u-owner        99 条
+群线记忆    curated/shared 里 user_id=u_group_1000000     33 条
 测试        node --test adapters/napcat/test/  → 50/50 通过
 最新提交    21126f0（docs: 运行逻辑说明）
 ```
@@ -53,7 +53,7 @@ NapCat      docker 容器 memorylib-napcat     Up 31 小时  restart: unless-sto
 ### 改配置（不需要改代码）
 
 ```
-D:\MemoryLib\adapters\napcat\config.json
+.\adapters\napcat\config.json
 ```
 
 改完必须重启任务才生效：
@@ -65,10 +65,10 @@ Stop-ScheduledTask -TaskName 'napcat-adapter'; Start-Sleep 3; Start-ScheduledTas
 ### 看她在想什么
 
 ```powershell
-node D:\MemoryLib\scripts\show-turns.mjs            # 最近 10 轮
-node D:\MemoryLib\scripts\show-turns.mjs --last     # 最近一轮完整上下文（system/记忆/群记录/回答/耗时）
-Get-Content D:\MemoryLib\logs\napcat-service.log -Tail 50
-Get-Content D:\MemoryLib\logs\ALERT.log -Tail 20
+node .\scripts\show-turns.mjs            # 最近 10 轮
+node .\scripts\show-turns.mjs --last     # 最近一轮完整上下文（system/记忆/群记录/回答/耗时）
+Get-Content .\logs\napcat-service.log -Tail 50
+Get-Content .\logs\ALERT.log -Tail 20
 docker logs memorylib-napcat --since 30m
 ```
 
@@ -87,7 +87,7 @@ docker logs memorylib-napcat --tail 30 | Select-String '二维码'
 ```powershell
 # 群白名单：config.json → bot.groupAllow
 # 群级身份（群线记忆主体）
-node D:\MemoryLib\scripts\identity.mjs add --channel napcat --uid group-<群号> --name <群名> --role guest --user-id u_group_<群号>
+node .\scripts\identity.mjs add --channel napcat --uid group-<群号> --name <群名> --role guest --user-id u_group_<群号>
 # 群友不用手动加：allowGroupGuests=true 时首次说话自动登记
 ```
 
@@ -148,7 +148,7 @@ soul/dafeiyu/style-samples.md  语气样本（few-shot）
   `{ok:false, reason:"not-addressed"}`，而 engage 分支只补了 `scope/groupId/uid`，漏了 `text`；
   随后 `log(\`... chars=${verdict.text.length}\`)` 在 undefined 上取 `.length` → 抛 TypeError，
   被 `receive` 的 catch 记成「处理失败」。
-- 证据：8 次报错全部紧跟「群 478901737 连续对话窗口内，未@也接话」（`logs/napcat-service.log`
+- 证据：8 次报错全部紧跟「群 1000000 连续对话窗口内，未@也接话」（`logs/napcat-service.log`
   L5033/5035/5067/5069/5071/5073/5076/5092），且时间都在 04:52–05:09Z（=12:52–13:09），
   即 `03276e2`（13:12）之前的旧代码；那版还没有带栈日志，所以 8 条都没有栈。
 - 修复：`03276e2` 先做安全访问兜底；`643c286`（13:19）真正修好——补 `verdict.text = extractText(...)`，

@@ -3,7 +3,7 @@
 日期：2026-08-23
 状态：**通过 —— vector 检索可正式依赖（graph 维持关闭）**
 
-## 生产配置（C:\Users\admin\.openclaw\openclaw.json，首次定位成功）
+## 生产配置（~\.openclaw\openclaw.json，首次定位成功）
 
 ```jsonc
 "openclaw-memory": {
@@ -41,4 +41,4 @@
 ## 备注
 
 - 验收全程只读（生产 ledger 用副本探测，未触碰生产数据）
-- 生产 openclaw.json 已定位：`C:\Users\admin\.openclaw\openclaw.json`（此前扫描遗漏 home 目录）
+- 生产 openclaw.json 已定位：`~\.openclaw\openclaw.json`（此前扫描遗漏 home 目录）

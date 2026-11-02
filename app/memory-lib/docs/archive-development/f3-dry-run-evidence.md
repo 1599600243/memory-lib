@@ -19,14 +19,14 @@ Drive the real `createAutoReview` router in both modes against the same fixed ca
 writing each mode's audit lines to its own JSONL file, then compare:
 
 ```powershell
-F:\ZHONGYAO\nodejs\node.exe scripts\auto-review-dry-run-compare.mjs --audit <dry-audit.jsonl> --audit <actual-audit.jsonl>
+node scripts\auto-review-dry-run-compare.mjs --audit <dry-audit.jsonl> --audit <actual-audit.jsonl>
 ```
 
 The regression seam that pins the comparator behaviour lives in the test suite:
 
 ```text
-F:\ZHONGYAO\nodejs\node.exe --test test/review-rate.test.mjs
-F:\ZHONGYAO\nodejs\node.exe --test test/auto-review.test.mjs
+node --test test/review-rate.test.mjs
+node --test test/auto-review.test.mjs
 ```
 
 ## Raw output (real run)

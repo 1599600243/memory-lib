@@ -6,7 +6,7 @@
 //      UTC 半开窗口，用来对照被测代码给出的 `resolvedRange`；
 //   ② `tail` 段用 `Intl` 直接判定「某个 capturedAt 落在哪个本地日」，
 //      用来对照 code 实际把条目归入哪一天。
-// 两个勘验都只读：自己建临时 dataRoot，不碰 `D:\MemoryLib\data`。
+// 两个勘验都只读：自己建临时 dataRoot，不碰 `.\data`。
 //
 // 用法：node scripts/dayrecall-evidence.mjs
 import fs from "node:fs/promises";

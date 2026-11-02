@@ -2,7 +2,7 @@ STATUS: READY
 
 # MEMORY-LOOP-1 开发报告（收口 + spec re-review medium 指认处置）
 
-> 交付物路径：`D:\MemoryLib\reports\MEMORY-LOOP-1-dev-report.md`（本文件）
+> 交付物路径：`.\reports\MEMORY-LOOP-1-dev-report.md`（本文件）
 > 仓库内另有一份**逐字节相同**的受版本管理副本：`memory-lib/reports/MEMORY-LOOP-1-dev-report.md`
 > （放在仓库里是为了让"报告本身"也有一个可引用的 git sha；两份内容一致，见 §1.3 的自引用说明）
 > 报告只有一份，文件名不含 `acceptance`。首行是 STATUS 标记（本行以上只有 STATUS 一行）。
@@ -60,7 +60,7 @@ e4f01a8  MEMORY-LOOP-1 切片1：捕获落盘即产生可追踪提炼待办 + /v
 测试文件：`memory-lib/test/refinement-jobs-submit-scope-http.test.mjs`（3 个顶层测试 + 4 个子测试，共 7 个断言点；
 已登记进 `memory-lib/scripts/run-tests.mjs` 的回归集）。
 
-| 阶段 | 命令（在 `D:\MemoryLib\app\memory-lib`） | 原始输出文件 | 结果 |
+| 阶段 | 命令（在 `app/memory-lib`） | 原始输出文件 | 结果 |
 | --- | --- | --- | --- |
 | 修前（HEAD=4a27bdb 的 src） | `node test\refinement-jobs-submit-scope-http.test.mjs` | `reports\MEMORY-LOOP-1-scope-red.raw.txt` | `tests 7 / pass 0 / fail 7` |
 | 修后（同一个文件，src=0211a69） | 同上 | `reports\MEMORY-LOOP-1-scope-green.raw.txt` | `tests 7 / pass 7 / fail 0` |
@@ -90,10 +90,10 @@ e4f01a8  MEMORY-LOOP-1 切片1：捕获落盘即产生可追踪提炼待办 + /v
 
 ```powershell
 # ① 整笔回退（推荐；只回退本次修复这一个提交）
-git -C D:\MemoryLib\app revert --no-edit 0211a69
+git -C .\app revert --no-edit 0211a69
 
 # ② 只把源码退回上一轮的 4a27bdb（保留新增测试，它会重新变红——这正是"判别力"的证据）
-git -C D:\MemoryLib\app checkout 4a27bdb68413892e0e7cc7904ccd1edc018036c9 -- `
+git -C .\app checkout 4a27bdb68413892e0e7cc7904ccd1edc018036c9 -- `
   memory-lib/src/write-memory.mjs memory-lib/src/localhost-server.mjs `
   memory-lib/src/refinement-jobs.mjs memory-lib/scripts/run-tests.mjs
 ```
@@ -109,7 +109,7 @@ git -C D:\MemoryLib\app checkout 4a27bdb68413892e0e7cc7904ccd1edc018036c9 -- `
 | `memory-lib/scripts/run-tests.mjs` | 回归集登记新测试文件（1 行）。 |
 | `memory-lib/reports/MEMORY-LOOP-1-dev-report.md` | 本报告的受版本管理副本（交付路径在仓库外，见文首）。 |
 
-**没覆盖什么**（详见 §6）：生产 8787 未部署/未重启、生产 `D:\MemoryLib\data` 未写；`document`/`tool` 结论
+**没覆盖什么**（详见 §6）：生产 8787 未部署/未重启、生产 `.\data` 未写；`document`/`tool` 结论
 "要 admin"这条**新增要求**没有在真实生产身份配置上回归（生产里持有 `memory/platform` 的角色都没有 admin）；
 `agent`/`plan`/`profile` 的放宽只有本单测试 + 探针，没有真实接入方用法支撑；"回执可回读"只对持有该层读作用域
 的主体保证（与 `/v1/write` 同），没有为"提交者必须能读回"再补机制（属可见性/产品决策面）。
@@ -283,7 +283,7 @@ CLI 包装、部署同步脚本、`node --test` 的目录展开）。这类失�
 
 | 红线 | 状态 | 证据 |
 | --- | --- | --- |
-| 只读生产 `D:\MemoryLib\data`、不部署/不重启 8787 | 遵守 | 所有实验在 `os.tmpdir()` 的临时 dataRoot + 临时 registry 副本上；未触碰 `data/`、未起 8787；探针/测试结束 `fs.rm` 清理。 |
+| 只读生产 `.\data`、不部署/不重启 8787 | 遵守 | 所有实验在 `os.tmpdir()` 的临时 dataRoot + 临时 registry 副本上；未触碰 `data/`、未起 8787；探针/测试结束 `fs.rm` 清理。 |
 | **零模型** | 遵守 | 改动只涉及门禁判定；`src/llm.mjs`、`pet.mjs`、`learning-agent.mjs` 未动；新测试不打模型调用（`libFactory` 用 `vectorLane: { probe: false }`）。 |
 | 不新增依赖 | 遵守 | `package.json` / lockfile 未改；新代码只用既有 import（`container-policy.mjs`、`write-memory.mjs`）。 |
 | **不改可见性判据 / container-policy / 检索根 / 检索排序** | 遵守 | `container-policy.mjs`、`memory-lib.mjs`、`read-only-core.mjs` **不在改动清单**；`write-memory.mjs` 的默认可见性表达式逐字符保留（见 §3 第 2/3 行：落盘读数修前=修后）。 |
@@ -320,7 +320,7 @@ CLI 包装、部署同步脚本、`node --test` 的目录展开）。这类失�
 
 ```powershell
 # 判别测试（修后应 7/7 通过；把 src 退回 4a27bdb 应 7 红）
-cd D:\MemoryLib\app\memory-lib
+cd app/memory-lib
 node test\refinement-jobs-submit-scope-http.test.mjs
 
 # refinement 切片 10 个文件
@@ -339,5 +339,5 @@ node test\m2-refinement-followup-http.test.mjs
 node scripts\run-tests.mjs
 
 # 修前/修后对照表（真实 HTTP + 盘上 frontmatter；夹具自建临时 dataRoot）
-node D:\MemoryLib\reports\MEMORY-LOOP-1-gate-probe.mjs AFTER
+node .\reports\MEMORY-LOOP-1-gate-probe.mjs AFTER
 ```

@@ -1,0 +1,384 @@
+{
+  "version": 1,
+  "createdAt": "2026-10-31T15:21:26.193Z",
+  "dataRoot": "D:/MemoryLib/data/memory",
+  "items": [
+    {
+      "id": "q01",
+      "query": "MAINT7 的独立验收结论是什么",
+      "expected": [
+        "curated/shared/curated-shared-230f7c3d43d5c68d.md",
+        "curated/shared/curated-shared-656324d34f734c2a.md",
+        "curated/shared/curated-shared-72774b0b7ea13de5.md",
+        "curated/shared/curated-shared-a3bd70eb01bcec8c.md",
+        "curated/shared/curated-shared-b4f1874750693e92.md",
+        "curated/shared/curated-shared-d383b099cc430cca.md",
+        "curated/shared/curated-shared-e1487c8d7f3c7293.md",
+        "curated/shared/curated-shared-f0787aebb7821a55.md",
+        "curated/shared/curated-shared-fee4bbda0e45afe1.md"
+      ]
+    },
+    {
+      "id": "q02",
+      "query": "MAINT6 专项通过了多少项",
+      "expected": [
+        "curated/shared/curated-shared-27c58233ec302b73.md",
+        "curated/shared/curated-shared-8dbcdb545f4e296f.md",
+        "curated/shared/curated-shared-98aa2491a7b2461a.md",
+        "curated/shared/curated-shared-dea3d09cd3b7e262.md",
+        "curated/shared/curated-shared-f5fe6d32495cfa6b.md"
+      ]
+    },
+    {
+      "id": "q03",
+      "query": "时区配置 TZ-CONFIG-1 的根因在哪",
+      "expected": [
+        "curated/shared/curated-shared-37981cc38bf75b6a.md",
+        "curated/shared/curated-shared-3f5479dc6de04d6c.md",
+        "curated/shared/curated-shared-96e32dcdad61249f.md",
+        "curated/shared/curated-shared-9d0664b2941b51f3.md",
+        "curated/shared/curated-shared-bea417037db387dd.md",
+        "curated/shared/curated-shared-d5a72cc014d71fe6.md"
+      ]
+    },
+    {
+      "id": "q04",
+      "query": "NAPCAT-2 工作流 C 交付了哪些提交",
+      "expected": [
+        "curated/shared/curated-shared-0c12d76b3a2f49e6.md",
+        "curated/shared/curated-shared-11da8253ce63cc83.md",
+        "curated/shared/curated-shared-1feee28df4e17d74.md",
+        "curated/shared/curated-shared-27e76ca34427c0ab.md",
+        "curated/shared/curated-shared-4d622d8b0889fb41.md",
+        "curated/shared/curated-shared-91ff1dcf339477b9.md",
+        "curated/shared/curated-shared-c9ca3f2aad9ec835.md"
+      ]
+    },
+    {
+      "id": "q05",
+      "query": "身份只能由服务端从凭据解析这条裁决的具体内容",
+      "expected": [
+        "curated/shared/curated-shared-965cac262cf2122b.md"
+      ]
+    },
+    {
+      "id": "q06",
+      "query": "调研 Duckling 和 chrono-node 时对资料来源的要求",
+      "expected": [
+        "curated/shared/curated-shared-046904c174003eff.md",
+        "curated/shared/curated-shared-209bc88b36963c61.md"
+      ]
+    },
+    {
+      "id": "q07",
+      "query": "审查 agent-scaffold 时要重点看第三方密钥是否泄漏",
+      "expected": [
+        "curated/shared/curated-shared-238645aa328a15b4.md",
+        "curated/shared/curated-shared-40695250cd4917ee.md",
+        "curated/shared/curated-shared-5013521fceff085d.md",
+        "curated/shared/curated-shared-6438d9ae4492e067.md",
+        "curated/shared/curated-shared-740513101976025a.md",
+        "curated/shared/curated-shared-78155028a6e1480f.md",
+        "curated/shared/curated-shared-884dd2278bab75a6.md",
+        "curated/shared/curated-shared-9c68c6895516ebfd.md",
+        "curated/shared/curated-shared-a2b806ff2ddba0e8.md",
+        "curated/shared/curated-shared-b442a60534cddc62.md",
+        "curated/shared/curated-shared-bfd49bed9c6412cd.md",
+        "curated/shared/curated-shared-c5cd77b95fd43678.md",
+        "curated/shared/curated-shared-ce263a7bedf61cdf.md",
+        "curated/shared/curated-shared-cf050d7eb2b68531.md",
+        "curated/shared/curated-shared-d7f3fb4796246a6a.md",
+        "curated/shared/curated-shared-e4d7c2d5ee4efc23.md",
+        "curated/shared/curated-shared-ef7b0ac37ac86a47.md",
+        "curated/shared/curated-shared-f945fc47ffef3b8f.md"
+      ]
+    },
+    {
+      "id": "q08",
+      "query": "CAPTURE-ATTR-2 对无归属捕获做了什么",
+      "expected": [
+        "curated/shared/curated-shared-2e85420e39a0456f.md",
+        "curated/shared/curated-shared-858119b8dc9e0d96.md"
+      ]
+    },
+    {
+      "id": "q09",
+      "query": "ATOMICWRITE-1 原子写的改动",
+      "expected": [
+        "curated/shared/curated-shared-0f15b3089f394a8a.md",
+        "curated/shared/curated-shared-2f3cbabba6a8ced4.md",
+        "curated/shared/curated-shared-9fa4e06d3e1a33e7.md"
+      ]
+    },
+    {
+      "id": "q10",
+      "query": "INDEX-2 的 p50 和 p95 性能预算是多少",
+      "expected": [
+        "curated/shared/curated-shared-272e66e26b17c30f.md",
+        "curated/shared/curated-shared-299ec2a60d038cc0.md",
+        "curated/shared/curated-shared-4793c876d639153b.md",
+        "curated/shared/curated-shared-4d45263ccb852271.md",
+        "curated/shared/curated-shared-5c327cdea17217a8.md",
+        "curated/shared/curated-shared-61144f0a1ca26e92.md",
+        "curated/shared/curated-shared-6308f17996b87c9f.md",
+        "curated/shared/curated-shared-672cd4cbe88c6438.md",
+        "curated/shared/curated-shared-8a4b63700ce540fd.md",
+        "curated/shared/curated-shared-9988cf6236a4e96c.md",
+        "curated/shared/curated-shared-9a118061621755cd.md",
+        "curated/shared/curated-shared-a042264b1c4a8a86.md",
+        "curated/shared/curated-shared-afa5b7e23812564a.md",
+        "curated/shared/curated-shared-b21b9fcbe900541a.md",
+        "curated/shared/curated-shared-bb937bf279c3acba.md",
+        "curated/shared/curated-shared-fadf39fbb5727d46.md"
+      ]
+    },
+    {
+      "id": "q11",
+      "query": "VISIBILITY-UNKNOWN-1 为什么不通过",
+      "expected": [
+        "curated/shared/curated-shared-4c846be07bc2ff0a.md",
+        "curated/shared/curated-shared-573e3c88ef1a463c.md",
+        "curated/shared/curated-shared-60f0dee4f73440a2.md",
+        "curated/shared/curated-shared-72774b0b7ea13de5.md",
+        "curated/shared/curated-shared-77ce630d3ae4179d.md",
+        "curated/shared/curated-shared-866880cf80ffd756.md",
+        "curated/shared/curated-shared-d02b68044928926f.md",
+        "curated/shared/curated-shared-f11fda861bd133a5.md"
+      ]
+    },
+    {
+      "id": "q12",
+      "query": "WRITE-DENY-1 被拒绝的那次验收",
+      "expected": [
+        "curated/shared/curated-shared-6993fdb2697df47b.md",
+        "curated/shared/curated-shared-73224784d08b5836.md",
+        "curated/shared/curated-shared-8c59a52b2eb3ed25.md"
+      ]
+    },
+    {
+      "id": "q13",
+      "query": "RETRIEVAL-1 真实 capture 的原文检索问题",
+      "expected": [
+        "curated/shared/curated-shared-0fdb66292729676a.md",
+        "curated/shared/curated-shared-1a7e257adc747399.md",
+        "curated/shared/curated-shared-1fee2b32d8e3e254.md",
+        "curated/shared/curated-shared-22893225268f6c1e.md",
+        "curated/shared/curated-shared-22c7cc13a7176b62.md",
+        "curated/shared/curated-shared-2c96391c89de14aa.md",
+        "curated/shared/curated-shared-2e43fd472c162be1.md",
+        "curated/shared/curated-shared-2f02c17617c4367f.md",
+        "curated/shared/curated-shared-30ac7f757305a160.md",
+        "curated/shared/curated-shared-36f20de6349a96a5.md",
+        "curated/shared/curated-shared-3dbe4cee20e09dff.md",
+        "curated/shared/curated-shared-5cfc96a96bbaaa2b.md",
+        "curated/shared/curated-shared-7aa96d226d3d59a7.md",
+        "curated/shared/curated-shared-9cee12036ff4f2d4.md",
+        "curated/shared/curated-shared-a492c3bbac3f4630.md",
+        "curated/shared/curated-shared-a57c0f50431adeb9.md",
+        "curated/shared/curated-shared-a633e5d83dd21a8e.md",
+        "curated/shared/curated-shared-ad4d80bddcd637f9.md",
+        "curated/shared/curated-shared-b025910031d55203.md",
+        "curated/shared/curated-shared-b33783945fd93995.md",
+        "curated/shared/curated-shared-b49a2dda7a7be588.md",
+        "curated/shared/curated-shared-b83966b4bfe38c6e.md",
+        "curated/shared/curated-shared-bc98f95df56e94d3.md",
+        "curated/shared/curated-shared-d0c08171d8a9efa7.md",
+        "curated/shared/curated-shared-dc9c2d6ab08e8f38.md",
+        "curated/shared/curated-shared-e3a43b0b142b9b95.md",
+        "curated/shared/curated-shared-e6226ec6d51cccbb.md",
+        "curated/shared/curated-shared-ebb53269408c4f9a.md",
+        "curated/shared/curated-shared-ef2450babb26644b.md",
+        "curated/shared/curated-shared-f52156121cec0730.md",
+        "curated/shared/curated-shared-fbaae88b396689f1.md"
+      ]
+    },
+    {
+      "id": "q14",
+      "query": "IN-PLUGIN-4 两处部署副本的问题",
+      "expected": [
+        "curated/shared/curated-shared-2e47aaa3964d60b5.md",
+        "curated/shared/curated-shared-347a50ab0829d106.md",
+        "curated/shared/curated-shared-48358d6cd618be26.md",
+        "curated/shared/curated-shared-556e19a65729ce05.md",
+        "curated/shared/curated-shared-9a3578b58fb8b96e.md",
+        "curated/shared/curated-shared-d89a704fbacb150e.md",
+        "curated/shared/curated-shared-e8db13d147f5eba7.md"
+      ]
+    },
+    {
+      "id": "q15",
+      "query": "REFINE-LOOP-1 回归门为什么没过",
+      "expected": [
+        "curated/shared/curated-shared-1d45c9c600cdc885.md",
+        "curated/shared/curated-shared-37a01eba7cd992a5.md",
+        "curated/shared/curated-shared-387cd64648cf4d52.md",
+        "curated/shared/curated-shared-3a1dbed48080738b.md",
+        "curated/shared/curated-shared-3a85bb6e9c1fd42a.md",
+        "curated/shared/curated-shared-59c1bffbe52f9710.md",
+        "curated/shared/curated-shared-60e46424f51f36c8.md",
+        "curated/shared/curated-shared-7e476eb7df70356f.md",
+        "curated/shared/curated-shared-7f379850f4a06789.md",
+        "curated/shared/curated-shared-8047d8655d1b6459.md",
+        "curated/shared/curated-shared-896e32d993f74bec.md",
+        "curated/shared/curated-shared-8ebef3ea8cbc6490.md",
+        "curated/shared/curated-shared-919636a58dd01a70.md",
+        "curated/shared/curated-shared-976801792cace962.md",
+        "curated/shared/curated-shared-9b76f660d4456bef.md",
+        "curated/shared/curated-shared-a6df0d770844e4e5.md",
+        "curated/shared/curated-shared-aa94b569f44c2be1.md",
+        "curated/shared/curated-shared-bbb3aac85655579c.md",
+        "curated/shared/curated-shared-bfea710ac5888a61.md",
+        "curated/shared/curated-shared-db90c30724eb8f1f.md",
+        "curated/shared/curated-shared-ecd020e3616583e3.md",
+        "curated/shared/curated-shared-f0cda5fd6db48935.md",
+        "curated/shared/curated-shared-f27816eb54184c7e.md",
+        "curated/shared/curated-shared-fa89cedb828a5469.md"
+      ]
+    },
+    {
+      "id": "q16",
+      "query": "MAINPATH-1 产品门不通过的原因",
+      "expected": [
+        "curated/shared/curated-shared-08aa2c2f210bcea7.md",
+        "curated/shared/curated-shared-1f52db937e429ce9.md",
+        "curated/shared/curated-shared-6f84b25df24d4e33.md",
+        "curated/shared/curated-shared-7e41162578edbdab.md",
+        "curated/shared/curated-shared-91fedcab9f4920c9.md",
+        "curated/shared/curated-shared-923b1f821790f5f5.md",
+        "curated/shared/curated-shared-a4bc06e08e076dc8.md",
+        "curated/shared/curated-shared-b80dd8fe2dace2cb.md",
+        "curated/shared/curated-shared-e4a80be3285b3f5c.md",
+        "curated/shared/curated-shared-e622bbc35036884a.md",
+        "curated/shared/curated-shared-e72998c61b98493d.md"
+      ]
+    },
+    {
+      "id": "q17",
+      "query": "M2.0 的 health 指标和巡检报告问题",
+      "expected": [
+        "curated/shared/curated-shared-05b3a74bb9512dff.md",
+        "curated/shared/curated-shared-0fe586304ad787a5.md",
+        "curated/shared/curated-shared-1a0b832bbfa253b1.md",
+        "curated/shared/curated-shared-285f59eab88812b2.md",
+        "curated/shared/curated-shared-39d52b9050ec8522.md",
+        "curated/shared/curated-shared-44872b68b70d704d.md",
+        "curated/shared/curated-shared-4ce57c39f6ad5012.md",
+        "curated/shared/curated-shared-4daea7ed069dda0c.md",
+        "curated/shared/curated-shared-55fb076d52ed5809.md",
+        "curated/shared/curated-shared-68f944da8a019d18.md",
+        "curated/shared/curated-shared-716d32cad8194e53.md",
+        "curated/shared/curated-shared-8adf53dd6efdc28f.md",
+        "curated/shared/curated-shared-8d4748d90fb8269f.md",
+        "curated/shared/curated-shared-8feef017645b1517.md",
+        "curated/shared/curated-shared-92e21768142d551c.md",
+        "curated/shared/curated-shared-9935acdc89a991a5.md",
+        "curated/shared/curated-shared-9eb4d9bc7cb9ca9c.md",
+        "curated/shared/curated-shared-a86874fc381ced17.md",
+        "curated/shared/curated-shared-aa676af44383e75a.md",
+        "curated/shared/curated-shared-b556563d975fd44b.md",
+        "curated/shared/curated-shared-c79c213a541ff121.md",
+        "curated/shared/curated-shared-d395503f44b2ec09.md",
+        "curated/shared/curated-shared-ea2fb736c99e576e.md",
+        "curated/shared/curated-shared-effd7e0eb9873a30.md",
+        "curated/shared/curated-shared-feec7f21d48b8256.md"
+      ]
+    },
+    {
+      "id": "q18",
+      "query": "MEM-WRITE-1 给 MCP 写入加了什么",
+      "expected": [
+        "curated/shared/curated-shared-1e977ff2c415d835.md",
+        "curated/shared/curated-shared-3f9451a93a996e6b.md",
+        "curated/shared/curated-shared-c14e549fcf0beace.md"
+      ]
+    },
+    {
+      "id": "q19",
+      "query": "MAINT8 的 mechanical fallback 是什么",
+      "expected": [
+        "curated/shared/curated-shared-a8cf3ef27d66b2e3.md",
+        "curated/shared/curated-shared-d08685ebc5794a0d.md"
+      ]
+    },
+    {
+      "id": "q20",
+      "query": "D29 直接写入迁移相关记录",
+      "expected": [
+        "curated/shared/curated-shared-3413804dcde122f5.md",
+        "curated/shared/curated-shared-3420e672d21b41e7.md",
+        "curated/shared/curated-shared-38c59339d7f2ed7e.md",
+        "curated/shared/curated-shared-3a85bb6e9c1fd42a.md",
+        "curated/shared/curated-shared-405bf1ea3b06e7ea.md",
+        "curated/shared/curated-shared-673bb7061cea0feb.md",
+        "curated/shared/curated-shared-6b07c5239636cd8a.md",
+        "curated/shared/curated-shared-84be34ea816b38d8.md",
+        "curated/shared/curated-shared-88826f5b0782799c.md",
+        "curated/shared/curated-shared-9032d9da301d3d7d.md",
+        "curated/shared/curated-shared-a51ac4afa2e81673.md",
+        "curated/shared/curated-shared-a57932dde2b63958.md",
+        "curated/shared/curated-shared-ccbe6a5108fb0e50.md",
+        "curated/shared/curated-shared-dfa915e77a1050c8.md",
+        "curated/shared/curated-shared-e88069b915a46f97.md",
+        "curated/shared/curated-shared-fb48bbd095114c24.md",
+        "curated/shared/curated-shared-fd04fa2e026f438a.md"
+      ]
+    },
+    {
+      "id": "q21",
+      "query": "REFINE-1 capture 响应新增了什么",
+      "expected": [
+        "curated/shared/curated-shared-4387f467ee4b86c2.md",
+        "curated/shared/curated-shared-51b69a1238fc3cc6.md",
+        "curated/shared/curated-shared-548d75f9b3d7742f.md",
+        "curated/shared/curated-shared-b14a567e907ed4c1.md",
+        "curated/shared/curated-shared-bd272736527153fd.md",
+        "curated/shared/curated-shared-c18a9695ffbbed3c.md",
+        "curated/shared/curated-shared-c815e51fd42dd52a.md"
+      ]
+    },
+    {
+      "id": "q22",
+      "query": "MEM-WRITE-1 验收通过了吗",
+      "expected": [
+        "curated/shared/curated-shared-1e977ff2c415d835.md"
+      ]
+    },
+    {
+      "id": "q23",
+      "query": "MAINT5 的 timer 和 health 验收细节",
+      "expected": [
+        "curated/shared/curated-shared-0a4d5d5ae06874f4.md",
+        "curated/shared/curated-shared-2eb8b0d1f8d20640.md",
+        "curated/shared/curated-shared-319c00a745cbdd09.md",
+        "curated/shared/curated-shared-7400dc7faf9fef47.md",
+        "curated/shared/curated-shared-76b7a25109f16c06.md",
+        "curated/shared/curated-shared-85b0b7b0d04f623d.md",
+        "curated/shared/curated-shared-929aa18325645ae9.md",
+        "curated/shared/curated-shared-9d37315a8a01031b.md",
+        "curated/shared/curated-shared-a41356d4d8c9cf57.md",
+        "curated/shared/curated-shared-ab0419e2000b0843.md",
+        "curated/shared/curated-shared-d202081957fc2df4.md",
+        "curated/shared/curated-shared-dd642d4fb30f0eb0.md",
+        "curated/shared/curated-shared-f63c04f23764cbe2.md"
+      ]
+    },
+    {
+      "id": "q24",
+      "query": "M1.6 增量索引和全量删除检测",
+      "expected": [
+        "curated/shared/curated-shared-147fa5c864c8c0d5.md",
+        "curated/shared/curated-shared-2aa154ccd0b68555.md",
+        "curated/shared/curated-shared-319c00a745cbdd09.md",
+        "curated/shared/curated-shared-4ea31bbf40abaa92.md",
+        "curated/shared/curated-shared-4f4f7ebfe150494c.md",
+        "curated/shared/curated-shared-53af880aa86d2487.md",
+        "curated/shared/curated-shared-80a5f0018f8f4a05.md",
+        "curated/shared/curated-shared-8e1900649b720dfa.md",
+        "curated/shared/curated-shared-a41a95bb0f1a75fe.md",
+        "curated/shared/curated-shared-b03d7ffbad56995d.md",
+        "curated/shared/curated-shared-dfa915e77a1050c8.md",
+        "curated/shared/curated-shared-e5ef83af8eca6e21.md"
+      ]
+    }
+  ]
+}

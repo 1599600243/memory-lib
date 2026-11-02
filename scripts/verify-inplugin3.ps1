@@ -1,5 +1,5 @@
 # IN-PLUGIN-3 一键复核（只读 + 测试，不改任何生产文件）
-# 用法: pwsh -File D:\MemoryLib\scripts\verify-inplugin3.ps1
+# 用法: pwsh -File .\scripts\verify-inplugin3.ps1
 #
 # 2026-10-20 修订（验收岗 5 指出三个真缺陷，已修）：
 #   ① 所有 git 命令加 `-c safe.directory`（本机仓库属主是 Administrators，不加会全空）
@@ -7,7 +7,7 @@
 #   ③ 红测前**校验改前文件真的被覆盖**：字节数/哈希对不上就报 FAIL 并中止，
 #      不再出现"git show 失败 → 留成改后文件 → 却打印一个正常字节数 → 红测退化成拿改后测改后"
 $ErrorActionPreference = 'Continue'
-$REPO  = 'D:\MemoryLib'
+$REPO  = '.'
 $PLUG  = "$REPO\scripts\dsh-memory-capture"
 $RED   = "$REPO\scripts\tmp-redcheck"
 $BASE  = '81efe7f'          # 改前提交（IN-PLUGIN-2 版本，index.js = 35123B）

@@ -57,6 +57,30 @@ export function accountPrincipal(account) {
 }
 
 // claim validation: agent must exist in framework; role must be bound to that agent
+function claimSegmentMatches(pattern, value) {
+  const parts = pattern.split("*");
+  if (parts.length === 1) return pattern === value;
+  let offset = 0;
+  for (let i = 0; i < parts.length; i += 1) {
+    const part = parts[i];
+    if (!part) continue;
+    const found = value.indexOf(part, offset);
+    if (found < 0 || (i === 0 && found !== 0)) return false;
+    offset = found + part.length;
+  }
+  return !parts.at(-1) || value.endsWith(parts.at(-1));
+}
+
+export function claimAllowed(allowlist, agentId, roleId) {
+  if (!Array.isArray(allowlist) || allowlist.length === 0) return true;
+  return allowlist.some((rule) => {
+    if (typeof rule !== "string") return false;
+    const parts = rule.split("/");
+    if (parts.length !== 2 || !parts[0] || !parts[1]) return false;
+    return claimSegmentMatches(parts[0], agentId) && claimSegmentMatches(parts[1], roleId);
+  });
+}
+
 export function resolveClaimedPrincipal(framework, claimed) {
   if (!framework) return { ok: false, reason: "UNKNOWN_CREDENTIAL" };
   if (framework.credential?.status !== "active") return { ok: false, reason: "REVOKED" };
@@ -68,6 +92,7 @@ export function resolveClaimedPrincipal(framework, claimed) {
   if (!agent) return { ok: false, reason: "UNKNOWN_AGENT" };
   const role = agent.roles?.find((r) => r.role_id === roleId);
   if (!role) return { ok: false, reason: "UNKNOWN_ROLE" };
+  if (!claimAllowed(framework.claim_allowlist, agentId, roleId)) return { ok: false, reason: "CLAIM_NOT_ALLOWED" };
   return { ok: true, framework, agent, role };
 }
 

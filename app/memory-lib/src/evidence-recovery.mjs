@@ -16,7 +16,24 @@ export function createEvidenceRecoveryApi({ dataRoot, workspaceRoot }) {
   async function find(root, id) { const wanted = slugify(id); for (const filePath of await walkFiles(root)) if (path.basename(filePath, path.extname(filePath)) === wanted) return filePath; return null; }
   async function read(root, id) { const filePath = await find(root, id); return filePath ? { path: filePath, content: await readTextFile(filePath) } : null; }
   async function evidenceImport(id, content) { return write(path.join(evidenceRoot, "documents"), id, content); }
-  async function evidenceGet(id) { return read(evidenceRoot, id); }
+  // 快路径：调用方给了 path 且它确实在 evidenceRoot 内、basename 与 id 一致 → 直接读。
+  // 否则退回"全树按 basename 找"。没有这条，前端一次解析 300 个文件头就要全树扫 300 遍。
+  async function evidenceGet(id, hintedPath = null) {
+    const wanted = slugify(id);
+    if (hintedPath) {
+      const resolved = path.resolve(String(hintedPath));
+      const rel = path.relative(evidenceRoot, resolved);
+      const inside = rel && !rel.startsWith("..") && !path.isAbsolute(rel);
+      const basenameMatches = path.basename(resolved, path.extname(resolved)) === wanted;
+      if (inside && basenameMatches) {
+        try {
+          const stat = await fs.stat(resolved);
+          if (stat.isFile()) return { path: resolved, content: await readTextFile(resolved) };
+        } catch { /* 落到慢路径 */ }
+      }
+    }
+    return read(evidenceRoot, id);
+  }
   async function evidenceList() { return { root: evidenceRoot, files: await walkFiles(evidenceRoot) }; }
   async function recoveryPlanGet(id) { return read(recoveryRoot, id); }
   async function recoveryPlanPut(id, content) { return write(recoveryRoot, id, content); }

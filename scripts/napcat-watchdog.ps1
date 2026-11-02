@@ -6,7 +6,7 @@
 # 有问题就弹 Windows 通知 + 追加 logs\ALERT.log；同一种问题 30 分钟内不重复弹。
 
 $ErrorActionPreference = 'SilentlyContinue'
-$root = 'D:\MemoryLib'
+$root = '.'
 $adapterLog = Join-Path $root 'logs\napcat-service.log'
 $alertLog = Join-Path $root 'logs\ALERT.log'
 $stateFile = Join-Path $root 'logs\.watchdog-state.json'
@@ -67,3 +67,10 @@ if ($recentDisconnect -ge 6 -and -not $lastConnect) {
 $adapter = Get-CimInstance Win32_Process -Filter "Name='node.exe'" |
   Where-Object { $_.CommandLine -match 'serve\.mjs' }
 if (-not $adapter) { Write-Alert '适配器进程不存在' '计划任务应在 1 分钟内拉起，若持续请检查任务状态' }
+
+# 4) 控制台 8788 掉了：先记一笔，再拉起（计划任务不会自己重试）
+$view = Get-NetTCPConnection -State Listen -LocalPort 8788 -ErrorAction SilentlyContinue
+if (-not $view) {
+  Write-Alert '控制台 8788 掉了' '正在重启 being-view 计划任务'
+  Start-ScheduledTask -TaskName 'being-view'
+}

@@ -7,7 +7,7 @@
  *      response.output_text.delta + 落库成功（范围单点名要求覆盖该事件类型）。
  *   D. fail-open：把记忆库地址指向一个死端口，再发一次真实请求，断言「对话照常 200」而落库失败只进日志。
  *
- * 凭据：上游 key 运行时从 C:\Users\admin\.dsh\.credentials.yaml 读，绝不写入仓库。
+ * 凭据：上游 key 运行时从 ~\.dsh\.credentials.yaml 读，绝不写入仓库。
  * 结果：每条打印 PASS/FAIL 与实测具体值，全绿才退出 0。
  */
 import http from 'node:http'

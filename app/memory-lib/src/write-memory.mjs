@@ -6,6 +6,7 @@ import { requireEvidenceRefs } from "./write-validation.mjs";
 import { normalizeContainer, principalIdentity, safeTemporaryKey } from "./container-policy.mjs";
 import { createGraphStore } from "./graph-retrieval.mjs";
 import { atomicWriteFile } from "./atomic-write.mjs";
+import { externalSourcesOf } from "./external-source-guard.mjs";
 
 export const WRITE_LAYERS = Object.freeze([
   "curated-shared", "agent", "project-state", "project-decision", "project-progress",
@@ -65,10 +66,16 @@ export function containerDefaultVisibility(container) {
   return container === "project" ? "project" : container === "tool" || container === "knowledge" ? "platform" : container === "role" ? "role" : "private";
 }
 
+export function sourceTrustOf(evidenceRefs) {
+  return externalSourcesOf(evidenceRefs).size ? "external" : "internal";
+}
+
 function baseFrontmatter(input, layer, type, id, extra = []) {
   const principal = principalIdentity(input.principal);
   const container = normalizeContainer(input.container ?? layer) ?? layer;
   const visibility = input.visibility ?? containerDefaultVisibility(container);
+  const evidenceRefs = requireEvidenceRefs(input.evidence_refs);
+  const sourceTrust = sourceTrustOf(evidenceRefs);
   return renderFrontmatter([
     ["id", id], ["layer", layer], ["container", container], ["visibility", visibility], ["type", type], ["status", input.status ?? "active"],
     ["occurred_at", input.occurred_at ?? new Date().toISOString()],
@@ -82,7 +89,9 @@ function baseFrontmatter(input, layer, type, id, extra = []) {
     // 没有键的记忆照旧写 `stable_key: null`，既有文件与既有调用方零影响。
     ["stable_key", stableKeyValue(input.stable_key)],
     ["updated_at", new Date().toISOString()],
-    ["tags", jsonArray(input.tags)], ["evidence_refs", requireEvidenceRefs(input.evidence_refs)],
+    ["tags", jsonArray(input.tags)], ["evidence_refs", evidenceRefs], ["source_trust", sourceTrust],
+    // source 记"从哪张嘴来"（console/desktop/web/napcat-*），与身份分离；不传则留空
+    ...(input.source ? [["source", String(input.source).slice(0, 120)]] : []),
     ["tenant_id", principal.tenant_id ?? "default"], ["framework_id", principal.framework_id], ["group_id", principal.group_id], ["user_id", principal.user_id], ["agent_id", principal.agent_id], ["role_id", principal.role_id],
     ["owned_by_account", input.owned_by_account ?? null], ["runs_on_machine", input.runs_on_machine ?? null],
     ...extra,
@@ -144,14 +153,14 @@ function parseProgress(text) {
   }
   return { topics, sections };
 }
-function renderProgress(project, topics, sections, priorText = "", principal = null) {
+function renderProgress(project, topics, sections, priorText = "", principal = null, sourceTrust = "internal") {
   const identity = principalIdentity(principal);
   const tenantId = identity.tenant_id ?? "default";
-  const updated = { layer: "project", type: "progress", project: JSON.stringify(project), updated_at: JSON.stringify(new Date().toISOString()), topics: JSON.stringify(topics), container: "project", tenant_id: JSON.stringify(tenantId), visibility: JSON.stringify("project"), group_id: JSON.stringify(identity.group_id), user_id: JSON.stringify(identity.user_id), agent_id: JSON.stringify(identity.agent_id), role_id: JSON.stringify(identity.role_id) };
+  const updated = { layer: "project", type: "progress", project: JSON.stringify(project), updated_at: JSON.stringify(new Date().toISOString()), topics: JSON.stringify(topics), container: "project", tenant_id: JSON.stringify(tenantId), visibility: JSON.stringify("project"), source_trust: JSON.stringify(sourceTrust), group_id: JSON.stringify(identity.group_id), user_id: JSON.stringify(identity.user_id), agent_id: JSON.stringify(identity.agent_id), role_id: JSON.stringify(identity.role_id) };
   const parsed = parseFrontmatterTyped(priorText);
   const header = parsed.frontmatter && Object.keys(parsed.frontmatter).length
     ? (updateFrontmatterFields(priorText, updated).match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/u)?.[0] ?? "")
-    : `---\nlayer: project\ncontainer: project\ntenant_id: ${updated.tenant_id}\nvisibility: ${updated.visibility}\ngroup_id: ${updated.group_id}\nuser_id: ${updated.user_id}\nagent_id: ${updated.agent_id}\nrole_id: ${updated.role_id}\ntype: progress\nproject: ${updated.project}\nupdated_at: ${updated.updated_at}\ntopics: ${updated.topics}\n---\n`;
+    : `---\nlayer: project\ncontainer: project\ntenant_id: ${updated.tenant_id}\nvisibility: ${updated.visibility}\ngroup_id: ${updated.group_id}\nuser_id: ${updated.user_id}\nagent_id: ${updated.agent_id}\nrole_id: ${updated.role_id}\ntype: progress\nproject: ${updated.project}\nupdated_at: ${updated.updated_at}\ntopics: ${updated.topics}\nsource_trust: ${updated.source_trust}\n---\n`;
   const lines = [header.trimEnd(), "", `# 项目进度 · ${project}`, ""];
   for (const topic of topics) {
     lines.push(`## ${topic}`, "");
@@ -349,7 +358,7 @@ export function createMemoryWriter({ dataRoot, onIndexed = null, graphStore = nu
     const existing = Array.isArray(parsed.frontmatter.evidence_refs) ? parsed.frontmatter.evidence_refs.map(String) : [];
     const mergedRefs = [...new Set([...existing, ...refs])];
     const updatedAt = new Date().toISOString();
-    const next = updateFrontmatterFields(before, { evidence_refs: JSON.stringify(mergedRefs), updated_at: JSON.stringify(updatedAt) });
+    const next = updateFrontmatterFields(before, { evidence_refs: JSON.stringify(mergedRefs), source_trust: JSON.stringify(sourceTrustOf(mergedRefs)), updated_at: JSON.stringify(updatedAt) });
     await atomicWrite(target, next);
     const id = String(parsed.frontmatter.id ?? path.basename(target, path.extname(target)));
     await onIndexed?.(target, { layer: "merge", id });
@@ -384,7 +393,8 @@ export function createMemoryWriter({ dataRoot, onIndexed = null, graphStore = nu
         else { bucket.set(key, { date, text, refs }); perTopic[topic] += 1; added += 1; }
       }
       const sections = new Map(parsed.topics.map((topic) => [topic, [...byTopic.get(topic).values()]]));
-      await atomicWrite(filePath, renderProgress(project, parsed.topics, sections, old, input.principal));
+      const progressRefs = [...input.evidence_refs, ...[...sections.values()].flatMap((entries) => entries.flatMap((entry) => entry.refs ?? []))];
+      await atomicWrite(filePath, renderProgress(project, parsed.topics, sections, old, input.principal, sourceTrustOf(progressRefs)));
       const principal = principalIdentity(input.principal);
       try {
         await graphStore.ingest({ event_id: `memory.created:project-progress:${project}`, type: "project.linked", tenant_id: principal.tenant_id ?? "default", evidence_id: input.evidence_refs[0], payload: { src_id: `project:${project}`, predicate: "belongs_to_project", dst_id: `progress:${project}`, visibility: "project", group_id: principal.group_id, user_id: principal.user_id, agent_id: principal.agent_id, role_id: principal.role_id, container: "project", project } });

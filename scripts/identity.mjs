@@ -22,6 +22,10 @@ import crypto from "node:crypto";
 const dataRoot = path.resolve(process.env.MEMORY_DATA_ROOT ?? "D:\\MemoryLib\\data");
 const identityFile = path.join(dataRoot, "runtime", "identity.json");
 const mappingFile = path.join(dataRoot, "runtime", "identities.json");
+// 模板优先用运行时覆盖（data/runtime），否则用仓库里的 config/role-templates.json。
+const templateFile = fs.existsSync(path.join(dataRoot, "runtime", "role-templates.json"))
+  ? path.join(dataRoot, "runtime", "role-templates.json")
+  : path.join(path.resolve(process.env.MEMORY_LIB_ROOT ?? path.join(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1")), "..")), "config", "role-templates.json");
 
 function readJson(file, fallback) {
   try { return JSON.parse(fs.readFileSync(file, "utf8")); } catch { return fallback; }
@@ -53,22 +57,45 @@ export function normalizeUid(uid) {
   return raw;
 }
 
-const ROLES = (agentId, userId) => ([
-  {
-    role_id: "chat-reader",
-    scopes: [{ layer: "memory", visibility: "user" }],
-    actions: ["search", "get"],
-    group_id: "qq",
+function loadTemplateDoc() {
+  const doc = readJson(templateFile, null);
+  if (!doc?.templates) {
+    throw new Error(`模板文件缺失或为空: ${templateFile}`);
+  }
+  return doc;
+}
+
+/** 按模板生成角色（只做填充，不写死规则） */
+function rolesFromTemplate(templateName, agentId, userId) {
+  const doc = loadTemplateDoc();
+  const tpl = doc.templates[templateName];
+  if (!tpl) {
+    throw new Error(`未知模板 "${templateName}"；可选: ${Object.keys(doc.templates).join(", ")}`);
+  }
+  return tpl.roles.map((r) => ({
+    ...r,
+    scopes: r.scopes.map((s) => ({ ...s })),
+    actions: [...r.actions],
     user_id: userId,
-  },
-  {
-    role_id: "chat-writer",
-    scopes: [{ layer: "memory", visibility: "user" }],
-    actions: ["propose"],
-    group_id: "qq",
-    user_id: userId,
-  },
-]);
+  }));
+}
+
+/** 落盘前校验：动作必须在词表内；scope 含 memory/user 时 user_id 必填；role_id 不重复 */
+function validateRoles(roles, userId) {
+  const doc = loadTemplateDoc();
+  const allowed = new Set(doc.actions ?? []);
+  const seen = new Set();
+  for (const r of roles) {
+    if (seen.has(r.role_id)) throw new Error(`模板内 role_id 重复: ${r.role_id}`);
+    seen.add(r.role_id);
+    for (const a of r.actions) {
+      if (!allowed.has(a)) throw new Error(`未知动作 "${a}"（role ${r.role_id}）；词表: ${[...allowed].join(", ")}`);
+    }
+    const needsUser = r.scopes.some((s) => s.layer === "memory" && s.visibility === "user");
+    if (needsUser && !r.user_id) throw new Error(`role ${r.role_id} 含 memory/user scope 但缺少 user_id`);
+  }
+  return true;
+}
 
 function loadMappings() {
   const doc = readJson(mappingFile, { version: 1, identities: [] });
@@ -76,7 +103,7 @@ function loadMappings() {
   return doc;
 }
 
-function cmdAdd({ channel, uid, name, role, "user-id": userIdFlag, "allow-share": allowShare }) {
+function cmdAdd({ channel, uid, name, role, "user-id": userIdFlag, "allow-share": allowShare, template, "dry-run": dryRun }) {
   const clean = normalizeUid(uid);
   const ch = String(channel ?? "").trim();
   if (!/^[a-z][a-z0-9-]{1,24}$/.test(ch)) throw new Error(`channel 不合法: ${ch}`);
@@ -105,11 +132,20 @@ function cmdAdd({ channel, uid, name, role, "user-id": userIdFlag, "allow-share"
   const framework = identity.frameworks[0];
   framework.agents = framework.agents ?? [];
 
+  const templateName = typeof template === "string" && template.trim() ? template.trim() : "chat-guest";
+  const roles = rolesFromTemplate(templateName, agentId, userId);
+  validateRoles(roles, userId);
+
   const existing = framework.agents.find((a) => a.agent_id === agentId);
   if (existing) {
-    existing.roles = ROLES(agentId, userId);
+    existing.roles = roles;
   } else {
-    framework.agents.push({ agent_id: agentId, roles: ROLES(agentId, userId) });
+    framework.agents.push({ agent_id: agentId, roles });
+  }
+
+  if (dryRun) {
+    console.log(JSON.stringify({ ok: true, dryRun: true, agent_id: agentId, user_id: userId, template: templateName, roles }, null, 2));
+    return;
   }
   writeJsonRetry(identityFile, identity);
 
@@ -178,8 +214,17 @@ try {
   else if (cmd === "list") cmdList();
   else if (cmd === "resolve") cmdResolve(flags);
   else if (cmd === "remove") cmdRemove(flags);
+  else if (cmd === "templates") {
+    const doc = loadTemplateDoc();
+    console.log("可用角色模板：");
+    for (const [name, tpl] of Object.entries(doc.templates)) {
+      console.log(`  ${name.padEnd(14)} ${tpl.description ?? ""}`);
+      for (const r of tpl.roles) console.log(`      - ${r.role_id.padEnd(18)} actions=[${r.actions.join(",")}]`);
+    }
+    console.log(`\n动作词表: ${(doc.actions ?? []).join(", ")}`);
+  }
   else {
-    console.log("用法: node scripts/identity.mjs <add|list|resolve|remove> --channel <ch> --uid <uid> [--name 名字] [--role owner|guest]");
+    console.log("用法: node scripts/identity.mjs <add|list|resolve|remove|templates> --channel <ch> --uid <uid> [--name 名字] [--role owner|guest] [--template <模板>] [--user-id u_xxx] [--allow-share] [--dry-run]");
     process.exit(2);
   }
 } catch (err) {

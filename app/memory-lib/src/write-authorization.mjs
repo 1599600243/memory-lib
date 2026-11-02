@@ -23,6 +23,7 @@
 // 可见性的**默认值**仍然只有一处真值源：write-memory 的 containerDefaultVisibility()。
 import { normalizeContainer } from "./container-policy.mjs";
 import { containerDefaultVisibility } from "./write-memory.mjs";
+import { identitySlotForVisibility } from "./container-policy.mjs";
 import { resolveRequestScopes } from "./identity-registry.mjs";
 
 /** frontmatter 里的值可能是带引号/带空白的字符串 —— 判权前必须归一，否则 "platform" ≠ platform。 */
@@ -54,15 +55,6 @@ export function claimedIdentityOf(body = {}) {
 }
 
 const USABLE = (value) => typeof value === "string" && value.trim() !== "" && value.trim() !== "unknown";
-
-/** 该可见性赖以成立的字段（缺失 ⇒ 这条写入没有受众，必须拒）。 */
-function identitySlotForVisibility(visibility) {
-  if (visibility === "user") return "user_id";
-  if (visibility === "role") return "role_id";
-  if (visibility === "agent") return "agent_id";
-  if (visibility === "shared") return "group_id";
-  return null; // private / daily ⇒ owner 位，单独判
-}
 
 /**
  * F4：身份位判定（纯函数）。

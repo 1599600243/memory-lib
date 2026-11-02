@@ -1,6 +1,6 @@
 # memory-lib
 
-[![ci](https://github.com/1599600243/memory-lib/actions/workflows/ci.yml/badge.svg)](https://github.com/1599600243/memory-lib/actions/workflows/ci.yml)
+[![ci](https://github.com/your-org/memory-lib/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/memory-lib/actions/workflows/ci.yml)
 
 > **状态：个人自用 / 实验性项目。** 接口与数据格式仍在变，暂不保证向后兼容。
 > **验过什么、没验过什么**，都写在 [`docs/VALIDATION.md`](docs/VALIDATION.md) 里，不吹。

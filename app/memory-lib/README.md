@@ -10,6 +10,20 @@
 
 D29 不提供 candidate/inbox、模型提炼队列、review/promote、knowledge quarantine、episode 或 graph 生产工作流。
 
+## 框架声明白名单
+
+框架条目可选配置 `claim_allowlist` 字符串数组，约束该凭证可声明的 `agent_id/role_id`。规则格式为 `agent/role`；每段中的 `*` 可匹配任意字符，例如 `agent/*`、`*/reader`、`qq-*/chat-reader` 或 `*/*`。规则必须恰有一个 `/` 且两段非空；非法项会忽略。未配置、非数组或空数组时白名单关闭，保持既有身份解析行为。
+
+## 外部来源可见性不变量
+
+精炼提交若引用的证据来源为 `napcat-*`、`napcat:*`、`qq-*` 或 `qq:*`，不可将记忆写成 `shared` 或 `platform` 可见性；违规会以 `EXTERNAL_SOURCE_VISIBILITY_DENIED` 拒绝，且在写入任何结论前完成检查。个人及其它非共享可见性不受此规则影响。
+
+只读巡检可运行：`node memory-lib/scripts/scan-external-visibility.mjs --data-root D:\\MemoryLib\\data\\memory`。脚本默认扫描该目录下 curated 与 project-* 记忆，并报告扫描数、命中数及命中文件/id。
+
+## 来源可信度
+
+正式记忆写入会根据 `evidence_refs` 写入 `source_trust`：可识别的 `napcat-*`、`napcat:*`、`qq-*`、`qq:*` 来源为 `external`，其余（包括缺失或不可解析的引用）为 `internal`。`/v1/memory/list`、`/v1/memory/find` 与 `/v1/search` 的每条结果透出该字段；历史文件未迁移，缺少该字段时返回 `unknown`。
+
 ## 可检索根
 
 `curated/shared`、`curated/agents`、`project-state`、`tools-memory`、`plans`、`profile`、`evidence/documents`。

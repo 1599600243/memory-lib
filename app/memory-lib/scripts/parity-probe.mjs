@@ -1,5 +1,5 @@
 // memory-lib Slice 1 — parity probe: compare memory-lib search vs the LIVE plugin
-// (C:\Users\admin\.openclaw\workspace\openclaw-memory) on the same fixture.
+// (~\.openclaw\workspace\openclaw-memory) on the same fixture.
 // Run: node --experimental-strip-types scripts/parity-probe.mjs
 //
 // This is the strongest "behavior identical" check: we execute the plugin's own

@@ -20,7 +20,7 @@
 //
 // 生产只读示例（**不写生产**）：
 //   node scripts/scenario-recall.mjs --base-url http://127.0.0.1:8787 \
-//        --credential-ref memory-lib/<你的> --secret-file D:\MemoryLib\data\runtime\secrets\<file>
+//        --credential-ref memory-lib/<你的> --secret-file .\data\runtime\secrets\<file>
 import fs from "node:fs/promises";
 import { recallScenario } from "../src/scenario-recall.mjs";
 

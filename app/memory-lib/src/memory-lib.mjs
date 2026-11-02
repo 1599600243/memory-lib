@@ -22,6 +22,7 @@ import {
 } from "./read-only-core.mjs";
 import { unquote, updateFrontmatterFields } from "./frontmatter-util.mjs";
 import { hybridSearch, inAuthRoots, ledgerFileState } from "./ledger-search.mjs";
+import { identifierRerankEnabled, queryIdentifiers, rerankByIdentifiers } from "./identifier-rerank.mjs";
 import { memoryIndexSearch } from "./index-search.mjs";
 import { semanticSearch } from "./semantic-index.mjs";
 import { attachZhSummary, loadSummaryIndex } from "./zh-summary-index.mjs";
@@ -32,8 +33,11 @@ import { probeVectorLane } from "./vector-lane.mjs";
 import { createMemoryWriter } from "./write-memory.mjs";
 import { buildCapacityReport } from "./capacity-report.mjs";
 import { createRefinementObservability } from "./refinement-observability.mjs";
+import { canSeePath, unquoteFrontmatter } from "./visibility.mjs";
 import { principalAllowsContainer, pathContainer } from "./container-policy.mjs";
 import { createGraphStore, jointSearch as graphJointSearch, rebuildGraph, reciprocalRankFusion } from "./graph-retrieval.mjs";
+import { resolveRootsForScopes } from "./scope-roots.mjs";
+export { resolveRootsForScopes };
 
 const DEFAULT_RANK_WEIGHTS = Object.freeze({ relevance: 0.5, recency: 0.28, importance: 0.22, quality: 0 });
 
@@ -56,63 +60,6 @@ export function scopeToString(scope) {
   return structuredScopeKey(scope);
 }
 
-export function resolveRootsForScopes(scopes, dataRoot, workspaceRoot) {
-  if (!Array.isArray(scopes)) return null; // null = unrestricted
-  if (scopes.length === 0) return []; // explicit empty scope = deny all
-  const roots = [];
-  for (const scope of scopes ?? []) {
-    const layer = scope?.layer;
-    const visibility = scope?.visibility;
-    const project = scope?.project;
-    if (layer === "memory" && visibility === "shared") {
-      roots.push(path.join(dataRoot, "curated", "shared"));
-      // D3-F4：项目记忆并入 memory/shared 检索根（受限身份可见，不改线上身份配置）
-      roots.push(path.join(dataRoot, "project-state"));
-      // D2-F4：工具记忆与计划记忆并入 memory/shared 作用域（受限身份可见）
-      roots.push(path.join(dataRoot, "tools-memory"));
-      roots.push(path.join(dataRoot, "plans"));
-      // D3.4：画像层（profile/，draft 由检索过滤）
-      roots.push(path.join(dataRoot, "profile"));
-      roots.push(path.join(dataRoot, "evidence", "documents"));
-      roots.push(path.join(dataRoot, "evidence", "conversations"));
-    } else if (layer === "memory" && visibility === "project" && typeof project === "string" && project) {
-      roots.push(project === "*" ? path.join(dataRoot, "project-state") : path.join(dataRoot, "project-state", project));
-      roots.push(path.join(dataRoot, "evidence", "documents"));
-    } else if (layer === "memory" && visibility === "agent" && typeof project === "string" && project) {
-      roots.push(project === "*" ? path.join(dataRoot, "curated", "agents") : path.join(dataRoot, "curated", "agents", project));
-      roots.push(path.join(dataRoot, "evidence", "conversations"));
-    } else if (layer === "tool") {
-      // D2.1：工具记忆 tools-memory/<tool>.md
-      roots.push(path.join(dataRoot, "tools-memory"));
-    } else if (layer === "plan") {
-      // D2.3：计划记忆 plans/<topic>.md
-      roots.push(path.join(dataRoot, "plans"));
-    } else if (layer === "memory" && visibility === "user") {
-      // 2026-10-30：QQ 身份（qq-*）的 scope 是 {layer:"memory",visibility:"user"}，**不带 project**。
-      // 原来没有匹配分支 → memory/list 一条都扫不到（brief 走索引所以还能命中），
-      // 表现为"库里 1725 条 user 记忆，列表接口返回 0 条"。
-      // user 级记忆实际落在 curated/shared（frontmatter visibility=user），
-      // 逐文件再由 principalAuthorizesPath 按 user_id 过滤，不会串。
-      roots.push(path.join(dataRoot, "curated", "shared"));
-      roots.push(path.join(dataRoot, "profile"));
-      roots.push(path.join(dataRoot, "evidence", "conversations"));
-    } else if (layer === "memory" && visibility === "user" && typeof project === "string" && project) {
-      // User scope is filtered by principal.user_id after this root is searched.
-      roots.push(path.join(dataRoot, "curated", "agents"));
-      roots.push(path.join(dataRoot, "plans"));
-      roots.push(path.join(dataRoot, "profile"));
-      roots.push(path.join(dataRoot, "evidence", "conversations"));
-    } else if (layer === "memory" && visibility === "platform") {
-      roots.push(path.join(dataRoot, "tools-memory"));
-      roots.push(path.join(dataRoot, "evidence", "documents"));
-    } else if (layer === "memory" && visibility === "daily") {
-      // daily notes = dataRoot 顶层 .md（项目活动记录），只扫顶层不递归
-      roots.push({ path: dataRoot, type: "daily" });
-    }
-    // default: deny — unknown layer/visibility combos contribute no root
-  }
-  return [...new Set(roots)];
-}
 
 // --- library-level: API surface -------------------------------------------------
 export function createMemoryLib(options = {}) {
@@ -141,27 +88,9 @@ export function createMemoryLib(options = {}) {
     if (!optionsPrincipal) return true;
     const text = frontmatter ? null : await readTextFile(filePath);
     const fm = frontmatter ?? (text ? parseFrontmatter(text).frontmatter : {});
-    const container = pathContainer(dataRoot, filePath);
-    if (!container) return false;
-    if (container === "evidence") {
-      const group = unquote(fm.group_id ?? fm.groupId);
-      const user = unquote(fm.user_id ?? fm.userId);
-      const principalGroup = optionsPrincipal.group_id;
-      const principalUser = optionsPrincipal.user_id;
-      return Boolean(group && user && group !== "unknown" && user !== "unknown" && principalGroup && principalUser && group === principalGroup && user === principalUser);
-    }
-    const metadata = { ...fm, container, project: unquote(fm.project), group_id: unquote(fm.group_id), user_id: unquote(fm.user_id), agent_id: unquote(fm.agent_id), role_id: unquote(fm.role_id), visibility: unquote(fm.visibility) || (container === "project" ? "project" : container === "tool" || container === "knowledge" ? "platform" : container === "role" ? "role" : "private") };
-    if (!metadata.group_id && !metadata.user_id && !metadata.agent_id && !metadata.role_id) {
-      if (container === "role") {
-        const parts = path.relative(dataRoot, filePath).split(path.sep);
-        metadata.agent_id = parts[0] === "curated" && parts[1] === "agents" ? parts[2] : null;
-      }
-      if (container === "project") return true;
-      if (container === "long-term" || container === "tool" || container === "knowledge") return true;
-    }
-    // Two keys must be mutually invisible because authenticated principal filtering proves it,
-    // never because a missing retrieval root happens to hide the record.
-    return principalAllowsContainer(optionsPrincipal, metadata);
+    // 判定语义收敛到 src/visibility.mjs::canSeePath；差分测试见
+    // test/visibility-equivalence.test.mjs（真实语料 × 真实身份逐条比对）。
+    return canSeePath({ principal: optionsPrincipal, dataRoot, filePath, frontmatter: fm });
   }
 
   async function auditGovernance({ action, resourceId, scope = defaultAuditScope, allow, rule, replacementId = null, denyReason = null }) {
@@ -255,7 +184,7 @@ export function createMemoryLib(options = {}) {
     const missing = checks.filter((item) => item.status === "missing");
     const pathHealth = missing.length === 0 ? "healthy" : missing.length <= 2 ? "reduced" : "degraded";
     const vectorDegraded = vector.status === "down" || vector.status === "stale";
-    return {
+  return {
       health: vectorDegraded ? "degraded" : pathHealth,
       reason: vectorDegraded ? vector.reason : null,
       checks,
@@ -291,7 +220,7 @@ export function createMemoryLib(options = {}) {
   // Why the lexical top-up is mandatory: the owned ledger can lag behind a
   // newly written file until the next rebuild. Lexical containment is
   // deterministic, so the file-first pass keeps direct writes immediately visible.
-  async function search({ query, limit = 10, documentQuota = 3, rawQuota = 3, sourceType = null, mode = "hybrid", searchMode = "hybrid", workspace = null, tags = [], since = null, until = null, project = null, include_superseded = false, include_stale = false, as_of = null, agent_id = options.agentId ?? null, role_id = options.roleId ?? null, lane = null, graphExpand = true, calendarDate = null, calendarTimezone = undefined } = {}) {
+  async function searchCore({ query, limit = 10, documentQuota = 3, rawQuota = 3, sourceType = null, mode = "hybrid", searchMode = "hybrid", workspace = null, tags = [], since = null, until = null, project = null, include_superseded = false, include_stale = false, as_of = null, agent_id = options.agentId ?? null, role_id = options.roleId ?? null, lane = null, graphExpand = true, calendarDate = null, calendarTimezone = undefined } = {}) {
     if (typeof query !== "string" || !query.trim()) return [];
     // DAYRECALL-2：`calendarDate` 是**硬条件时间范围**，与 timeline() 同一套解析。
     // 用同一个 resolveCalendarRange ⇒ 非法日期在这里就 4xx，窗口字符串也与枚举路径逐字一致。
@@ -316,12 +245,18 @@ export function createMemoryLib(options = {}) {
     let secondVectorSim = 0;
     let ftsHits = 0;
     let usedOwnedIndex = false;
+    lastSearchMeta = null;
     if (mode === "hybrid" && authRoots !== null && authRoots.length === 0) {
       results = [];
     } else if (mode === "hybrid") {
-      const owned = await memoryIndexSearch(dataRoot, query, candidateLimit, authRoots, options.ollama, options.embeddingFetch ?? globalThis.fetch);
+      const owned = await memoryIndexSearch(dataRoot, query, candidateLimit, authRoots, options.ollama, options.embeddingFetch ?? globalThis.fetch, {
+        principal: optionsPrincipal,
+        scopes,
+        tenantId: optionsPrincipal?.tenant_id ?? "default",
+      });
       if (owned) {
         usedOwnedIndex = true;
+        lastSearchMeta = { prefiltered: Boolean(owned.prefiltered), lanes: owned.lanes ?? null, used_owned_index: true };
         results = owned.results.filter((r) => pathAuthorized(r.path));
         bestVectorSim = owned.bestVectorSim ?? 0;
         ftsHits = owned.lanes?.fts ?? 0;
@@ -727,6 +662,26 @@ export function createMemoryLib(options = {}) {
     });
   }
 
+  // 带元信息的检索：默认 search() 仍返回数组（兼容旧调用方）；HTTP 层用这个拿 prefiltered/lanes。
+  async function searchWithMeta(options = {}) {
+    const results = await search(options);
+    return { results, meta: lastSearchMeta };
+  }
+
+  // 标识符重排包装：query 含拉丁标识符时，先取更大候选池，按"正文命中标识符"重排，再截到用户要的条数。
+  let lastSearchMeta = null;
+  const RERANK_POOL = 50;
+  async function search(options = {}) {
+    const identifiers = queryIdentifiers(options.query);
+    const requested = Number.isInteger(options.limit) && options.limit > 0 ? options.limit : 10;
+    if (!identifiers.length || !identifierRerankEnabled(options)) return searchCore(options);
+    const pool = Math.max(requested, Math.min(RERANK_POOL, Math.max(requested * 5, 30)));
+    const candidates = await searchCore({ ...options, limit: pool });
+    if (!Array.isArray(candidates) || candidates.length <= 1) return Array.isArray(candidates) ? candidates.slice(0, requested) : candidates;
+    const reranked = await rerankByIdentifiers(candidates, identifiers, (filePath) => readTextFile(filePath).catch(() => ""));
+    return reranked.slice(0, requested);
+  }
+
   return {
     dataRoot,
     workspaceRoot,
@@ -739,6 +694,7 @@ export function createMemoryLib(options = {}) {
     calendarTimezone: deploymentTimezone,
     health,
     search,
+    searchWithMeta,
     timeline,
     rankNeighbors,
     listMemories,
@@ -1242,12 +1198,6 @@ async function filterItemsByMetadata(items, { workspace = null, tags = [] } = {}
     out.push(item);
   }
   return out;
-}
-
-function unquoteFrontmatter(value) {
-  const text = String(value ?? "").trim();
-  if (!text) return "";
-  try { const parsed = JSON.parse(text); return typeof parsed === "string" ? parsed : text; } catch { return text; }
 }
 
 // D1F3：按发生时间**区间重叠**过滤（「昨天做了什么」这类按时间问句）。

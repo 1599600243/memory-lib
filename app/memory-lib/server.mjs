@@ -30,7 +30,7 @@ function arg(name, fallback) {
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 }
 
-// 2026-10-04：数据与本体搬到 D:\MemoryLib（旧路径 I:\OpenClaw\memory-data 保留为 junction 门牌，
+// 2026-10-04：数据与本体搬到 .（旧路径 I:\OpenClaw\memory-data 保留为 junction 门牌，
 // 供 openclaw.json / clawdbot.json / Memory-Archive-Daily 等既有引用继续解析）。
 // 默认值跟着搬到新家，避免裸跑 `node server.mjs` 时又指回旧路径。
 const dataRoot = arg("--data-root", "D:\\MemoryLib\\data\\memory");

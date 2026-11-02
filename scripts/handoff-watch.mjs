@@ -30,20 +30,20 @@ const LOG = path.join(REPORTS, "handoff.log");
 const DSH = "http://127.0.0.1:3080";
 // ⚠️ 2026-10-20 22:4x 换新：验收岗4（session-564b671c，21.7 万 token）切到 gpt-5.6-sol（窗口 20 万）后
 //    连压缩都失败（`pi-ai detected context overflow`），整轮被产品岗停掉 → 换**验收岗5**（干净上下文、gpt-5.6-sol）。
-//    换会话时 ACCEPTANCE_SESSION 与下面的 ACCEPTANCE_SESSION_FILE 必须一起改（目录名由 cwd=D:\MemoryLib 推导）。
+//    换会话时 ACCEPTANCE_SESSION 与下面的 ACCEPTANCE_SESSION_FILE 必须一起改（目录名由 cwd=. 推导）。
 const ACCEPTANCE_SESSION = "session-9d645c73-95aa-426c-ae82-adf29d091f6b"; // 验收岗5（2026-10-20 建，接 IN-PLUGIN-3）
 const PRODUCT_SESSION = "session-dccc44aa-5b2e-4e00-af85-d23dfe1d7860"; // 产品岗（我）
 // 开发会话的 transcript 文件：用它的静默时长判断"开发是不是空转"（见 alertDevIdle）
 // ⚠️ 2026-10-15 再次换新：上一个开发会话（session-39c67a0c…）卡在"没人点的人工批准"上（工作区不含仓库），
 //    而更早的 session-f2bbb670… 每轮被 400「System messages are not allowed」打回。
-//    现在的开发岗是 **session-c2e02d01…（工作区=D:\MemoryLib ⇒ 会话目录 --D-MemoryLib--）**，
+//    现在的开发岗是 **session-c2e02d01…（工作区=. ⇒ 会话目录 --D-MemoryLib--）**，
 //    并已把模型切到 deepseek-official/deepseek-v4-flash（唯一实测接受 system 角色的路线）。
 //    ⚠️ 换会话时 **目录名（由 cwd 推导）与会话 id 必须一起改**，否则静默时长永远算错。
 const DEV_SESSION = "session-b3eb6133-7619-4450-a7bc-918a4d6af735"; // 开发岗8（2026-10-19 08:2x 换：它手上是 REFINE-LOOP-2 事件日期修复；开发岗7 的 WRITE-DENY 链已结案、空闲属正常）
 const DEV_SESSION_FILE = path.join(String(process.env.USERPROFILE ?? "C:\\Users\\admin"), ".dsh", "sessions", "--D-MemoryLib--", DEV_SESSION, "session.jsonl.zstd");
 // 验收会话的 transcript：用来判断"验收岗是不是把这单丢了"（见 openHandoffs / ACCEPTANCE-DROPPED）
 // ⚠️ 目录名是**会话 cwd 推导出来的**：旧验收会话 cwd 在 `D:\AI\deepseek-harness\agentgongz`（`--D-AI-deepseek-harness-agentgongz--`），
-//    2026-10-08 新建的验收会话 cwd 是 `D:\MemoryLib`（`--D-MemoryLib--`）—— **换会话时这两处必须一起改**：
+//    2026-10-08 新建的验收会话 cwd 是 `.`（`--D-MemoryLib--`）—— **换会话时这两处必须一起改**：
 //    `ACCEPTANCE_SESSION` 与 `ACCEPTANCE_SESSION_FILE`。漏改后者的后果是"静默时长永远算错"，告警会误报/漏报。
 const ACCEPTANCE_SESSION_FILE = path.join(String(process.env.USERPROFILE ?? "C:\\Users\\admin"), ".dsh", "sessions", "--D-MemoryLib--", ACCEPTANCE_SESSION, "session.jsonl.zstd");
 // 产品岗（我）自己的会话文件：用来判断"流水线是真停了，还是只是串行等我"
@@ -98,9 +98,9 @@ const ACCEPTANCE_START = (milestone, reportFile) => `【交接：开始验收 ${
 开发已交付。请开始独立验收。
 
 ⚠️ **硬规矩（先看这条再动手）**：所有 pwsh / 读写调用里**不要传 sandbox_permissions 字段**。
-你的 cwd 是 D:\MemoryLib，读写它内部本来就允许；传了那个字段要么被判"不比当前更宽"直接拒绝（你干不了活），
+你的 cwd 是 .，读写它内部本来就允许；传了那个字段要么被判"不比当前更宽"直接拒绝（你干不了活），
 要么弹一个**没人点的批准**（你会静默卡死，历史上卡过 6.6 小时和 7.5 小时）。真被拒就换不越界的等价做法，或把"做不了+原因"写进报告。
-完整说明见 ~/.dsh/AGENTS.md 与 D:\MemoryLib\AGENTS.md。
+完整说明见 ~/.dsh/AGENTS.md 与 .\AGENTS.md。
 
 交付物：
 - **范围单**：到 D:\\MemoryLib\\orders\\ 找与本里程碑对应的那一份（文件名含里程碑号，如 M1.1）

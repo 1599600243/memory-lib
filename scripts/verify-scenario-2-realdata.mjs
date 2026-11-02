@@ -14,7 +14,7 @@
  * 源目录**只读**；凭据轮换只发生在副本的 secrets 目录里，不碰生产的 wincred。
  *
  * 用法：node verify-scenario-2-realdata.mjs [repoRoot] [copyRoot]
- *   copyRoot 默认 D:\MemoryLib\sc2-realdata-copy；不存在才复制（复用已有副本）
+ *   copyRoot 默认 .\sc2-realdata-copy；不存在才复制（复用已有副本）
  */
 import fs from "node:fs/promises";
 import path from "node:path";

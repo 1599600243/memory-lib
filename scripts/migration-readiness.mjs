@@ -9,7 +9,7 @@
  *   · 嵌入模型（ollama）是否可用
  *   · 身份/密钥注册表是否齐全
  *
- * 用法：node migration-readiness.mjs [dataRoot]   （默认 D:\MemoryLib\data）
+ * 用法：node migration-readiness.mjs [dataRoot]   （默认 .\data）
  */
 import fs from "node:fs";
 import path from "node:path";

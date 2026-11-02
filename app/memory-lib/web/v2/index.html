@@ -1,0 +1,1634 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>记忆库 · 控制台 v2</title>
+<style>
+/* ===== 设计 token：A 密度（Primer 风）+ C 深色自动 ===== */
+:root{
+  --bg:#f6f8fa; --panel:#ffffff; --panel-2:#f6f8fa; --line:#d0d7de; --line-soft:#d8dee4;
+  --fg:#1f2328; --fg-2:#656d76; --fg-3:#8c959f;
+  --acc:#0969da; --acc-bg:#ddf4ff; --acc-line:#b6e3ff;
+  --ok:#1a7f37; --ok-bg:#dafbe1; --warn:#9a6700; --warn-bg:#fff8c5; --bad:#cf222e; --bad-bg:#ffebe9;
+  --graph-memory:#4f8cff; --graph-project:#ffb454; --graph-evidence:#5b6b85; --graph-tag:#ff5c6c; --graph-entity:#b48cff;
+  --r:6px; --row:32px; --nav-w:232px;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+html[data-theme="dark"]{
+  --bg:#0d1117; --panel:#161b22; --panel-2:#1c2128; --line:#30363d; --line-soft:#21262d;
+  --fg:#e6edf3; --fg-2:#9198a1; --fg-3:#6e7681;
+  --acc:#4493f8; --acc-bg:#121d2f; --acc-line:#1f6feb;
+  --ok:#3fb950; --ok-bg:#12261c; --warn:#d29922; --warn-bg:#272115; --bad:#f85149; --bad-bg:#2d1214;
+}
+@media (prefers-color-scheme: dark){
+  html[data-theme="auto"]{
+    --bg:#0d1117; --panel:#161b22; --panel-2:#1c2128; --line:#30363d; --line-soft:#21262d;
+    --fg:#e6edf3; --fg-2:#9198a1; --fg-3:#6e7681;
+    --acc:#4493f8; --acc-bg:#121d2f; --acc-line:#1f6feb;
+    --ok:#3fb950; --ok-bg:#12261c; --warn:#d29922; --warn-bg:#272115; --bad:#f85149; --bad-bg:#2d1214;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC",Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased}
+code,kbd{font-family:var(--mono);font-size:12px}
+a{color:var(--acc);text-decoration:none}
+
+/* ---------- 登录 ---------- */
+#login{display:grid;place-items:center;min-height:100vh;padding:24px}
+.login-box{width:min(360px,100%);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:24px}
+.login-box h1{margin:0 0 4px;font-size:16px}
+.login-box p{margin:0 0 18px;color:var(--fg-2);font-size:12px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;color:var(--fg-2);margin-bottom:4px}
+.field input{width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg);color:var(--fg);font:13px inherit}
+.field input:focus{outline:2px solid var(--acc);outline-offset:-1px;border-color:var(--acc)}
+.btn{border:1px solid var(--line);background:var(--panel-2);color:var(--fg);border-radius:var(--r);padding:6px 12px;font:13px inherit;cursor:pointer}
+.btn:hover{background:var(--line-soft)}
+.btn.primary{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+.btn.primary:hover{filter:brightness(1.05)}
+.btn:disabled{opacity:.5;cursor:default}
+.msg{margin-top:12px;font-size:12px;color:var(--bad);min-height:18px}
+
+/* ---------- 外壳 ---------- */
+#app{display:none;grid-template-columns:var(--nav-w) 1fr;min-height:100vh}
+#app.on{display:grid}
+aside{background:var(--panel);border-right:1px solid var(--line);position:sticky;top:0;height:100vh;overflow:auto}
+.brand{padding:16px 16px 12px;border-bottom:1px solid var(--line-soft)}
+.brand b{font-size:14px}
+.brand span{display:block;color:var(--fg-2);font-size:11.5px;margin-top:2px}
+.nav-group{padding:10px 8px 0}
+.nav-group h4{margin:8px 8px 6px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3)}
+.nav a{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--r);color:var(--fg);font-size:12.5px}
+.nav a:hover{background:var(--panel-2)}
+.nav a[aria-current]{background:var(--acc-bg);color:var(--acc);font-weight:600}
+.nav .ico{width:14px;text-align:center;opacity:.75}
+.nav .badge{margin-left:auto;font-size:10.5px;padding:0 6px;border:1px solid var(--line-soft);border-radius:1em;color:var(--fg-2)}
+main{min-width:0}
+header.top{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line);padding:12px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header.top h1{margin:0;font-size:15px;font-weight:600}
+header.top .sub{color:var(--fg-2);font-size:12px}
+header.top .grow{flex:1}
+.seg{display:flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.seg button{border:0;background:var(--panel);color:var(--fg-2);font:inherit;font-size:12px;padding:5px 10px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--acc-bg);color:var(--acc);font-weight:600}
+.who{font-size:11.5px;color:var(--fg-2)}
+.content{padding:20px 24px;width:100%}
+
+/* ---------- 组件 ---------- */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.card .label{color:var(--fg-2);font-size:12px}
+.card .num{font:600 24px/1.15 var(--mono);font-variant-numeric:tabular-nums;margin-top:6px}
+.card .hint{color:var(--fg-3);font-size:11.5px;margin-top:4px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);margin-bottom:16px;overflow:hidden}
+.panel>h2{margin:0;padding:10px 14px;font-size:12.5px;font-weight:600;border-bottom:1px solid var(--line-soft);background:var(--panel-2);display:flex;align-items:center;gap:8px}
+.panel>h2 .right{margin-left:auto;font-weight:400;color:var(--fg-2);font-size:11.5px}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--fg);padding:0;width:min(920px,92vw);max-width:min(920px,92vw);max-height:86vh;box-shadow:0 24px 64px rgba(0,0,0,.45)}
+dialog::backdrop{background:rgba(8,10,14,.55);backdrop-filter:blur(2px)}
+.dlg-head{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line-soft);position:sticky;top:0;background:var(--panel);z-index:1}
+.dlg-head h3{margin:0;font-size:13px;font-weight:600;white-space:nowrap}
+.dlg-head .who{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#evDlgBody{margin:0;padding:14px;font-family:var(--mono);font-size:11.5px;line-height:1.55;white-space:pre-wrap;overflow:auto;max-height:calc(86vh - 52px)}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:0 14px;height:var(--row);font-size:12.5px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+th{color:var(--fg-2);font-weight:500;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--panel-2)}
+tbody tr.is-selected td{background:color-mix(in srgb,var(--acc) 14%,transparent);box-shadow:inset 2px 0 0 var(--acc)}
+td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:1px 8px;border-radius:1em;border:1px solid currentColor;white-space:nowrap}
+.pill.ok{color:var(--ok)} .pill.warn{color:var(--warn)} .pill.bad{color:var(--bad)} .pill.acc{color:var(--acc)}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block}
+.tag{font-family:var(--mono);font-size:11px;color:var(--fg-2);background:var(--panel-2);border:1px solid var(--line-soft);padding:0 6px;border-radius:4px}
+.bars{display:grid;gap:8px;padding:12px 14px}
+.bar{display:grid;grid-template-columns:130px 1fr 52px;align-items:center;gap:10px;font-size:12px}
+.track{height:8px;background:var(--panel-2);border:1px solid var(--line-soft);border-radius:4px;overflow:hidden}
+.fill{height:100%;background:var(--acc);border-radius:4px}
+.bar .v{text-align:right;font-family:var(--mono);color:var(--fg-2)}
+.toolbar{display:flex;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line-soft);flex-wrap:wrap;align-items:center}
+input[type=search],select{padding:6px 10px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg);color:var(--fg);font:13px inherit}
+input[type=search]{flex:1;min-width:200px}
+input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offset:-1px;border-color:var(--acc)}
+.item{padding:10px 14px;border-bottom:1px solid var(--line-soft)}
+.item:last-child{border-bottom:none}
+.item .id{font-family:var(--mono);font-size:11px;color:var(--fg-3)}
+.item .body{margin:4px 0 6px;font-size:13px;line-height:1.55;white-space:pre-wrap}
+.item .meta{display:flex;gap:10px;align-items:center;font-size:11px;color:var(--fg-3);flex-wrap:wrap}
+.skeleton{height:12px;border-radius:4px;background:linear-gradient(90deg,var(--panel-2) 25%,var(--line-soft) 37%,var(--panel-2) 63%);background-size:400% 100%;animation:sh 1.2s ease infinite}
+@keyframes sh{0%{background-position:100% 0}100%{background-position:0 0}}
+.empty{padding:28px 14px;text-align:center;color:var(--fg-2)}
+.err{padding:12px 14px;color:var(--bad);background:var(--bad-bg);font-size:12.5px}
+.more{padding:10px 14px;border-top:1px solid var(--line-soft);text-align:center}
+.graph-canvas{height:min(68vh,720px);min-height:520px;overflow:hidden;background:var(--bg);border-top:1px solid var(--line-soft)}
+.graph-canvas svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.graph-legend{display:flex;gap:12px;flex-wrap:wrap;padding:8px 14px;color:var(--fg-2);font-size:11.5px}
+.graph-legend span{display:inline-flex;align-items:center;gap:5px}
+.graph-swatch{width:8px;height:8px;border-radius:50%;display:inline-block}
+.graph-swatch.memory{background:var(--graph-memory)} .graph-swatch.project{background:var(--graph-project)} .graph-swatch.evidence{background:var(--graph-evidence)} .graph-swatch.tag{background:var(--graph-tag)} .graph-swatch.entity{background:var(--graph-entity)}
+.graph-count{margin-left:auto;color:var(--fg-2);font-size:11.5px}
+.graph-subviews{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.graph-subviews .panel{min-width:0}
+.graph-rows{max-height:420px;overflow:auto}
+.graph-rows table{min-width:560px}
+.graph-toolbar button:focus-visible,.graph-toolbar select:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+@media(max-width:900px){.graph-subviews{grid-template-columns:1fr}}
+.view{display:none}
+.view.on{display:block}
+@media(max-width:900px){#app.on{grid-template-columns:1fr}aside{position:static;height:auto}.cards{grid-template-columns:repeat(2,1fr)}}
+  .graph-detail{margin-top:8px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);min-height:46px}
+  .graph-detail-title{font-weight:600;margin-bottom:4px;line-height:1.4}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <form class="login-box" id="loginForm">
+    <h1>记忆库 · 控制台 v2</h1>
+    <p>用控制台账号登录（与旧版共用账号）</p>
+    <div class="field"><label for="u">用户名</label><input id="u" autocomplete="username" required></div>
+    <div class="field"><label for="p">密码</label><input id="p" type="password" autocomplete="current-password" required></div>
+    <button class="btn primary" type="submit" id="loginBtn">登录</button>
+    <div class="msg" id="loginMsg"></div>
+    <p style="margin-top:14px"><a href="/">← 回到旧版控制台</a></p>
+  </form>
+</div>
+
+<div id="app">
+  <aside>
+    <div class="brand"><b>记忆库</b><span>memory-lib · 控制台 v2</span></div>
+    <div class="nav">
+      <div class="nav-group">
+        <h4>数据</h4>
+        <a href="#/overview" data-view="overview"><span class="ico">▦</span>概览</a>
+        <a href="#/browse" data-view="browse"><span class="ico">☰</span>记忆</a>
+        <a href="#/evidence" data-view="evidence"><span class="ico">❏</span>证据</a>
+        <a href="#/graph" data-view="graph"><span class="ico">◇</span>记忆图谱</a>
+      </div>
+      <div class="nav-group">
+        <h4>治理</h4>
+        <a href="#/registry" data-view="registry"><span class="ico">⚿</span>身份权限</a>
+        <a href="#/roles" data-view="roles"><span class="ico">◉</span>角色</a>
+        <a href="#/audit" data-view="audit"><span class="ico">≡</span>审计日志</a>
+        <a href="#/recovery" data-view="recovery"><span class="ico">↺</span>恢复中心</a>
+        <a href="#/health" data-view="health"><span class="ico">✚</span>系统健康</a>
+      </div>
+      <div class="nav-group">
+        <h4>采集</h4>
+        <a href="#/ingest" data-view="ingest"><span class="ico">↓</span>采集 / 导入</a>
+        <a href="#/agents" data-view="agents"><span class="ico">⚙</span>Agents</a>
+        <a href="#/runtime" data-view="runtime"><span class="ico">▷</span>运行时状态</a>
+        <a href="#/pet" data-view="pet"><span class="ico">☺</span>宠物智能体</a>
+      </div>
+      <div class="nav-group">
+        <h4>学习</h4>
+        <a href="#/learning" data-view="learning"><span class="ico">✎</span>学习中心</a>
+        <a href="#/knowledge" data-view="knowledge"><span class="ico">▤</span>知识库</a>
+        <a href="#/tools" data-view="tools"><span class="ico">⚒</span>工具</a>
+        <a href="#/projects" data-view="projects"><span class="ico">▣</span>项目</a>
+        <a href="#/plans" data-view="plans"><span class="ico">◷</span>计划</a>
+        <a href="#/profile" data-view="profile"><span class="ico">☺</span>画像</a>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <header class="top">
+      <h1 id="pageTitle">概览</h1>
+      <span class="sub" id="pageSub">只读</span>
+      <span class="grow"></span>
+      <div class="seg" role="group" aria-label="主题">
+        <button data-theme-btn="auto" aria-pressed="true">自动</button>
+        <button data-theme-btn="light" aria-pressed="false">浅色</button>
+        <button data-theme-btn="dark" aria-pressed="false">深色</button>
+      </div>
+      <span class="who" id="who"></span>
+      <button class="btn" id="logoutBtn" type="button">退出</button>
+    </header>
+
+    <div class="content">
+      <!-- 概览 -->
+      <section class="view" id="view-overview">
+        <div class="cards" id="ovCards"></div>
+        <div class="panel"><h2>按身份分布 <span class="right" id="ovIdCount"></span></h2>
+          <table><thead><tr><th>user_id</th><th class="num">条数</th><th>占全库</th></tr></thead><tbody id="ovIdRows"></tbody></table>
+        </div>
+        <div class="panel"><h2>来源分布 <span class="right">长期记忆按写入来源</span></h2><div class="bars" id="ovBars"></div></div>
+        <div class="panel"><h2>异常检查 <span class="right" id="ovCheckSum"></span></h2>
+          <table><thead><tr><th>检查项</th><th class="num">数量</th><th>结论</th></tr></thead><tbody id="ovCheckRows"></tbody></table>
+        </div>
+
+        <div class="panel"><h2>索引与向量 <span class="right" id="ovIdxRight"></span></h2>
+          <table><thead><tr><th>指标</th><th class="num">数值</th><th>说明</th></tr></thead><tbody id="ovIdxRows"></tbody></table>
+        </div>
+
+        <div class="panel"><h2>最近写入 <span class="right" id="ovRecentRight"></span></h2>
+          <div id="ovRecent"></div>
+        </div>
+
+        <p class="who" id="ovFoot"></p>
+      </section>
+
+      <!-- 记忆：一个搜索框，空=按时间浏览，有词=全库检索 -->
+      <section class="view" id="view-browse">
+        <div class="panel">
+          <h2>记忆 <span class="right" id="brCount"></span></h2>
+          <div class="toolbar">
+            <input type="search" id="brFilter" placeholder="搜全库（标题/正文/证据）；清空则按时间列出全部">
+            <select id="brIdentity"><option value="">全部身份（仅管理员）</option></select>
+            <select id="brLimit"><option>50</option><option selected>100</option><option>200</option></select>
+          </div>
+          <div id="brList"><div class="empty"><div class="skeleton"></div></div></div>
+          <div class="more" id="brMore" hidden><button class="btn" id="brMoreBtn" type="button">加载更多</button></div>
+        </div>
+      </section>
+
+      <!-- 系统健康 -->
+      <section class="view" id="view-health">
+        <div class="cards" id="hlCards"></div>
+        <div class="panel"><h2>原始健康响应</h2><pre id="hlRaw" style="margin:0;padding:14px;font-family:var(--mono);font-size:11.5px;overflow:auto;max-height:420px"></pre></div>
+      </section>
+
+
+      <!-- 证据 -->
+      <section class="view" id="view-evidence">
+        <div class="panel">
+          <h2>证据 <span class="right" id="evCount"></span></h2>
+          <div class="toolbar">
+            <input type="search" id="evFilter" placeholder="按路径过滤，例如 napcat / dsh-session" aria-label="按路径过滤证据">
+            <select id="evSource" aria-label="按来源筛选证据" title="来源（读文件头 frontmatter 的 source）">
+              <option value="">全部来源</option>
+              <option value="dsh-session">dsh-session</option>
+              <option value="napcat-group">napcat-group</option>
+              <option value="napcat-c2c">napcat-c2c</option>
+              <option value="capture-proxy">capture-proxy</option>
+              <option value="runtime-event">runtime-event</option>
+            </select>
+            <select id="evDate" aria-label="按日期筛选证据" title="日期（frontmatter 的 calendarDate / capturedAt，本地时区）">
+              <option value="">全部日期</option>
+              <option value="today">今天</option>
+              <option value="7">最近 7 天</option>
+              <option value="30">最近 30 天</option>
+            </select>
+            <select id="evGroup" aria-label="证据列表是否按会话分组" title="按 conversationId 分组">
+              <option value="">不分组</option>
+              <option value="group">按会话分组</option>
+            </select>
+            <button class="btn" id="evReload" type="button">重新加载</button>
+          </div>
+          <p class="who" id="evParseNote" style="margin:0;padding:8px 14px;border-bottom:1px solid var(--line-soft)"></p>
+          <div id="evList"><div class="empty"><div class="skeleton"></div></div></div>
+        </div>
+        <dialog id="evDialog" aria-labelledby="evDlgTitle">
+          <div class="dlg-head">
+            <h3 id="evDlgTitle">证据内容</h3>
+            <span class="who" id="evDlgPath"></span>
+            <button class="btn" id="evDlgClose" type="button">关闭</button>
+          </div>
+          <pre id="evDlgBody"></pre>
+        </dialog>
+      </section>
+
+      <!-- 身份权限 -->
+      <section class="view" id="view-registry">
+        <div class="cards" id="rgCards"></div>
+        <div class="panel">
+          <h2>框架 / 智能体 / 角色 <span class="right" id="rgRight"></span></h2>
+          <div id="rgBody"><div class="empty"><div class="skeleton"></div></div></div>
+        </div>
+      </section>
+
+      <!-- 角色 -->
+      <section class="view" id="view-roles">
+        <div class="panel">
+          <h2>角色记忆 <span class="right" id="rlCount"></span></h2>
+          <div id="rlBody"><div class="empty"><div class="skeleton"></div></div></div>
+        </div>
+      </section>
+
+      <!-- 审计 -->
+      <section class="view" id="view-audit">
+        <div class="panel">
+          <h2>审计日志 <span class="right" id="auRight"></span></h2>
+          <div class="toolbar">
+            <select id="auLimit"><option>50</option><option selected>100</option><option>300</option></select>
+            <select id="auAllow"><option value="">全部</option><option value="true">仅放行</option><option value="false">仅拒绝</option></select>
+            <button class="btn" id="auReload" type="button">刷新</button>
+          </div>
+          <div id="auBody"><div class="empty"><div class="skeleton"></div></div></div>
+        </div>
+      </section>
+
+      <!-- 恢复中心 -->
+      <section class="view" id="view-recovery">
+        <div class="cards" id="rcCards"></div>
+        <div class="panel"><h2>恢复目录文件 <span class="right" id="rcRight"></span></h2>
+          <table><thead><tr><th>文件</th><th>相对路径</th></tr></thead><tbody id="rcBody"></tbody></table>
+        </div>
+      </section>
+
+      <!-- 采集 / 导入 -->
+      <section class="view" id="view-ingest">
+        <div class="cards" id="igCards"></div>
+        <div class="panel">
+          <h2>导入外部记忆 <span class="right" id="igRange"></span></h2>
+          <div style="padding:14px">
+            <div class="field">
+              <label for="igPaths">路径（每行一个，或逗号分隔）</label>
+              <textarea id="igPaths" rows="4" placeholder="例如 .\inbox\notes.md 或 .\inbox" style="width:100%;font-family:var(--mono);font-size:12px"></textarea>
+            </div>
+            <div class="toolbar" style="padding:0 0 12px;border:0">
+              <label class="who" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="igRecursive" checked> 递归目录</label>
+              <label class="who" style="display:flex;gap:6px;align-items:center">glob <input id="igGlob" value="*.md" style="width:90px"></label>
+              <label class="who" style="display:flex;gap:6px;align-items:center">类型
+                <select id="igKind"><option value="document">document（资料）</option><option value="conversation">conversation（对话）</option></select>
+              </label>
+              <label class="who" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="igDry" checked> 只预览（不写盘）</label>
+              <button class="btn" id="igRun" type="button">预览 / 导入</button>
+              <span class="who" id="igMsg"></span>
+            </div>
+          </div>
+          <table><thead><tr><th>文件</th><th>动作</th><th>说明</th></tr></thead><tbody id="igBody"><tr><td colspan="3" class="empty">还没有导入记录。填路径后点「预览 / 导入」。</td></tr></tbody></table>
+        </div>
+        <div class="panel">
+          <h2>转录导入队列 <span class="right" id="trRight"></span></h2>
+          <table><thead><tr><th>指纹</th><th>状态</th><th>更新时间</th></tr></thead><tbody id="trBody"><tr><td colspan="3" class="empty">读取中…</td></tr></tbody></table>
+        </div>
+      </section>
+
+      <!-- Agents -->
+      <section class="view" id="view-agents">
+        <div class="cards" id="agCards"></div>
+        <div class="panel">
+          <h2>框架 / 智能体 / 角色 <span class="right" id="agRight"></span></h2>
+          <table><thead><tr><th>框架</th><th>凭证</th><th>智能体</th><th>角色</th><th>动作</th><th>范围（layer/visibility）</th></tr></thead><tbody id="agBody"><tr><td colspan="6" class="empty">读取中…</td></tr></tbody></table>
+        </div>
+        <div class="panel">
+          <h2>API Key（控制台/脚本签发） <span class="right" id="akRight"></span></h2>
+          <p class="who" style="margin:0;padding:8px 14px;border-bottom:1px solid var(--line-soft)">这里列的是 <code>data/runtime/api-keys.json</code> 里由控制台/CLI 签发的角色密钥（当前 4 把：home-circle 2、work-circle 2）。只存 prefix + secret_hash，明文不可恢复；吊销立刻失效。MCP 的身份凭证（credential_ref）不走这张表，上面的 39 条是「角色实例」。</p>
+          <table><thead><tr><th>key id</th><th>角色</th><th>user / group</th><th>创建</th><th>吊销</th><th>最近使用</th></tr></thead><tbody id="akBody"><tr><td colspan="6" class="empty">读取中…</td></tr></tbody></table>
+        </div>
+      </section>
+
+      <!-- 运行时状态 -->
+      <section class="view" id="view-runtime">
+        <div class="cards" id="rtCards"></div>
+        <div class="panel">
+          <h2>服务与索引 <span class="right" id="rtRight"></span></h2>
+          <table><thead><tr><th>检查项</th><th>值</th><th>说明</th></tr></thead><tbody id="rtBody"><tr><td colspan="3" class="empty">读取中…</td></tr></tbody></table>
+        </div>
+        <div class="panel">
+          <h2>精炼队列（按天） <span class="right" id="rfRight"></span></h2>
+          <table><thead><tr><th>指标</th><th class="num">数量</th><th>说明</th></tr></thead><tbody id="rfBody"><tr><td colspan="3" class="empty">读取中…</td></tr></tbody></table>
+        </div>
+        <div class="panel">
+          <h2>最近任务 <span class="right" id="rfJobsRight"></span></h2>
+          <table><thead><tr><th>job</th><th>状态</th><th>agent</th><th>证据数</th><th>创建时间</th></tr></thead><tbody id="rfJobsBody"><tr><td colspan="5" class="empty">读取中…</td></tr></tbody></table>
+        </div>
+      </section>
+
+      <!-- 新增数据视图 -->
+      <section class="view" id="view-knowledge"><div class="cards" id="knCards"></div><div class="panel"><h2>知识文档 <span class="right" id="knRight"></span></h2><div class="toolbar"><input type="search" id="knFilter" placeholder="过滤路径、来源或内容" aria-label="过滤知识文档"></div><div id="knBody"><div class="empty"><div class="skeleton"></div></div></div></div></section>
+      <section class="view" id="view-tools"><div class="cards" id="tlCards"></div><div class="panel"><h2>工具记忆 <span class="right" id="tlRight"></span></h2><div id="tlBody"><div class="empty"><div class="skeleton"></div></div></div></div></section>
+      <section class="view" id="view-projects"><div class="cards" id="pjCards"></div><div class="panel"><h2>项目 <span class="right" id="pjRight"></span></h2><div id="pjBody"><div class="empty"><div class="skeleton"></div></div></div></div></section>
+      <section class="view" id="view-plans"><div class="cards" id="plCards"></div><div class="panel"><h2>计划 <span class="right" id="plRight"></span></h2><div id="plBody"><div class="empty"><div class="skeleton"></div></div></div></div></section>
+      <section class="view" id="view-profile"><div class="cards" id="pfCards"></div><div class="panel"><h2>学习者画像 <span class="right" id="pfRight"></span></h2><div id="pfBody"><div class="empty"><div class="skeleton"></div></div></div></div></section>
+      <section class="view" id="view-learning"><div class="panel"><h2>主题学习状态</h2><div class="toolbar"><input id="lrTopic" type="search" placeholder="输入主题" aria-label="学习主题"><button class="btn" id="lrLoad" type="button">查询</button></div></div><div class="cards" id="lrCards"></div><div class="panel"><h2>计划</h2><div id="lrPlan"><div class="empty">输入主题后查询</div></div></div><div class="panel"><h2>进度</h2><div id="lrProgress"><div class="empty">输入主题后查询</div></div></div><div class="panel"><h2>到期复习</h2><div id="lrReview"><div class="empty">输入主题后查询</div></div></div></section>
+      <section class="view" id="view-pet"><div class="cards" id="ptCards"></div><div class="panel"><h2>Persona <span class="right" id="ptPersonaRight"></span></h2><div id="ptPersonas"><div class="empty"><div class="skeleton"></div></div></div></div><div class="panel"><h2>运行时草稿 <span class="right" id="ptDraftRight"></span></h2><div id="ptDrafts"><div class="empty"><div class="skeleton"></div></div></div></div></section>
+      <section class="view" id="view-graph">
+        <div class="panel">
+          <h2>记忆图谱 <span class="right" id="grRight">全局关系图</span></h2>
+          <div class="toolbar graph-toolbar">
+            <select id="grProject" aria-label="按项目筛选图谱"><option value="">全部项目</option></select>
+            <button class="btn" id="grLoad" type="button">刷新</button>
+            <button class="btn" id="grZoomIn" type="button" aria-label="放大图谱" title="放大">+</button>
+            <button class="btn" id="grZoomOut" type="button" aria-label="缩小图谱" title="缩小">−</button>
+            <button class="btn" id="grReset" type="button">重置视图</button>
+            <button class="btn" id="grLabels" type="button" aria-pressed="false">显示全部标签</button>
+              <button class="btn" id="grGeneric" type="button" aria-pressed="false">显示泛标签</button>
+            <span class="graph-count" id="grCount">等待加载</span>
+          </div>
+          <div id="grProjectMsg" role="status"></div>
+          <div class="graph-canvas" id="grOut"><div class="empty"><div class="skeleton"></div></div></div>
+          <div class="graph-detail" id="grDetail"><div class="empty">点击节点看详情（摘要 / 类型 / 文件路径）</div></div>
+            <div class="graph-legend" aria-label="节点类型图例">
+            <span><i class="graph-swatch memory"></i>记忆</span>
+            <span><i class="graph-swatch project"></i>项目</span>
+            <span><i class="graph-swatch evidence"></i>证据</span>
+            <span><i class="graph-swatch tag"></i>标签</span>
+            <span><i class="graph-swatch entity"></i>实体</span>
+          </div>
+        </div>
+        <div class="cards" id="grCards"></div>
+        <div class="graph-subviews">
+          <div class="panel"><h2>边列表 <span class="right" id="grEdgeRight"></span></h2><div class="graph-rows" id="grEdges"><div class="empty">加载图谱后显示关系</div></div></div>
+          <div class="panel"><h2>节点列表 <span class="right" id="grNodeRight"></span></h2><div class="graph-rows" id="grNodes"><div class="empty">加载图谱后显示节点</div></div></div>
+        </div>
+      </section>
+
+      <section class="view" id="view-todo"><div class="panel"><h2 id="todoTitle">页面不可用</h2><div class="err" id="todoDesc">请求的页面不存在或尚未注册。</div></div></section>
+    </div>
+  </main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const S = { token: sessionStorage.getItem("memlib-v2-token") || "", principal: null, stats: null, browse: { items: [], offset: 0, total: 0 }, busy: false };
+  const $ = (id) => document.getElementById(id);
+  const nf = new Intl.NumberFormat("zh-CN");
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  // ---------- 主题 ----------
+  function applyTheme(t) {
+    document.documentElement.dataset.theme = t;
+    document.querySelectorAll("[data-theme-btn]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.themeBtn === t)));
+    try { localStorage.setItem("memlib-theme", t); } catch {}
+  }
+  document.querySelectorAll("[data-theme-btn]").forEach((b) => b.addEventListener("click", () => applyTheme(b.dataset.themeBtn)));
+  try { const t = localStorage.getItem("memlib-theme"); if (t) applyTheme(t); } catch {}
+
+  // ---------- 请求 ----------
+  async function post(path, body) {
+    const headers = { "content-type": "application/json" };
+    if (S.token) headers.authorization = "Bearer " + S.token;
+    const res = await fetch(path, { method: "POST", headers, body: JSON.stringify(body || {}) });
+    let data = {};
+    try { data = await res.json(); } catch {}
+    if (res.status === 401 && S.token) { logout(); throw new Error("登录已过期，请重新登录"); }
+    if (!res.ok) throw new Error((data.error && (data.error.code || data.error.message)) || ("HTTP " + res.status));
+    return data;
+  }
+  async function getJson(path) {
+    // 之前这里没带 Authorization：GET /v1/ingest/status、/v1/admin/registry、/v1/health
+    // 全部 401。和 post() 保持一致：带 Bearer、401 走登出、错误信息取服务端 code。
+    const headers = {};
+    if (S.token) headers.authorization = "Bearer " + S.token;
+    const res = await fetch(path, { cache: "no-store", headers });
+    let data = {};
+    try { data = await res.json(); } catch {}
+    if (res.status === 401 && S.token) { logout(); throw new Error("登录已过期，请重新登录"); }
+    if (!res.ok) throw new Error((data.error && (data.error.code || data.error.message)) || ("HTTP " + res.status));
+    return data;
+  }
+
+  // ---------- 登录 ----------
+  $("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    $("loginMsg").textContent = "";
+    $("loginBtn").disabled = true;
+    try {
+      const res = await fetch("/v1/auth/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ username: $("u").value, password: $("p").value }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.access_token) throw new Error((data.error && (data.error.code || data.error.message)) || ("登录失败 " + res.status));
+      S.token = data.access_token;
+      S.principal = data.principal || null;
+      sessionStorage.setItem("memlib-v2-token", S.token);
+      $("p").value = "";
+      enter();
+    } catch (err) {
+      $("loginMsg").textContent = err.message;
+    } finally {
+      $("loginBtn").disabled = false;
+    }
+  });
+  function logout() {
+    S.token = ""; S.principal = null;
+    sessionStorage.removeItem("memlib-v2-token");
+    $("app").classList.remove("on");
+    $("login").style.display = "grid";
+  }
+  $("logoutBtn").addEventListener("click", logout);
+
+  function enter() {
+    $("login").style.display = "none";
+    $("app").classList.add("on");
+    const p = S.principal || {};
+    $("who").textContent = (p.agent || p.username || "") + (p.role ? " · " + p.role : "");
+    route();
+  }
+
+  // ---------- 路由 ----------
+  const VIEWS = {
+    overview: ["概览", "只读 · /v1/memory/stats"],
+    browse: ["记忆", "空=按时间浏览 · 有词=全库检索"],
+    health: ["系统健康", "/v1/health"],
+    evidence: ["证据", "原始对话与来源"],
+    graph: ["记忆图谱", "节点与边"],
+    registry: ["身份权限", "框架 / 智能体 / 角色"],
+    roles: ["角色", "权限能力"],
+    audit: ["审计日志", "访问与拒绝记录"],
+    recovery: ["恢复中心", "备份与还原"],
+    ingest: ["采集 / 导入", "外部记忆导入"],
+    agents: ["Agents", "接入的智能体"],
+    runtime: ["运行时状态", "进程与任务"],
+    pet: ["宠物智能体", "宠物运行时"],
+    learning: ["学习中心", "学习计划与复习"],
+    knowledge: ["知识库", "知识范围"],
+    tools: ["工具", "工具记忆"],
+    projects: ["项目", "项目记忆"],
+    plans: ["计划", "计划记忆"],
+    profile: ["画像", "学习者画像"],
+  };
+  const IMPLEMENTED = new Set(["overview", "browse", "health", "evidence", "registry", "roles", "audit", "recovery", "ingest", "agents", "runtime", "knowledge", "tools", "projects", "plans", "profile", "learning", "pet", "graph"]);
+
+  function route() {
+    const name = (location.hash.replace(/^#\//, "") || "overview").split("?")[0];
+    const raw = name === "search" ? "browse" : name;
+    const key = VIEWS[raw] ? raw : "overview";
+    const target = IMPLEMENTED.has(key) ? key : "todo";
+    document.querySelectorAll(".view").forEach((v) => v.classList.toggle("on", v.id === "view-" + target));
+    document.querySelectorAll(".nav a[data-view]").forEach((a) => {
+      if (a.dataset.view === key) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+    });
+    $("pageTitle").textContent = VIEWS[key][0];
+    $("pageSub").textContent = VIEWS[key][1];
+    if (key === "overview") loadOverview();
+    if (key === "browse") { if ($("brFilter").value.trim()) runQuery(); else loadBrowse(true); }
+    if (key === "health") loadHealth();
+    if (key === "evidence") loadEvidence();
+    if (key === "registry") loadRegistry();
+    if (key === "roles") loadRoles();
+    if (key === "audit") loadAudit();
+    if (key === "recovery") loadRecovery();
+    if (key === "ingest") loadIngest();
+    if (key === "agents") loadAgents();
+    if (key === "runtime") loadRuntime();
+    if (key === "knowledge") loadKnowledge();
+    if (key === "tools") loadTools();
+    if (key === "projects") loadProjects();
+    if (key === "plans") loadPlans();
+    if (key === "profile") loadProfile();
+    if (key === "learning") loadLearning();
+    if (key === "pet") loadPet();
+    if (key === "graph") loadGraph();
+  }
+  window.addEventListener("hashchange", route);
+
+  // ---------- 概览 ----------
+  async function loadOverview() {
+    $("ovCards").innerHTML = '<div class="card"><div class="label">长期记忆</div><div class="num"><div class="skeleton"></div></div></div>'.repeat(4);
+    try {
+      const [stats, health, recentData] = await Promise.all([
+        post("/v1/memory/stats", {}),
+        getJson("/v1/health").catch(() => null),
+        post("/v1/memory/list", { limit: 8, roots: ["shared", "user", "agent", "project"] }).catch(() => ({ items: [] })),
+      ]);
+      S.stats = stats;
+      populateIdentities();
+      const t = stats.totals || {};
+      const idx = health && health.index ? health.index : null;
+      $("ovCards").innerHTML = [
+        ["长期记忆", t.memories, "curated/shared"],
+        ["原始证据", t.evidence, "evidence/conversations"],
+        ["已索引", idx ? idx.indexed_files : "—", idx ? ("失败 " + (idx.failed ?? 0)) : "health 未返回"],
+        ["健康", health ? health.health : "—", "记忆服务状态"],
+      ].map(([l, v, h]) => '<div class="card"><div class="label">' + l + '</div><div class="num">' + (typeof v === "number" ? nf.format(v) : esc(v)) + '</div><div class="hint">' + esc(h) + '</div></div>').join("");
+
+      const total = t.memories || 1;
+      $("ovIdRows").innerHTML = (stats.identities || []).map((r) => {
+        const pct = (r.stored / total * 100).toFixed(1);
+        return '<tr><td><code>' + esc(r.userId) + '</code></td><td class="num">' + nf.format(r.stored) + '</td><td>' + pct + '%</td></tr>';
+      }).join("") || '<tr><td colspan="3" class="empty">没有数据</td></tr>';
+      $("ovIdCount").textContent = (stats.identities || []).length + " 个身份";
+
+      const max = Math.max.apply(null, (stats.sources || []).map((s) => s.count).concat([1]));
+      $("ovBars").innerHTML = (stats.sources || []).map((s) =>
+        '<div class="bar"><span>' + esc(s.name) + '</span><div class="track"><div class="fill" style="width:' + (s.count / max * 100).toFixed(1) + '%"></div></div><span class="v">' + nf.format(s.count) + '</span></div>'
+      ).join("") || '<div class="empty">没有数据</div>';
+
+      const bad = (stats.checks || []).filter((c) => c.level !== "ok").length;
+      $("ovCheckSum").innerHTML = bad === 0 ? '<span class="pill ok"><span class="dot"></span>全部通过</span>' : '<span class="pill warn"><span class="dot"></span>' + bad + ' 项需关注</span>';
+      $("ovCheckRows").innerHTML = (stats.checks || []).map((c) =>
+        '<tr><td>' + esc(c.name) + '</td><td class="num">' + nf.format(c.count) + '</td><td>' +
+        (c.level === "ok" ? '<span class="pill ok"><span class="dot"></span>通过</span>' : '<span class="pill warn"><span class="dot"></span>可接受 / 待处理</span>') + '</td></tr>'
+      ).join("");
+
+      // ---- 索引与向量 ----
+      const idxInfo = (health && health.index) || {};
+      const vec = (health && health.vector) || {};
+      const vecText = vec.status === "ok" ? (vec.reason || "正常") : (vec.reason || "未启用");
+      $("ovIdxRight").textContent = idxInfo.pending_changes ? ("待索引 " + idxInfo.pending_changes) : "无待处理变更";
+      const rows = [
+        ["已索引文件", idxInfo.indexed_files, "fts + vector 覆盖"],
+        ["原始证据已索引", idxInfo.raw_indexed_files, "evidence/conversations"],
+        ["待索引变更", idxInfo.pending_changes, "写入后自动触发"],
+        ["索引失败", idxInfo.failed, (idxInfo.failed || 0) === 0 ? "无失败" : "需要 repair"],
+        ["上次索引耗时", idxInfo.last_index_ms, "毫秒"],
+        ["向量车道", null, vecText + "（" + (vec.model || "—") + "）"],
+        ["最后索引时间", null, idxInfo.last_indexed_at ? new Date(idxInfo.last_indexed_at).toLocaleString("zh-CN") : "—"],
+      ];
+      $("ovIdxRows").innerHTML = rows.map(([k, v, hint]) =>
+        '<tr><td>' + esc(k) + '</td><td class="num">' + (typeof v === "number" ? nf.format(v) : "—") + '</td><td class="who">' + esc(hint) + '</td></tr>'
+      ).join("");
+
+      // ---- 最近写入 ----
+      const items = (recentData && (recentData.items || recentData.results)) || [];
+      $("ovRecentRight").textContent = items.length ? items.length + " 条" : "";
+      $("ovRecent").innerHTML = items.length ? items.map((m) => {
+        const body = m.body || m.text || m.summary || m.content || "";
+        const uid = m.user_id || m.userId || "";
+        const when = m.occurred_at || m.updated_at || m.updatedAt || "";
+        return '<div class="item"><div class="body">' + esc(String(body)).slice(0, 240) + '</div>' +
+          '<div class="meta">' + (when ? '<span>' + esc(String(when).slice(0, 16).replace("T", " ")) + '</span>' : "") +
+          (uid ? '<span class="tag">' + esc(uid) + '</span>' : "") + '</div></div>';
+      }).join("") : '<div class="empty">读取不到最近条目（可能需要更高的读取权限）</div>';
+
+      const r = stats.range || {};
+      $("ovFoot").textContent = "数据快照 " + new Date(stats.generatedAt).toLocaleString("zh-CN") + (r.oldest ? " · 时间范围 " + r.oldest + " ~ " + r.newest : "");
+    } catch (err) {
+      $("ovCards").innerHTML = '<div class="panel"><div class="err">概览加载失败：' + esc(err.message) + '</div></div>';
+    }
+  }
+
+  // ---------- 记忆浏览 ----------
+  function itemHtml(m) {
+    // 列表接口给 { id, path, body, frontmatter, updatedAt }；
+    // 检索接口给 { path, line, excerpt, sourceType, score, provenance }
+    const body = m.body || m.excerpt || m.text || m.summary || m.content || "";
+    const fm = m.frontmatter || {};
+    const id = m.id || m.memory_id || (m.path ? String(m.path).split(/[\\/]/).pop() + (m.line ? ":" + m.line : "") : "");
+    const uid = m.user_id || m.userId || fm.user_id || "";
+    const tags = Array.isArray(m.tags) ? m.tags : (Array.isArray(fm.tags) ? fm.tags : []);
+    const when = m.occurred_at || m.updated_at || m.updatedAt || fm.occurred_at || fm.updated_at || "";
+    const src = m.sourceType ? '<span class="tag">' + esc(m.sourceType) + '</span>' : "";
+    const score = typeof m.score === "number" ? '<span class="tag">相关度 ' + m.score.toFixed(2) + '</span>' : "";
+    return '<div class="item"><div class="id">' + esc(id) + '</div><div class="body">' + esc(body).slice(0, 1200) + '</div>' +
+      '<div class="meta">' + (when ? '<span>' + esc(String(when).slice(0, 19).replace("T", " ")) + '</span>' : '') +
+      (uid ? '<span class="tag">' + esc(uid) + '</span>' : '') + src + score +
+      tags.slice(0, 5).map((t) => '<span class="tag">' + esc(t) + '</span>').join("") +
+      '</div></div>';
+  }
+  // ---------- 记忆：一个搜索框，空=按时间浏览，有词=全库检索 ----------
+  let searchTimer = null;
+
+  function identityOf(m) {
+    const fm = m.frontmatter || {};
+    return m.user_id || m.userId || fm.user_id || "";
+  }
+  function applyIdentity(items) {
+    const want = $("brIdentity").value;
+    return want ? items.filter((m) => identityOf(m) === want) : items;
+  }
+
+  function populateIdentities() {
+    const sel = $("brIdentity");
+    if (!S.stats || sel.options.length > 1) return;
+    (S.stats.identities || []).forEach((r) => {
+      const o = document.createElement("option");
+      o.value = r.userId;
+      o.textContent = r.userId + " · " + nf.format(r.stored) + " 条";
+      sel.appendChild(o);
+    });
+  }
+
+  async function runQuery() {
+    const q = $("brFilter").value.trim();
+    const identity = $("brIdentity").value;
+    if (!q) return loadBrowse(true);
+    if (identity) return loadByIdentity(identity, q);
+    $("brMore").hidden = true;
+    $("brList").innerHTML = '<div class="empty">检索全库中…</div>';
+    // 管理员：先走全库字面命中（能找到"我记得有"的），失败再退回语义检索。
+    try {
+      const data = await post("/v1/memory/find", { query: q, limit: 100 });
+      const items = data.items || [];
+      $("brCount").textContent = "「" + q + "」全库命中 " + (data.total || items.length) + " 条（字面匹配，未走索引/前置过滤）";
+      $("brList").innerHTML = items.length ? items.map(itemHtml).join("") : '<div class="empty">全库没有包含「' + esc(q) + '」的记忆。</div>';
+      return;
+    } catch (e) {
+      if (!/FORBIDDEN|403/.test(e.message)) {
+        $("brList").innerHTML = '<div class="err">检索失败：' + esc(e.message) + '</div>';
+        return;
+      }
+    }
+    try {
+      const data = await post("/v1/search", { query: q, limit: 50, searchMode: "hybrid" });
+      const all = (data.results || data.items || data.memories || []);
+      const meta = data.meta;
+      const diag = meta
+        ? " · 前置过滤" + (meta.prefiltered ? "开" : "关") + (meta.lanes ? "（候选：FTS " + (meta.lanes.fts ?? 0) + " / 向量 " + (meta.lanes.vector ?? 0) + "）" : "")
+        : "";
+      $("brCount").textContent = "「" + q + "」语义命中 " + all.length + " 条（限你的授权范围）" + diag;
+      $("brList").innerHTML = all.length ? all.map(itemHtml).join("") : '<div class="empty">没有命中。换个词试试。</div>';
+    } catch (err) {
+      $("brList").innerHTML = '<div class="err">检索失败：' + esc(err.message) + '</div>';
+    }
+  }
+
+  async function loadByIdentity(identity, keyword) {
+    $("brMore").hidden = true;
+    $("brList").innerHTML = '<div class="empty">读取 ' + esc(identity) + ' 的记忆…</div>';
+    try {
+      const data = await post("/v1/memory/by-identity", { userId: identity, limit: 500, offset: 0 });
+      let items = data.items || [];
+      if (keyword) {
+        const k = keyword.toLowerCase();
+        items = items.filter((m) => JSON.stringify(m).toLowerCase().includes(k));
+      }
+      $("brCount").textContent = identity + " · 共 " + (data.total || items.length) + " 条" + (keyword ? "（过滤后 " + items.length + "）" : "");
+      $("brList").innerHTML = items.length ? items.map(itemHtml).join("") : '<div class="empty">该身份没有匹配的记忆。</div>';
+    } catch (err) {
+      $("brList").innerHTML = '<div class="err">读取失败：' + esc(err.message) + '</div>';
+    }
+  }
+
+  async function loadBrowse(reset) {
+    if (S.busy) return;
+    S.busy = true;
+    const limit = Number($("brLimit").value) || 100;
+    if (reset) { S.browse = { items: [] }; $("brList").innerHTML = '<div class="empty"><div class="skeleton"></div></div>'; }
+    try {
+      if (!S.stats) { try { S.stats = await post("/v1/memory/stats", {}); } catch {} }
+      populateIdentities();
+      const identity = $("brIdentity").value;
+      const data = identity
+        ? await post("/v1/memory/by-identity", { userId: identity, limit: Math.max(limit, 500), offset: 0 })
+        : await post("/v1/memory/list", { limit, roots: ["shared", "user", "agent", "project"] });
+      const items = applyIdentity(data.items || []);
+      $("brCount").textContent = identity ? identity + " · 共 " + (data.total || items.length) + " 条" : "共 " + items.length + " 条（按最近更新）";
+      $("brMore").hidden = false;
+      $("brList").innerHTML = items.length ? items.map(itemHtml).join("") : '<div class="empty">当前授权范围没有记忆。</div>';
+    } catch (err) {
+      $("brList").innerHTML = '<div class="err">加载失败：' + esc(err.message) + '</div>';
+    } finally {
+      S.busy = false;
+    }
+  }
+
+  function onQueryInput() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(runQuery, 300);
+  }
+  $("brFilter").addEventListener("input", onQueryInput);
+  $("brFilter").addEventListener("keydown", (e) => { if (e.key === "Enter") { clearTimeout(searchTimer); runQuery(); } });
+  $("brIdentity").addEventListener("change", runQuery);
+  $("brLimit").addEventListener("change", () => { if (!$("brFilter").value.trim()) loadBrowse(true); });
+  $("brMoreBtn").addEventListener("click", () => loadBrowse(false));
+
+  // ---------- 健康 ----------
+  async function loadHealth() {
+    $("hlCards").innerHTML = '<div class="card"><div class="label">加载中</div><div class="num"><div class="skeleton"></div></div></div>'.repeat(3);
+    $("hlRaw").textContent = "";
+    try {
+      const h = await getJson("/v1/health");
+      const idx = h.index || {};
+      $("hlCards").innerHTML = [
+        ["健康", h.health || "—", h.service || "memory-lib"],
+        ["已索引", idx.indexed_files, "fts + vector"],
+        ["索引失败", idx.failed, (idx.failed || 0) === 0 ? "无失败项" : "需要 repair"],
+      ].map(([l, v, hint]) => '<div class="card"><div class="label">' + l + '</div><div class="num">' + (typeof v === "number" ? nf.format(v) : esc(v)) + '</div><div class="hint">' + esc(hint) + '</div></div>').join("");
+      $("hlRaw").textContent = JSON.stringify(h, null, 2);
+    } catch (err) {
+      $("hlCards").innerHTML = '<div class="panel"><div class="err">健康检查失败：' + esc(err.message) + '</div></div>';
+    }
+  }
+
+
+  // ---------- 证据 ----------
+  // /v1/evidence/list 只回路径；来源/日期/会话分组要读文件头 frontmatter —— 按需拉到 evMeta（路径 → 元数据）缓存。
+  const EV_LIMIT = 300; // 元数据只解析当前过滤结果的前 300 条（列表同口径）
+  const EV_CONC = 8;    // 元数据并发上限
+  let evFiles = [];
+  const evMeta = new Map();
+  let evToken = 0;      // 重新加载时作废在途解析
+  let evParse = { running: false, done: 0, total: 0 };
+  let evParseAgain = false;
+  let evRenderQueued = false;
+
+  const evPad2 = (n) => String(n).padStart(2, "0");
+  function evLocalDay(d) { return d.getFullYear() + "-" + evPad2(d.getMonth() + 1) + "-" + evPad2(d.getDate()); }
+  function evDayIndexOf(key) {
+    const m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(key || "").trim());
+    if (!m) return null;
+    const t = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).getTime();
+    return Number.isNaN(t) ? null : Math.round(t / 86400000);
+  }
+  function evMetaDay(meta) {
+    if (!meta) return null;
+    if (meta.calendarDate) { const i = evDayIndexOf(meta.calendarDate); if (i !== null) return i; }
+    if (meta.capturedAt) { const d = new Date(meta.capturedAt); if (!Number.isNaN(d.getTime())) return evDayIndexOf(evLocalDay(d)); }
+    return null;
+  }
+  function evDayLabel(meta) {
+    if (!meta || meta.error) return "";
+    if (meta.calendarDate) return meta.calendarDate;
+    const d = new Date(meta.capturedAt || "");
+    return Number.isNaN(d.getTime()) ? "" : evLocalDay(d);
+  }
+  function evDatePass(day, scope, today) {
+    if (day === null) return false;
+    if (scope === "today") return day === today;
+    if (scope === "7") return day >= today - 6 && day <= today;
+    if (scope === "30") return day >= today - 29 && day <= today;
+    return true;
+  }
+  function evParseMeta(text) {
+    const out = { source: "", calendarDate: "", capturedAt: "", conversationId: "" };
+    const block = /^\uFEFF?---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(String(text || ""));
+    if (!block) return out;
+    for (const line of block[1].split(/\r?\n/)) {
+      const hit = /^([A-Za-z0-9_-]+)\s*:\s*(.*)$/.exec(line.trim());
+      if (!hit) continue;
+      let val = hit[2].trim();
+      if (val.length > 1 && ((val[0] === '"' && val[val.length - 1] === '"') || (val[0] === "'" && val[val.length - 1] === "'"))) val = val.slice(1, -1);
+      const key = hit[1].toLowerCase();
+      if (key === "source") out.source = val;
+      else if (key === "calendardate") out.calendarDate = val;
+      else if (key === "capturedat") out.capturedAt = val;
+      else if (key === "conversationid") out.conversationId = val;
+    }
+    return out;
+  }
+  function evFileStem(p) { return String(p || "").split(/[\\/]/).pop().replace(/\.md$/i, ""); }
+  // /v1/evidence/get 服务端按 { id }（文件名去扩展名）定位；path 一并带上，兼容按路径取的口径
+  async function evReadFile(p) {
+    const d = await post("/v1/evidence/get", { id: evFileStem(p), path: p });
+    const text = typeof d === "string" ? d : (d && (d.content ?? d.text ?? d.body ?? ""));
+    return String(text ?? "");
+  }
+  function evView() {
+    const q = $("evFilter").value.trim().toLowerCase();
+    const source = $("evSource").value;
+    const scope = $("evDate").value;
+    const today = evDayIndexOf(evLocalDay(new Date()));
+    const byPath = evFiles.filter((f) => !q || f.toLowerCase().includes(q));
+    const paths = byPath.slice(0, EV_LIMIT);
+    const rows = [];
+    for (const p of paths) {
+      const meta = evMeta.get(p);
+      // 元数据没到（或读取失败）的行先留着，不把"还不知道"当成"不匹配"
+      if (meta && !meta.error) {
+        if (source && meta.source !== source) continue;
+        if (scope && !evDatePass(evMetaDay(meta), scope, today)) continue;
+      }
+      rows.push(p);
+    }
+    return { byPath, paths, rows, q, source, scope };
+  }
+  function evRowHtml(p) {
+    const meta = evMeta.get(p);
+    let srcCell;
+    if (!meta) srcCell = '<span class="tag">解析中…</span>';
+    else if (meta.error) srcCell = '<span class="pill bad" title="' + esc(meta.error) + '">读取失败</span>';
+    else if (meta.source) srcCell = '<span class="tag">' + esc(meta.source) + '</span>';
+    else srcCell = '<span class="who">无 source</span>';
+    const day = evDayLabel(meta);
+    const conv = meta && !meta.error ? meta.conversationId : "";
+    return '<tr style="cursor:pointer" data-path="' + esc(p) + '">'
+      + '<td><code>' + esc(String(p).split(/[\\/]/).slice(-2).join("/")) + '</code></td>'
+      + '<td>' + srcCell + '</td>'
+      + '<td class="who">' + esc(day || "—") + '</td>'
+      + '<td>' + (conv ? '<code>' + esc(conv) + '</code>' : '<span class="who">—</span>') + '</td></tr>';
+  }
+  function updateEvParseNote(v) {
+    const base = v.byPath.length > EV_LIMIT
+      ? "匹配 " + nf.format(v.byPath.length) + " 个，元数据只解析前 " + EV_LIMIT + " 条"
+      : "元数据只解析前 " + EV_LIMIT + " 条";
+    $("evParseNote").textContent = base + "（来源 / 日期 / 会话分组读文件头 frontmatter）"
+      + (evParse.running ? " · 解析中 " + evParse.done + "/" + evParse.total : "");
+  }
+  function renderEvidence() {
+    const v = evView();
+    updateEvParseNote(v);
+    const active = Boolean(v.q || v.source || v.scope);
+    $("evCount").textContent = "共 " + nf.format(evFiles.length) + " 个" + (active ? "（过滤后 " + nf.format(v.rows.length) + "）" : "");
+    if (!v.rows.length) {
+      $("evList").innerHTML = '<div class="empty">' + (evFiles.length ? "没有匹配的证据文件，试试放宽筛选。" : "没有证据文件。") + '</div>';
+      return;
+    }
+    let body;
+    if ($("evGroup").value === "group") {
+      const groups = new Map();
+      for (const p of v.rows) {
+        const key = (evMeta.get(p) || {}).conversationId || "（无会话）";
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(p);
+      }
+      const keys = [...groups.keys()].sort((a, b) => (a === "（无会话）" ? 1 : b === "（无会话）" ? -1 : a.localeCompare(b)));
+      body = keys.map((k) => {
+        const list = groups.get(k);
+        return '<tr><td colspan="4" style="padding:6px 14px;height:auto;background:var(--panel-2);color:var(--fg-2)">'
+          + (k === "（无会话）" ? '<span class="who">（无会话）</span>' : '<code>' + esc(k) + '</code>')
+          + ' · ' + nf.format(list.length) + ' 条</td></tr>' + list.map(evRowHtml).join("");
+      }).join("");
+    } else {
+      body = v.rows.map(evRowHtml).join("");
+    }
+    $("evList").innerHTML = '<table><thead><tr><th>文件</th><th>来源</th><th>日期</th><th>会话</th></tr></thead><tbody>' + body + '</tbody></table>'
+      + (v.byPath.length > EV_LIMIT ? '<div class="empty">匹配 ' + nf.format(v.byPath.length) + ' 个，列表只显示前 ' + EV_LIMIT + ' 个，用路径过滤缩小范围</div>' : "");
+  }
+  function scheduleEvRender() {
+    if (evRenderQueued) return;
+    evRenderQueued = true;
+    requestAnimationFrame(() => { evRenderQueued = false; renderEvidence(); });
+  }
+  async function ensureEvMeta(paths) {
+    if (evParse.running) { evParseAgain = true; return; }
+    const todo = paths.filter((p) => !evMeta.has(p));
+    evParse = { running: todo.length > 0, done: paths.length - todo.length, total: paths.length };
+    if (!todo.length) { renderEvidence(); return; }
+    const token = ++evToken;
+    let cursor = 0;
+    const worker = async () => {
+      for (;;) {
+        if (token !== evToken) return;
+        const i = cursor++;
+        if (i >= todo.length) return;
+        const p = todo[i];
+        let meta;
+        try { meta = evParseMeta(await evReadFile(p)); }
+        catch (err) { meta = { source: "", calendarDate: "", capturedAt: "", conversationId: "", error: (err && err.message) || "读取失败" }; }
+        if (token !== evToken) return;
+        evMeta.set(p, meta);
+        evParse.done += 1;
+        scheduleEvRender();
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(EV_CONC, todo.length) }, () => worker()));
+    if (token !== evToken) return;
+    evParse.running = false;
+    renderEvidence();
+    if (evParseAgain) { evParseAgain = false; await ensureEvMeta(evView().paths); }
+  }
+  async function refreshEvidence() {
+    renderEvidence();
+    await ensureEvMeta(evView().paths);
+  }
+  async function loadEvidence(resetMeta) {
+    $("evList").innerHTML = '<div class="empty"><div class="skeleton"></div></div>';
+    if (resetMeta) {
+      evToken += 1;
+      evMeta.clear();
+      evParse = { running: false, done: 0, total: 0 };
+      evParseAgain = false;
+    }
+    try {
+      const d = await post("/v1/evidence/list", {});
+      evFiles = (d.files || []).filter((f) => String(f).toLowerCase().endsWith(".md"));
+      renderEvidence();
+      await ensureEvMeta(evView().paths);
+    } catch (e) {
+      $("evList").innerHTML = '<div class="err">加载失败：' + esc(e.message) + '</div>';
+      $("evCount").textContent = "";
+    }
+  }
+  // 弹窗打开期间作废在途请求：关掉后 await 回来不再写回
+  let evDetailToken = 0;
+  const evDialog = $("evDialog");
+  async function openEvidence(p) {
+    const my = ++evDetailToken;
+    $("evDlgPath").textContent = String(p).split(/[\\/]/).slice(-2).join("/");
+    $("evDlgBody").textContent = "加载中…";
+    document.querySelectorAll("#evList tr[data-path]").forEach((tr) => {
+      tr.classList.toggle("is-selected", tr.getAttribute("data-path") === String(p));
+    });
+    if (!evDialog.open) evDialog.showModal();
+    requestAnimationFrame(() => { try { $("evDlgClose").focus(); } catch {} });
+    try {
+      const text = String(await evReadFile(p)).slice(0, 20000);
+      if (my !== evDetailToken) return; // 已关闭或被更新的请求取代
+      $("evDlgBody").textContent = text;
+      $("evDlgBody").scrollTop = 0;
+    } catch (e) {
+      if (my !== evDetailToken) return;
+      $("evDlgBody").textContent = "读取失败：" + e.message;
+    }
+  }
+  $("evFilter").addEventListener("input", refreshEvidence);
+  $("evSource").addEventListener("change", refreshEvidence);
+  $("evDate").addEventListener("change", refreshEvidence);
+  $("evGroup").addEventListener("change", renderEvidence);
+  $("evReload").addEventListener("click", () => loadEvidence(true));
+  $("evList").addEventListener("click", (e) => {
+    const tr = e.target.closest("tr[data-path]");
+    if (tr) openEvidence(tr.dataset.path);
+  });
+  $("evDlgClose").addEventListener("click", () => evDialog.close());
+  // 点遮罩关闭：点击目标就是 dialog 本身（而非内部内容）
+  evDialog.addEventListener("click", (e) => { if (e.target === evDialog) evDialog.close(); });
+  // ESC 关闭、关闭后作废在途请求并清空内容
+  evDialog.addEventListener("close", () => {
+    evDetailToken++;
+    $("evDlgBody").textContent = "";
+  });
+
+  // ---------- 采集 / 导入 ----------
+  const igState = { done: false };
+  function igCard(label, value, hint) {
+    return '<div class="card"><div class="label">' + esc(label) + '</div><div class="num">' + value + '</div><div class="hint">' + esc(hint || "") + '</div></div>';
+  }
+  function pillFor(state) {
+    const s = String(state || "unknown");
+    const tone = /done|imported|complete|ok|active/i.test(s) ? "ok" : /queue|pending|running/i.test(s) ? "warn" : /fail|error|ignored|revoked/i.test(s) ? "bad" : "";
+    return '<span class="pill ' + tone + '">' + esc(s) + '</span>';
+  }
+  function fmtTime(v) {
+    if (!v) return "—";
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) return String(v);
+    return d.toLocaleString("zh-CN", { hour12: false });
+  }
+  function compactList(list, max) {
+    const items = Array.isArray(list) ? list : [];
+    if (!items.length) return "—";
+    return items.slice(0, max).join(", ") + (items.length > max ? " +" + (items.length - max) : "");
+  }
+  function scopeList(scopes, max) {
+    const items = Array.isArray(scopes) ? scopes : [];
+    if (!items.length) return "—";
+    const text = items.map((s) => (s.layer || s.container || "?") + "/" + (s.visibility || "?") + (s.project ? ":" + s.project : ""));
+    return text.slice(0, max).join(", ") + (text.length > max ? " +" + (text.length - max) : "");
+  }  function keyUsage(iso) {
+    if (!iso) return '<span class="pill bad">从未使用</span>';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return esc(String(iso));
+    const days = Math.floor((Date.now() - d.getTime()) / 86400000);
+    return esc(fmtTime(iso)) + (days >= 14 ? ' <span class="pill warn">' + days + ' 天未用</span>' : "");
+  }
+  function relPath(p) {
+    const parts = String(p || "").replace(/\\/g, "/").split("/");
+    return parts.slice(-3).join("/");
+  }
+  async function loadIngest() {
+    if (!igState.done) {
+      igState.done = true;
+      $("igCards").innerHTML = '<div class="card"><div class="label"><div class="skeleton"></div></div><div class="num"><div class="skeleton"></div></div></div>'.repeat(4);
+    }
+    try {
+      const status = await getJson("/v1/ingest/status");
+      $("igRange").textContent = status.role_range === "any-path" ? "可导入任意路径" : "只能导入 imports/ 目录";
+      const t = await post("/v1/transcripts/import/status", {}).catch(() => null);
+      const files = (t && t.files) || [];
+      const queued = files.filter((f) => f.status === "queued").length;
+      $("igCards").innerHTML = [
+        igCard("导入根目录", '<span style="font-size:12px;font-family:var(--mono)">' + esc(status.imports_path || "—") + "</span>", "外部资料放这里"),
+        igCard("角色范围", esc(status.role_range === "any-path" ? "任意路径" : "imports 限定"), "由角色 actions 决定"),
+        igCard("转录已处理", nf.format(files.length), "队列文件数"),
+        igCard("待处理", nf.format(queued), "状态 queued"),
+      ].join("");
+      $("trRight").textContent = files.length + " 个文件";
+      $("trBody").innerHTML = files.length ? files.slice(-200).reverse().map((f) =>
+        '<tr><td><code>' + esc(String(f.fingerprint || "—").slice(0, 12)) + '</code></td><td>' + pillFor(f.status) + '</td><td class="who">' + esc(fmtTime(f.updatedAt)) + '</td></tr>'
+      ).join("") : '<tr><td colspan="3" class="empty">队列为空</td></tr>';
+    } catch (e) {
+      $("igCards").innerHTML = igCard("读取失败", "—", e.message);
+      $("trBody").innerHTML = '<tr><td colspan="3" class="err">' + esc(e.message) + '</td></tr>';
+    }
+  }
+  async function runIngest() {
+    const paths = $("igPaths").value.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean);
+    if (!paths.length) { $("igMsg").textContent = "先填路径"; return; }
+    const dry = $("igDry").checked;
+    $("igRun").disabled = true;
+    $("igMsg").textContent = dry ? "预览中…" : "导入中…";
+    try {
+      const res = await post("/v1/ingest", {
+        paths, recursive: $("igRecursive").checked,
+        glob: $("igGlob").value.trim() || undefined,
+        kind: $("igKind").value, dry_run: dry,
+      });
+      const c = res.counts || {};
+      $("igMsg").textContent = (dry ? "预览" : "已导入") + "：计划 " + (c.planned ?? 0) + " / 跳过 " + (c.skipped ?? 0) + (dry ? "" : " / 写入 " + (c.imported ?? 0));
+      const rows = [];
+      for (const item of res.planned || []) rows.push({ path: item.path, act: dry ? "将导入" : "已导入", note: item.kind || "" });
+      for (const item of res.skipped || []) rows.push({ path: item.path, act: "跳过", note: item.reason || "" });
+      $("igBody").innerHTML = rows.length ? rows.slice(0, 300).map((r) =>
+        '<tr><td><code>' + esc(relPath(r.path)) + '</code></td><td>' + esc(r.act) + '</td><td class="who">' + esc(r.note) + '</td></tr>'
+      ).join("") : '<tr><td colspan="3" class="empty">没有可处理的文件</td></tr>';
+      if (!dry && (c.imported ?? 0) > 0) loadIngest();
+    } catch (e) {
+      $("igMsg").textContent = "失败：" + e.message;
+    } finally {
+      $("igRun").disabled = false;
+    }
+  }
+
+  $("igRun").addEventListener("click", runIngest);
+
+  // ---------- Agents ----------
+  async function loadAgents() {
+    $("agBody").innerHTML = '<tr><td colspan="6" class="empty">读取中…</td></tr>';
+    try {
+      // /v1/admin/registry 只注册了 POST（GET 会 404 NOT_FOUND）
+      const data = await post("/v1/admin/registry", {});
+      const frameworks = data.frameworks || [];
+      const keys = data.api_keys || [];
+      const agentCount = frameworks.reduce((n, f) => n + (f.agents || []).length, 0);
+      const roleCount = frameworks.reduce((n, f) => n + (f.agents || []).reduce((m, a) => m + (a.roles || []).length, 0), 0);
+      const revoked = frameworks.filter((f) => /revoked/i.test(f.credential_status || "")).length;
+      $("agCards").innerHTML = [
+        igCard("框架", nf.format(frameworks.length), "凭证主体"),
+        igCard("智能体", nf.format(agentCount), "接入的 agent"),
+        igCard("角色", nf.format(roleCount), "动作 + 范围"),
+        igCard("已吊销凭证", nf.format(revoked), revoked ? "需要处理" : "全部正常"),
+      ].join("");
+      $("agRight").textContent = frameworks.length + " 个框架 · " + agentCount + " 个智能体 · " + roleCount + " 条角色实例";
+      const rows = [];
+      for (const f of frameworks) {
+        const fAgents = f.agents || [];
+        const span = fAgents.reduce((n, x) => n + Math.max(1, (x.roles || []).length), 0) || 1;
+        let firstRow = true;
+        if (!fAgents.length) {
+          rows.push('<tr><td><code>' + esc(f.framework_id) + '</code></td><td>' + pillFor(f.credential_status) + '</td><td class="who">—</td><td class="who">—</td><td class="num">0</td><td class="who">—</td></tr>');
+          continue;
+        }
+        for (const a of fAgents) {
+          const aRoles = a.roles || [];
+          if (!aRoles.length) {
+            rows.push("<tr>"
+              + (firstRow ? '<td rowspan="' + span + '"><code>' + esc(f.framework_id) + '</code></td><td rowspan="' + span + '">' + pillFor(f.credential_status) + '</td>' : "")
+              + '<td><code>' + esc(a.agent_id) + '</code></td><td class="who">—</td><td class="who">—</td><td class="who">—</td></tr>');
+            firstRow = false;
+            continue;
+          }
+          aRoles.forEach((r, i) => {
+            // 注意：框架、凭证两个 rowspan 单元格占两列，必须都发，否则整行左移、范围列永远空
+            rows.push("<tr>"
+              + (firstRow ? '<td rowspan="' + span + '"><code>' + esc(f.framework_id) + '</code></td><td rowspan="' + span + '">' + pillFor(f.credential_status) + '</td>' : "")
+              + (i === 0 ? '<td rowspan="' + aRoles.length + '"><code>' + esc(a.agent_id) + '</code></td>' : "")
+              + '<td><code>' + esc(r.role_id) + '</code></td>'
+              + '<td class="who">' + esc(compactList(r.actions, 4)) + '</td>'
+              + '<td class="who">' + esc(scopeList(r.scopes, 3)) + "</td></tr>");
+            firstRow = false;
+          });
+        }
+      }
+      $("agBody").innerHTML = rows.join("") || '<tr><td colspan="6" class="empty">注册表里没有框架</td></tr>';
+      $("akRight").textContent = keys.length + " 把 key" + (keys.length ? "（已吊销 " + keys.filter((k) => k.revoked_at).length + "）" : "");
+      $("akBody").innerHTML = keys.length ? keys.map((k) =>
+        '<tr><td title="' + esc(k.id) + '"><code>' + esc(String(k.id || "").slice(0, 14)) + '…</code></td><td>' + esc(k.role_name || k.role_id) + '</td><td class="who">' + esc((k.user_id || "—") + " / " + (k.group_id || "—")) + '</td><td class="who">' + esc(fmtTime(k.created_at)) + '</td><td>' + (k.revoked_at ? pillFor("revoked") : '<span class="who">—</span>') + '</td><td class="who">' + keyUsage(k.last_used_at) + '</td></tr>'
+      ).join("") : '<tr><td colspan="6" class="empty">没有 API key</td></tr>';
+    } catch (e) {
+      $("agCards").innerHTML = igCard("读取失败", "—", e.message);
+      $("agBody").innerHTML = '<tr><td colspan="6" class="err">' + esc(e.message) + '</td></tr>';
+      $("akBody").innerHTML = '<tr><td colspan="6" class="err">' + esc(e.message) + '</td></tr>';
+    }
+  }
+
+  // ---------- 运行时状态 ----------
+  async function loadRuntime() {
+    $("rtBody").innerHTML = '<tr><td colspan="3" class="empty">读取中…</td></tr>';
+    try {
+      const [health, metrics] = await Promise.all([
+        getJson("/v1/health"),
+        post("/v1/refinement/jobs/metrics", {}).catch(() => null),
+      ]);
+      const idx = health.index || {};
+      const vec = health.vector || {};
+      $("rtCards").innerHTML = [
+        igCard("服务", esc(health.health?.status ?? health.health ?? "—"), "memory-lib v" + (health.version ?? "?")),
+        igCard("向量车道", esc(vec.status || "—"), vec.model ? vec.model + " · dim " + (vec.dimension ?? "?") : vec.reason || ""),
+        igCard("索引文件", nf.format(idx.indexed_files ?? 0), "失败 " + (idx.failed ?? 0)),
+        igCard("精炼未完成", nf.format(metrics?.counts?.open_jobs ?? 0), metrics?.day ? "统计日 " + metrics.day : "未取到"),
+      ].join("");
+      const rows = [];
+      const pushRow = (k, v, note) => rows.push('<tr><td>' + esc(k) + '</td><td><code>' + esc(String(v ?? "—")) + '</code></td><td class="who">' + esc(note || "") + '</td></tr>');
+      pushRow("health", health.health?.status ?? health.health, "总状态");
+      for (const [k, v] of Object.entries(health.health?.checks || {})) pushRow("check:" + k, v, "");
+      pushRow("vector", vec.status, vec.reason || "");
+      pushRow("indexed_files", idx.indexed_files, "索引条目");
+      pushRow("index_failed", idx.failed, "索引失败");
+      pushRow("capacity", health.capacity?.memories ?? "—", "记忆容量");
+      const ar = health.audit_rotation || {};
+      pushRow("audit_rotation", (ar.enabled ? "启用" : "关闭") + " · " + (ar.interval_minutes ?? "?") + " 分钟", "上次 " + (ar.last_status || "—"));
+      $("rtRight").textContent = health.service + " v" + (health.version ?? "");
+      $("rtBody").innerHTML = rows.join("");
+
+      if (!metrics) {
+        $("rfBody").innerHTML = '<tr><td colspan="3" class="empty">需要 search 动作才能读精炼指标</td></tr>';
+        $("rfJobsBody").innerHTML = '<tr><td colspan="5" class="empty">—</td></tr>';
+        return;
+      }
+      const c = metrics.counts || {};
+      const labels = {
+        captured_conversations: "捕获对话", captured_evidence_records: "证据条数", conversations_with_jobs: "有任务的对话",
+        uncovered_conversations: "没任务的对话", jobs_in_day: "当日任务", completed_jobs: "已完成任务",
+        completed_conversations: "已完成对话", written_jobs: "已写入任务", written_conversations: "已写入对话",
+        no_durable_fact_jobs: "无 durable 结论", no_durable_fact_conversations: "无结论对话", open_jobs: "未完成任务",
+      };
+      $("rfRight").textContent = metrics.day + (metrics.timezone ? " · " + metrics.timezone : "");
+      $("rfBody").innerHTML = Object.keys(labels).filter((k) => c[k] !== undefined).map((k) =>
+        '<tr><td>' + esc(labels[k]) + '</td><td class="num">' + nf.format(c[k]) + '</td><td class="who"><code>' + esc(k) + '</code></td></tr>'
+      ).join("") || '<tr><td colspan="3" class="empty">当天没有精炼活动</td></tr>';
+      const jobs = metrics.jobs || [];
+      $("rfJobsRight").textContent = jobs.length + " 条";
+      $("rfJobsBody").innerHTML = jobs.length ? jobs.slice(0, 100).map((j) =>
+        '<tr><td><code>' + esc(String(j.id || j.job_id || "—").slice(0, 16)) + '</code></td><td>' + pillFor(j.status || j.state) + '</td><td class="who">' + esc(j.agent_id || j.agentId || "—") + '</td><td class="num">' + nf.format((j.evidence_ids || []).length) + '</td><td class="who">' + esc(fmtTime(j.created_at || j.createdAt)) + '</td></tr>'
+      ).join("") : '<tr><td colspan="5" class="empty">当天没有任务</td></tr>';
+    } catch (e) {
+      $("rtCards").innerHTML = igCard("读取失败", "—", e.message);
+      $("rtBody").innerHTML = '<tr><td colspan="3" class="err">' + esc(e.message) + '</td></tr>';
+      $("rfBody").innerHTML = '<tr><td colspan="3" class="err">' + esc(e.message) + '</td></tr>';
+      $("rfJobsBody").innerHTML = '<tr><td colspan="5" class="err">' + esc(e.message) + '</td></tr>';
+    }
+  }
+
+  // ---------- 身份权限 ----------
+  async function loadRegistry() {
+    $("rgBody").innerHTML = '<div class="empty"><div class="skeleton"></div></div>';
+    try {
+      const d = await post("/v1/admin/registry", {});
+      const fws = d.frameworks || [];
+      const agents = fws.reduce((n, f) => n + (f.agents || []).length, 0);
+      const roles = fws.reduce((n, f) => n + (f.agents || []).reduce((m, a) => m + (a.roles || []).length, 0), 0);
+      $("rgCards").innerHTML = [
+        ["框架", fws.length, "credential 维度"],
+        ["智能体", agents, "agent_id"],
+        ["角色实例", roles, "actions + scopes"],
+        ["控制台账号", (d.accounts || []).length, "username/password"],
+      ].map(([l, v, h]) => '<div class="card"><div class="label">' + l + '</div><div class="num">' + nf.format(v) + '</div><div class="hint">' + esc(h) + '</div></div>').join("");
+      $("rgRight").textContent = fws.map((f) => f.framework_id).join(", ");
+      $("rgBody").innerHTML = fws.map((f) => {
+        const rows = (f.agents || []).map((a) =>
+          (a.roles || []).map((r, i) =>
+            '<tr>' + (i === 0 ? '<td rowspan="' + a.roles.length + '"><code>' + esc(a.agent_id) + '</code></td>' : '') +
+            '<td><code>' + esc(r.role_id) + '</code></td>' +
+            '<td>' + (r.actions || []).map((x) => '<span class="tag">' + esc(x) + '</span>').join(" ") + '</td>' +
+            '<td class="who">' + (r.scopes || []).map((s) => esc((s.layer || s.container || "") + "/" + (s.visibility || ""))).join(", ") + '</td>' +
+            '<td><code>' + esc(r.user_id || "—") + '</code></td></tr>').join("")).join("");
+        return '<div style="padding:10px 14px;border-bottom:1px solid var(--line-soft)"><b>' + esc(f.framework_id) + '</b> <span class="who">' + esc(f.credential_ref || "") + '</span></div>' +
+          '<table><thead><tr><th>智能体</th><th>角色</th><th>动作</th><th>范围</th><th>user_id</th></tr></thead><tbody>' + rows + '</tbody></table>';
+      }).join("") || '<div class="empty">注册表为空</div>';
+    } catch (e) {
+      $("rgBody").innerHTML = '<div class="err">加载失败：' + esc(e.message) + '（需要 admin 权限）</div>';
+    }
+  }
+
+  // ---------- 角色 ----------
+  async function loadRoles() {
+    $("rlBody").innerHTML = '<div class="empty"><div class="skeleton"></div></div>';
+    try {
+      const d = await post("/v1/roles/list", {});
+      const items = d.items || [];
+      $("rlCount").textContent = "共 " + items.length + " 条";
+      $("rlBody").innerHTML = items.length
+        ? '<table><thead><tr><th>id</th><th>类型</th><th>置信</th><th>经验</th><th>状态</th></tr></thead><tbody>' + items.map((m) =>
+            '<tr><td><code>' + esc(m.id) + '</code></td><td>' + esc(m.kind || "lesson") + '</td><td>' + esc(m.confidence || "—") +
+            '</td><td>' + esc(String(m.sections?.["经验"] || m.body || "").slice(0, 160)) + '</td><td>' + esc(m.status || "—") + '</td></tr>').join("") + '</tbody></table>'
+        : '<div class="empty">角色记忆为空：这一层记"我这类角色学到的经验"，用 memory_role_note 或 scripts/note-role.mjs 写入。</div>';
+    } catch (e) {
+      $("rlBody").innerHTML = '<div class="err">加载失败：' + esc(e.message) + '</div>';
+    }
+  }
+
+  // ---------- 审计 ----------
+  async function loadAudit() {
+    $("auBody").innerHTML = '<div class="empty"><div class="skeleton"></div></div>';
+    try {
+      const allow = $("auAllow").value;
+      const d = await post("/v1/admin/audit", { limit: Number($("auLimit").value) || 100, ...(allow ? { allow: allow === "true" } : {}) });
+      const rows = d.events || [];
+      $("auRight").textContent = rows.length + " 条";
+      $("auBody").innerHTML = rows.length
+        ? '<table><thead><tr><th>时间</th><th>身份</th><th>动作</th><th>资源</th><th>结果</th><th class="num">耗时</th></tr></thead><tbody>' + rows.map((e) =>
+            '<tr><td class="who">' + esc(String(e.ts || "").slice(0, 19).replace("T", " ")) + '</td>' +
+            '<td><code>' + esc((e.agent || "") + "/" + (e.role || "")) + '</code></td>' +
+            '<td>' + esc(e.action || "") + '</td>' +
+            '<td class="who">' + esc(String(e.resourceId || "").slice(0, 40)) + '</td>' +
+            '<td>' + (e.allow ? '<span class="pill ok"><span class="dot"></span>放行</span>' : '<span class="pill bad"><span class="dot"></span>' + esc(e.denyReason || "拒绝") + '</span>') + '</td>' +
+            '<td class="num">' + (e.latencyMs ?? "") + '</td></tr>').join("") + '</tbody></table>'
+        : '<div class="empty">这段时间没有审计事件（或 allow 过滤掉了全部）。</div>';
+    } catch (e) {
+      $("auBody").innerHTML = '<div class="err">加载失败：' + esc(e.message) + '（需要 admin 权限）</div>';
+    }
+  }
+  $("auReload").addEventListener("click", loadAudit);
+  $("auLimit").addEventListener("change", loadAudit);
+  $("auAllow").addEventListener("change", loadAudit);
+
+  // ---------- 恢复中心 ----------
+  async function loadRecovery() {
+    $("rcBody").innerHTML = '<tr><td colspan="2"><div class="skeleton"></div></td></tr>';
+    try {
+      const d = await post("/v1/recovery/status", {});
+      const files = d.files || [];
+      $("rcRight").textContent = files.length + " 个文件";
+      $("rcCards").innerHTML = [
+        ["恢复目录", d.root ? "已配置" : "未配置", d.root || "—"],
+        ["文件数", files.length, "计划与校验脚本"],
+      ].map(([l, v, h]) => '<div class="card"><div class="label">' + l + '</div><div class="num" style="font-size:' + (typeof v === "number" ? "24px" : "15px") + '">' + esc(String(v)) + '</div><div class="hint" style="word-break:break-all">' + esc(h) + '</div></div>').join("");
+      $("rcBody").innerHTML = files.length
+        ? files.map((f) => '<tr><td><code>' + esc(String(f).split(/[\\/]/).pop()) + '</code></td><td class="who">' + esc(String(f).slice(String(d.root || "").length + 1)) + '</td></tr>').join("")
+        : '<tr><td colspan="2" class="empty">恢复目录为空</td></tr>';
+    } catch (e) {
+      $("rcBody").innerHTML = '<tr><td colspan="2" class="err">加载失败：' + esc(e.message) + '</td></tr>';
+    }
+  }
+
+  // ---------- 知识库 / 工具 / 项目 / 计划 / 画像 / 学习 / 宠物 / 图谱 ----------
+  function newCards(id, label, count, hint) {
+    $(id).innerHTML = igCard(label, nf.format(count), hint);
+  }
+  function dataTable(items, columns, emptyText) {
+    if (!items.length) return '<div class="empty">' + esc(emptyText) + '</div>';
+    return '<table><thead><tr>' + columns.map((c) => '<th>' + esc(c[0]) + '</th>').join("") + '</tr></thead><tbody>' + items.map((item) => '<tr>' + columns.map((c) => '<td>' + esc(String(c[1](item) ?? "—")) + '</td>').join("") + '</tr>').join("") + '</tbody></table>';
+  }
+  function errorBox(err, area, permissionText) {
+    const code = String(err.message || err);
+    const msg = /403|FORBIDDEN/i.test(code) && permissionText ? permissionText + "（403）" : /404|NOT_FOUND/i.test(code) ? "端点不存在（404）：" + code : "读取失败：" + code;
+    $(area).innerHTML = '<div class="err">' + esc(msg) + '</div>';
+  }
+  const asList = (d, ...keys) => { for (const key of keys) if (Array.isArray(d?.[key])) return d[key]; return []; };
+  const field = (x, ...keys) => { for (const key of keys) if (x?.[key] != null) return x[key]; return "—"; };
+  async function loadKnowledge() {
+    $("knBody").innerHTML = '<div class="empty"><div class="skeleton"></div></div>';
+    try {
+      // 知识文档的真实来源是 evidence/documents（不是 /v1/memory/list 的长期记忆）
+      const d = await post("/v1/knowledge/list", {});
+      S.knowledge = asList(d, "items");
+      renderKnowledge();
+    } catch (e) { errorBox(e, "knBody"); $("knCards").innerHTML = ""; }
+  }
+  function renderKnowledge() {
+    const docs = S.knowledge || [];
+    const q = $("knFilter").value.trim().toLowerCase();
+    const filtered = docs.filter((m) => !q || JSON.stringify(m).toLowerCase().includes(q));
+    newCards("knCards", "知识文档", docs.length, "knowledge / document · 当前授权范围");
+    $("knRight").textContent = filtered.length + " 条显示";
+    $("knBody").innerHTML = dataTable(filtered, [["标题", x => x.title || x.id], ["来源", x => x.source || "—"], ["更新时间", x => fmtTime(x.updated_at || x.updatedAt)], ["路径", x => x.path || "—"]], "知识库还没有文档（可在 #/ingest 上传文档）");
+  }
+  $("knFilter").addEventListener("input", renderKnowledge);
+  async function loadTools() {
+    $("tlBody").innerHTML = '<div class="empty"><div class="skeleton"></div></div>';
+    try { const d = await post("/v1/tools/list", {}); const xs = asList(d, "items"); newCards("tlCards", "工具", xs.length, "当前授权范围"); $("tlRight").textContent = xs.length + " 条"; $("tlBody").innerHTML = dataTable(xs, [["工具名", x => x.tool_name || x.name], ["类型", x => x.kind || "tool"], ["环境", x => x.env || "—"], ["验证时间", x => fmtTime(x.verified_at)], ["状态", x => x.status]], "还没有工具记忆：需要 agent 通过 MCP memory_write(layer=\"tool\") 写入；目前没有生产者，所以一直是 0"); } catch (e) { errorBox(e, "tlBody"); }
+  }
+  async function loadProjects() {
+    $("pjBody").innerHTML = '<div class="empty"><div class="skeleton"></div></div>';
+    try {
+      const d = await post("/v1/project/list", {});
+      const xs = asList(d, "items");
+      const decided = xs.reduce((n, x) => n + (Array.isArray(x.decisions) ? x.decisions.length : 0), 0);
+      const progressed = xs.reduce((n, x) => n + (Array.isArray(x.progress) ? x.progress.length : (x.progress ? 1 : 0)), 0);
+      newCards("pjCards", "项目", xs.length, "当前授权范围 · 决策 " + decided + " / 进展 " + progressed);
+      $("pjRight").textContent = xs.length + " 个 · 决策 " + decided + " · 进展 " + progressed;
+      const asArray = (value) => Array.isArray(value) ? value : (value && typeof value === "object" ? [value] : []);
+    const latest = (x) => {
+        const times = [];
+        if (x.current_state?.updated_at) times.push(x.current_state.updated_at);
+        for (const item of (x.decisions || [])) if (item.updated_at) times.push(item.updated_at);
+        for (const item of asArray(x.progress)) if (item.updated_at) times.push(item.updated_at);
+        times.sort();
+        return times.length ? times[times.length - 1] : null;
+      };
+      $("pjBody").innerHTML = dataTable(xs, [
+        ["项目", (x) => x.project || x.project_id || x.id],
+        ["当前状态", (x) => x.current_state ? (x.current_state.status || "有 current-state") + (x.current_state.updated_at ? " · " + fmtTime(x.current_state.updated_at) : "") : "无 current-state"],
+        ["决策", (x) => (Array.isArray(x.decisions) ? x.decisions.length : 0) + " 条"],
+        ["进展", (x) => asArray(x.progress).length + " 条"],
+        ["代码", (x) => {
+          const cg = x.code_graph;
+          if (!cg) return "未建图";
+          const base = (cg.files ?? 0) + " 文件 · " + (cg.nodes ?? 0) + " 符号";
+          if (cg.state === "STALE") return base + " · ⚠ 过期（" + (cg.stale_reasons || []).join("、") + "）";
+          if (cg.state === "MISSING_GRAPH") return base + " · ⚠ 图文件丢失";
+          return base + " · " + fmtTime(cg.last_built_at);
+        }],
+        ["关联代码", (x) => {
+          const refs = x.code_refs || [];
+          if (!refs.length) return "—";
+          const shown = refs.slice(0, 4).map((r) => r.type === "file" ? r.value : r.value + "()").join(" · ");
+          return shown + (refs.length > 4 ? " +" + (refs.length - 4) : "");
+        }],
+        ["最近更新", (x) => fmtTime(latest(x))],
+      ], "当前范围没有项目记忆（project-state 下没有 layer=project 的文件）");
+    } catch (e) { errorBox(e, "pjBody"); }
+  }
+  async function loadPlans() {
+    $("plBody").innerHTML = '<div class="empty"><div class="skeleton"></div></div>';
+    try { const d = await post("/v1/plans/list", { include_done: true }); const xs = asList(d, "items"); newCards("plCards", "计划", xs.length, "含已完成计划"); $("plRight").textContent = xs.length + " 条"; $("plBody").innerHTML = dataTable(xs, [["主题", x => x.topic || x.id], ["状态", x => x.status], ["更新时间", x => fmtTime(x.updated_at || x.updatedAt)]], "还没有计划记忆：学习/规划流程调用 plans_put 之后才会出现（当前没有生产者）"); } catch (e) { errorBox(e, "plBody"); }
+  }
+  async function loadProfile() {
+    $("pfBody").innerHTML = '<div class="empty"><div class="skeleton"></div></div>';
+    try { const d = await post("/v1/profile/list", { include_draft: true }); const xs = asList(d, "items"); newCards("pfCards", "画像条目", xs.length, "含 draft · 当前授权范围"); $("pfRight").textContent = xs.length + " 条"; $("pfBody").innerHTML = dataTable(xs, [["id", x => x.id], ["摘要", x => String(x.summary || x.body || x.content || "—").slice(0, 180)], ["来源", x => x.source || (x.evidence_refs || []).join(", ")], ["更新时间", x => fmtTime(x.updated_at || x.updatedAt)]], "还没有画像：学习画像或用户画像写入之后才会出现（当前没有生产者）"); } catch (e) { errorBox(e, "pfBody"); }
+  }
+  async function loadLearning() {
+    const topic = $("lrTopic").value.trim(); if (!topic) return;
+    ["lrPlan", "lrProgress", "lrReview"].forEach((id) => { $(id).innerHTML = '<div class="empty"><div class="skeleton"></div></div>'; });
+    const calls = [["/v1/learning/plan_get", "lrPlan", "plan"], ["/v1/learning/progress_get", "lrProgress", "progress"], ["/v1/learning/review_get", "lrReview", "review"]];
+    const vals = await Promise.all(calls.map(async ([path, area, key]) => { try { const d = await post(path, { topic }); const value = d[key] ?? d; const entries = Array.isArray(value) ? value.map((v, i) => [i, v]) : Object.entries(value && typeof value === "object" ? value : { value }); $(area).innerHTML = dataTable(entries, [["字段", x => x[0]], ["值", x => typeof x[1] === "object" ? JSON.stringify(x[1]) : x[1]]], "主题暂无数据"); return true; } catch (e) { errorBox(e, area, "该角色没有 learning 动作"); return false; } }));
+    newCards("lrCards", "主题", vals.filter(Boolean).length + "/3", topic + " · 计划 / 进度 / 复习接口成功数");
+  }
+  $("lrLoad").addEventListener("click", loadLearning);
+  $("lrTopic").addEventListener("keydown", (e) => { if (e.key === "Enter") loadLearning(); });
+  async function loadPet() {
+    ["ptPersonas", "ptDrafts"].forEach((id) => { $(id).innerHTML = '<div class="empty"><div class="skeleton"></div></div>'; });
+    const jobs = [["/v1/pet/runtime/persona/list", "ptPersonas", "personas"], ["/v1/pet/runtime/drafts/list", "ptDrafts", "drafts"]];
+    const counts = await Promise.all(jobs.map(async ([path, area, key]) => { try { const d = await post(path, { limit: 100 }); const xs = asList(d, key); $(area).innerHTML = dataTable(xs, [["标识", x => x.id || x.role_id || x.name || x.mode], ["内容", x => String(x.content || x.body || x.summary || JSON.stringify(x)).slice(0, 220)], ["更新时间", x => fmtTime(x.updated_at || x.updatedAt) ]], "当前角色没有对应数据"); $(area === "ptPersonas" ? "ptPersonaRight" : "ptDraftRight").textContent = xs.length + " 条"; return xs.length; } catch (e) { errorBox(e, area, "该角色没有 pet 动作"); return null; } }));
+    newCards("ptCards", "Persona / 草稿", counts.reduce((n, x) => n + (x || 0), 0), counts.includes(null) ? "至少一个接口不可读" : "当前角色范围");
+  }
+  // ---------- 图谱：项目筛选 + legacy 力导向 SVG ----------
+  const GRAPH_NS = "http://www.w3.org/2000/svg";
+  const GRAPH_COLOR = { memory: "var(--graph-memory)", project: "var(--graph-project)", evidence: "var(--graph-evidence)", tag: "var(--graph-tag)", entity: "var(--graph-entity)" };
+  const G = { showGeneric: false, nodes: [], edges: [], idx: new Map(), view: { k: 1, x: 0, y: 0 }, viewEl: null, edgeEls: [], labelsOn: false, hover: null, raf: 0, pin: null, pan: null, W: 1000, H: 700, kk: 1, projectsLoaded: false };
+
+  async function loadGraphProjects(force) {
+    if (G.projectsLoaded && !force) return;
+    const select = $("grProject");
+    const selected = select.value;
+    try {
+      const d = await post("/v1/project/list", {});
+      const projects = asList(d, "items");
+      select.innerHTML = '<option value="">全部项目</option>' + projects.map((p) => {
+        const id = p.project || p.project_id || p.id || "";
+        return id ? '<option value="' + esc(id) + '">' + esc(p.name || id) + '</option>' : "";
+      }).join("");
+      if (projects.some((p) => String(p.project || p.project_id || p.id || "") === selected)) select.value = selected;
+      $("grProjectMsg").innerHTML = "";
+      G.projectsLoaded = true;
+    } catch (e) {
+      $("grProjectMsg").innerHTML = '<div class="err">项目筛选列表读取失败：' + esc(e.message) + '</div>';
+    }
+  }
+
+  async function loadGraph() {
+    await loadGraphProjects();
+    const project = $("grProject").value;
+    $("grOut").innerHTML = '<div class="empty"><div class="skeleton"></div></div>';
+    $("grNodes").innerHTML = '<div class="empty"><div class="skeleton"></div></div>';
+    $("grEdges").innerHTML = '<div class="empty"><div class="skeleton"></div></div>';
+    $("grCount").textContent = "读取中…";
+    try {
+      const d = await post("/v1/graph/dump", { limit: 1200, ...(project ? { project } : {}) });
+      const graph = { nodes: asList(d, "nodes"), edges: asList(d, "edges"), totals: d.totals || {} };
+      const allNodes = graph.nodes.map((n) => ({ ...n, id: String(n.id) }));
+      const allEdges = graph.edges.map((e) => ({ ...e, source: String(e.src_id), target: String(e.dst_id), type: e.predicate }));
+      // 泛标签（refined/decision/fact）默认不画：它们把几千条记忆连成一个大毛球，没有信息量
+      const hidden = G.showGeneric ? new Set() : new Set(allNodes.filter((n) => n.generic).map((n) => n.id));
+      const nodes = allNodes.filter((n) => !hidden.has(n.id));
+      const idx = new Map(nodes.map((n, i) => [n.id, i]));
+      const edges = allEdges.filter((e) => !hidden.has(e.source) && !hidden.has(e.target) && idx.has(e.source) && idx.has(e.target));
+      const labelOf = new Map(allNodes.map((n) => [n.id, n.label || n.id]));
+      const totals = graph.totals;
+      $("grCards").innerHTML = igCard("图谱节点", nf.format(totals.nodes ?? nodes.length), project || "全部项目") + igCard("关系边", nf.format(totals.edges ?? edges.length), totals.truncated ? "结果已截断" : "当前返回范围");
+      $("grRight").textContent = project || "全部项目";
+      $("grNodeRight").textContent = nodes.length + " / " + (totals.nodes ?? nodes.length);
+      $("grEdgeRight").textContent = edges.length + " / " + (totals.edges ?? edges.length);
+      const typeCn = (ty) => ({ project: "项目", memory: "记忆", evidence: "证据", tag: "标签", entity: "实体" }[ty] || ty);
+      $("grNodes").innerHTML = dataTable(nodes.slice(0, 100), [["内容", (n) => n.label || n.id], ["类型", (n) => typeCn(n.type)], ["文件", (n) => n.path || "—"]], "图里还没有关系：需要先跑一次图重建");
+      $("grEdges").innerHTML = dataTable(edges.slice(0, 100), [["起点", (e) => labelOf.get(e.source) || e.source], ["关系", (e) => e.predicate === "derived_from" ? "来自证据" : e.predicate === "related_to" ? "相关" : e.predicate === "belongs_to_project" ? "属于项目" : e.predicate], ["终点", (e) => labelOf.get(e.target) || e.target]], "当前图谱没有边");
+      if (!nodes.length) {
+        $("grOut").innerHTML = '<div class="empty">图里还没有关系：需要先跑一次图重建</div>';
+        $("grCount").textContent = "0 节点 · 0 边";
+        return;
+      }
+      renderGraph({ nodes, edges, totals });
+    } catch (e) {
+      const code = String(e.message || e);
+      const message = /403|FORBIDDEN|ACTION_DENIED/i.test(code) ? "该角色没有 search 动作（403）" : /404|NOT_FOUND/i.test(code) ? "图谱端点不存在（404）" : "读取失败：" + code;
+      $("grOut").innerHTML = '<div class="err">' + esc(message) + '</div>';
+      $("grNodes").innerHTML = '<div class="err">' + esc(message) + '</div>';
+      $("grEdges").innerHTML = '<div class="err">' + esc(message) + '</div>';
+      $("grCards").innerHTML = "";
+      $("grCount").textContent = "读取失败";
+    }
+  }
+  $("grLoad").addEventListener("click", () => loadGraphProjects(true).then(loadGraph));
+  $("grProject").addEventListener("change", loadGraph);
+  $("grLabels").addEventListener("click", () => {
+    G.labelsOn = !G.labelsOn;
+    $("grLabels").textContent = G.labelsOn ? "隐藏全部标签" : "显示全部标签";
+    $("grLabels").setAttribute("aria-pressed", String(G.labelsOn));
+    refreshLabelVisibility();
+  });
+  $("grGeneric").addEventListener("click", () => {
+    G.showGeneric = !G.showGeneric;
+    $("grGeneric").setAttribute("aria-pressed", String(G.showGeneric));
+    $("grGeneric").textContent = G.showGeneric ? "隐藏泛标签" : "显示泛标签";
+    loadGraph();
+  });
+  $("grZoomIn").addEventListener("click", () => graphZoom(1.2));
+  $("grZoomOut").addEventListener("click", () => graphZoom(1 / 1.2));
+  $("grReset").addEventListener("click", () => resetGraphView());
+
+  function renderGraph(g) {
+    const W = G.W, H = G.H, raw = g.nodes || [], edges = g.edges || [];
+    const idx = new Map(raw.map((n, i) => [n.id, i]));
+    const deg = new Map();
+    for (const e of edges) { deg.set(e.source, (deg.get(e.source) || 0) + 1); deg.set(e.target, (deg.get(e.target) || 0) + 1); }
+    const topN = new Set([...deg.entries()].sort((a, b) => b[1] - a[1]).slice(0, Math.max(8, Math.min(30, Math.round(raw.length / 18)))).map(([id]) => id));
+    const nodes = raw.map((n) => ({ ...n, deg: deg.get(n.id) || 0, top: topN.has(n.id), x: W / 2, y: H / 2, vx: 0, vy: 0, r: 3, circle: null, text: null }));
+    const byType = {};
+    for (const n of nodes) (byType[n.type] || (byType[n.type] = [])).push(n);
+    const total = nodes.length || 1, R = Math.min(W, H) * 0.36;
+    let angle0 = Math.random() * Math.PI * 2;
+    for (const group of Object.values(byType)) {
+      const span = group.length / total * Math.PI * 2 * 1.12;
+      group.sort((a, b) => b.deg - a.deg);
+      group.forEach((node, j) => {
+        const frac = group.length === 1 ? 0.5 : j / (group.length - 1), angle = angle0 + span * frac;
+        const radius = R * (0.3 + 0.7 * (1 - Math.min(1, node.deg / 10)));
+        node.x = W / 2 + Math.cos(angle) * radius; node.y = H / 2 + Math.sin(angle) * radius;
+      });
+      angle0 += span;
+    }
+    G.nodes = nodes; G.edges = edges; G.idx = idx; G.kk = Math.sqrt(W * H / total) * 1.15;
+    const svg = document.createElementNS(GRAPH_NS, "svg");
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("role", "img"); svg.setAttribute("aria-label", "可交互的记忆关系图"); svg.classList.add("graph-svg");
+    const viewEl = document.createElementNS(GRAPH_NS, "g"), edgeLayer = document.createElementNS(GRAPH_NS, "g"), nodeLayer = document.createElementNS(GRAPH_NS, "g");
+    viewEl.append(edgeLayer, nodeLayer); svg.append(viewEl); G.viewEl = viewEl; G.edgeEls = [];
+    for (const edge of edges) {
+      const line = document.createElementNS(GRAPH_NS, "line");
+      line.setAttribute("stroke", "var(--line)"); line.setAttribute("stroke-width", "1"); line.setAttribute("opacity", "0.3");
+      edgeLayer.append(line); G.edgeEls.push({ el: line, source: edge.source, target: edge.target });
+    }
+    for (const n of nodes) {
+      n.r = Math.min(11, n.deg > 0 ? 3 + 3 * Math.log2(1 + n.deg) : 3);
+      const circle = document.createElementNS(GRAPH_NS, "circle");
+      circle.setAttribute("r", n.r.toFixed(1)); circle.setAttribute("fill", GRAPH_COLOR[n.type] || "var(--graph-evidence)"); circle.setAttribute("stroke", "var(--line)"); circle.classList.add("graph-node"); circle.dataset.nodeId = n.id;
+      const label = document.createElementNS(GRAPH_NS, "text");
+      label.setAttribute("text-anchor", "middle"); label.setAttribute("fill", "var(--fg-2)"); label.setAttribute("font-size", "10"); label.setAttribute("opacity", "0"); label.textContent = String(n.label || n.id).slice(0, 32);
+      nodeLayer.append(circle, label); n.circle = circle; n.text = label;
+      circle.addEventListener("mouseover", () => setHover(n.id)); circle.addEventListener("mouseout", () => setHover(null));
+      circle.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const typeCn = ({ project: "项目", memory: "记忆", evidence: "证据", tag: "标签", entity: "实体" }[n.type] || n.type);
+        $("grDetail").innerHTML = '<div class="graph-detail-body">'
+          + '<div class="graph-detail-title">' + esc(n.label || n.id) + '</div>'
+          + '<div class="who">类型：' + esc(typeCn) + (n.updated_at ? ' · 更新：' + esc(fmtTime(n.updated_at)) : '') + '</div>'
+          + (n.path ? '<div class="who">文件：<code>' + esc(n.path) + '</code></div>' : '')
+          + '<div class="who">节点 id：<code>' + esc(n.id) + '</code></div>'
+          + '</div>';
+      });
+    }
+    const k0 = Math.max(0.22, Math.min(1, 0.9 / Math.max(1, Math.sqrt(total / 120))));
+    G.view.k = k0; G.view.x = (W - W * k0) / 2; G.view.y = (H - H * k0) / 2;
+    $("grOut").replaceChildren(svg); bindGraphEvents(svg);
+    let temperature = 6; const iters = total > 250 ? 100 : 180;
+    for (let i = 0; i < iters; i++) { stepSim(temperature); temperature *= 0.97; }
+    syncPositions(); applyView();
+    $("grCount").textContent = `${nf.format(g.totals.nodes ?? nodes.length)} 节点 · ${nf.format(g.totals.edges ?? edges.length)} 边${g.totals.truncated ? " · 已截断" : ""}`;
+  }
+
+  function stepSim(temperature) {
+    const { nodes, edges, idx, W, H, kk } = G;
+    for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
+      const a = nodes[i], b = nodes[j]; let dx = b.x - a.x, dy = b.y - a.y, d2 = dx * dx + dy * dy;
+      if (d2 < 4) { dx += (Math.random() - 0.5) * 2; dy += (Math.random() - 0.5) * 2; d2 = dx * dx + dy * dy + 0.01; }
+      const d = Math.sqrt(d2), force = Math.min(kk * kk / d2, 8), fx = dx / d * force, fy = dy / d * force;
+      a.vx -= fx; a.vy -= fy; b.vx += fx; b.vy += fy;
+    }
+    for (const edge of edges) {
+      const a = nodes[idx.get(edge.source)], b = nodes[idx.get(edge.target)]; if (!a || !b) continue;
+      const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 0.01, force = (d - 64) * 0.055, fx = dx / d * force, fy = dy / d * force;
+      a.vx += fx; a.vy += fy; b.vx -= fx; b.vy -= fy;
+    }
+    for (const node of nodes) {
+      node.vx += (W / 2 - node.x) * 0.0012; node.vy += (H / 2 - node.y) * 0.0012;
+      const speed = Math.hypot(node.vx, node.vy); if (speed > temperature) { node.vx = node.vx / speed * temperature; node.vy = node.vy / speed * temperature; }
+      node.x += node.vx; node.y += node.vy; node.vx *= 0.82; node.vy *= 0.82;
+      node.x = Math.max(-W * 0.4, Math.min(W * 1.4, node.x)); node.y = Math.max(-H * 0.4, Math.min(H * 1.4, node.y));
+    }
+  }
+  function syncPositions() {
+    for (const n of G.nodes) { n.circle.setAttribute("cx", n.x.toFixed(1)); n.circle.setAttribute("cy", n.y.toFixed(1)); n.text.setAttribute("x", n.x.toFixed(1)); n.text.setAttribute("y", (n.y - n.r - 4).toFixed(1)); }
+    for (const edge of G.edgeEls) { const a = G.nodes[G.idx.get(edge.source)], b = G.nodes[G.idx.get(edge.target)]; if (!a || !b) continue; edge.el.setAttribute("x1", a.x.toFixed(1)); edge.el.setAttribute("y1", a.y.toFixed(1)); edge.el.setAttribute("x2", b.x.toFixed(1)); edge.el.setAttribute("y2", b.y.toFixed(1)); }
+  }
+  function applyView() { G.viewEl?.setAttribute("transform", `translate(${G.view.x.toFixed(1)} ${G.view.y.toFixed(1)}) scale(${G.view.k.toFixed(4)})`); refreshLabelVisibility(); }
+  function refreshLabelVisibility() { const all = G.labelsOn || G.nodes.length <= 50 || G.view.k >= 1.7; for (const n of G.nodes) n.text.setAttribute("opacity", all || n.top || G.hover === n.id ? "1" : "0"); }
+  function setHover(id) {
+    G.hover = id;
+    if (id) {
+      const nearby = new Set([id]); for (const edge of G.edges) { if (edge.source === id) nearby.add(edge.target); if (edge.target === id) nearby.add(edge.source); }
+      for (const n of G.nodes) { const active = nearby.has(n.id); n.circle.setAttribute("opacity", active ? "1" : "0.14"); n.circle.setAttribute("stroke", active ? "var(--fg)" : "var(--line)"); }
+      for (const edge of G.edgeEls) edge.el.setAttribute("opacity", edge.source === id || edge.target === id ? "0.95" : "0.04");
+    } else { for (const n of G.nodes) { n.circle.setAttribute("opacity", "0.92"); n.circle.setAttribute("stroke", "var(--line)"); } for (const edge of G.edgeEls) edge.el.setAttribute("opacity", "0.3"); }
+    refreshLabelVisibility();
+  }
+  function svgPoint(svg, event) { const rect = svg.getBoundingClientRect(); return { x: (event.clientX - rect.left) / rect.width * G.W, y: (event.clientY - rect.top) / rect.height * G.H }; }
+  function bindGraphEvents(svg) {
+    svg.addEventListener("wheel", (event) => { event.preventDefault(); const p = svgPoint(svg, event), factor = event.deltaY < 0 ? 1.18 : 1 / 1.18; zoomAt(p.x, p.y, factor); }, { passive: false });
+    svg.addEventListener("mousedown", (event) => {
+      if (event.button !== 0) return; const p = svgPoint(svg, event), wx = (p.x - G.view.x) / G.view.k, wy = (p.y - G.view.y) / G.view.k;
+      const hit = G.nodes.find((n) => Math.hypot(n.x - wx, n.y - wy) < (n.r + 5) / G.view.k);
+      if (hit) { G.pin = { id: hit.id, x: hit.x, y: hit.y }; svg.style.cursor = "grabbing"; event.preventDefault(); startDragSim(); }
+      else { G.pan = { x: p.x, y: p.y, ox: G.view.x, oy: G.view.y }; svg.style.cursor = "grabbing"; event.preventDefault(); }
+    });
+    svg.addEventListener("mousemove", (event) => { const p = svgPoint(svg, event); if (G.pin) { const wx = (p.x - G.view.x) / G.view.k, wy = (p.y - G.view.y) / G.view.k, node = G.nodes[G.idx.get(G.pin.id)]; G.pin.x = wx; G.pin.y = wy; if (node) { node.x = wx; node.y = wy; node.vx = 0; node.vy = 0; } } else if (G.pan) { G.view.x = G.pan.ox + p.x - G.pan.x; G.view.y = G.pan.oy + p.y - G.pan.y; applyView(); } });
+    const end = () => { if (G.raf) { cancelAnimationFrame(G.raf); G.raf = 0; } G.pin = null; G.pan = null; svg.style.cursor = "grab"; };
+    svg.addEventListener("mouseup", end); svg.addEventListener("mouseleave", end);
+  }
+  function startDragSim() {
+    if (G.raf) cancelAnimationFrame(G.raf);
+    const tick = () => { stepSim(3.5); const node = G.pin && G.nodes[G.idx.get(G.pin.id)]; if (node) { node.x = G.pin.x; node.y = G.pin.y; node.vx = 0; node.vy = 0; } syncPositions(); G.raf = requestAnimationFrame(tick); };
+    tick();
+  }
+  function zoomAt(x, y, factor) { const k = Math.max(0.15, Math.min(10, G.view.k * factor)), wx = (x - G.view.x) / G.view.k, wy = (y - G.view.y) / G.view.k; G.view.k = k; G.view.x = x - wx * k; G.view.y = y - wy * k; applyView(); }
+  function graphZoom(factor) { zoomAt(G.W / 2, G.H / 2, factor); }
+  function resetGraphView() { if (!G.viewEl) return; const n = Math.max(1, G.nodes.length), k = Math.max(0.22, Math.min(1, 0.9 / Math.max(1, Math.sqrt(n / 120)))); G.view.k = k; G.view.x = (G.W - G.W * k) / 2; G.view.y = (G.H - G.H * k) / 2; applyView(); }
+
+
+  // ---------- 启动 ----------
+  if (S.token) { enter(); } else { $("login").style.display = "grid"; }
+})();
+</script>
+</body>
+</html>
+
+
+
+
+

@@ -19,7 +19,7 @@ const PRINCIPAL = {
 };
 
 function memoryFile(id, fact) {
-  return `---\nid: "${id}"\nlayer: "long-term"\ncontainer: "long-term"\nvisibility: "platform"\nstatus: "active"\ncalendarDate: "2026-10-22"\n---\n\n${fact}\n`;
+  return `---\nid: "${id}"\nlayer: "long-term"\ncontainer: "long-term"\nvisibility: "platform"\nstatus: "active"\ncalendarDate: new Date().toISOString().slice(0, 10)\n---\n\n${fact}\n`;
 }
 
 function fakeFetch() {

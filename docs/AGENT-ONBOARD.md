@@ -17,7 +17,7 @@
 ## 二、一条命令接入（推荐）
 
 ```powershell
-cd D:\MemoryLib
+cd .
 
 # 1) 生成配置（密钥默认打码，不显示在屏幕）
 node scripts\agent-onboard.mjs --agent codex          # 打印 TOML
@@ -50,7 +50,7 @@ node scripts\agent-onboard.mjs --agent codex --write --agent-id admin-01 --role 
 ```
 $ codex mcp list
 Name    Command                      Args                                            Env                      Status   Auth
-memory  F:\ZHONGYAO\nodejs\node.exe  D:\MemoryLib\...\mcp-server.mjs                 MCP_MEMORY_*=*****       enabled  Unsupported
+memory  node  .\...\mcp-server.mjs                 MCP_MEMORY_*=*****       enabled  Unsupported
 ```
 
 **stdio MCP 握手（同一份配置，等价于 Codex 启动时做的事）**：
@@ -72,7 +72,7 @@ memory_recall_brief(记忆库几层) ✅ 返回"记忆库收敛为 8 层…"
 ### Claude Code
 
 ```powershell
-claude mcp add memory --scope user -- <命令里的 env 逐项 --env> -- "F:\ZHONGYAO\nodejs\node.exe" "D:\MemoryLib\app\memory-lib\mcp\mcp-server.mjs"
+claude mcp add memory --scope user -- <命令里的 env 逐项 --env> -- "node" "app/memory-lib\mcp\mcp-server.mjs"
 ```
 或把 `--write` 生成的 `.mcp.json` 放到项目根。
 
@@ -92,8 +92,8 @@ headers: X-MCP-Credential-Ref / X-MCP-Secret / X-MCP-Agent / X-MCP-Role
 ### 通用（任何 stdio MCP 客户端）
 
 ```
-command: F:\ZHONGYAO\nodejs\node.exe
-args:    D:\MemoryLib\app\memory-lib\mcp\mcp-server.mjs
+command: node
+args:    app/memory-lib\mcp\mcp-server.mjs
 env:     MCP_MEMORY_URL / MCP_MEMORY_CRED_REF / MCP_MEMORY_SECRET / MCP_MEMORY_AGENT / MCP_MEMORY_ROLE
 ```
 

@@ -74,10 +74,13 @@ test("ping -> {}", async () => {
   assert.deepEqual(r.result, {});
 });
 
-test("tools/list -> current 49-tool catalog and retired families stay absent", async () => {
+test("tools/list -> current 53-tool catalog and retired families stay absent", async () => {
   const r = await RESEARCHER.handle({ jsonrpc: "2.0", id: 3, method: "tools/list" });
   const names = r.result.tools.map((t) => t.name);
-  assert.equal(names.length, 49, "memory-lib MCP exposes the current static 49-tool catalog");
+  assert.equal(names.length, 53, "memory-lib MCP exposes the current static 53-tool catalog");
+    for (const added of ["memory_tool_note", "memory_plan_note", "memory_profile_note", "memory_role_note"]) {
+      assert.ok(names.includes(added), `missing ${added}`);
+    }
   const searchTool = r.result.tools.find((tool) => tool.name === "memory_search");
   assert.equal(searchTool.inputSchema.properties.documentQuota.description, "额外资料层配额，默认 3；0 表示关闭资料层");
   assert.equal(searchTool.inputSchema.required, undefined, "timeline enumeration must allow query to be omitted");

@@ -2,12 +2,12 @@
 /**
  * MAINT10：把生产上那条验收探针标成 deprecated（只发一条 HTTP，重启/改配置一概不碰）。
  *
- *   node D:\MemoryLib\scripts\maint10-deprecate-probe.mjs                 # 只读预检 + 打印将要发的请求
- *   node D:\MemoryLib\scripts\maint10-deprecate-probe.mjs --apply         # 真的 deprecate
- *   node D:\MemoryLib\scripts\maint10-deprecate-probe.mjs --apply --id=别的id
+ *   node .\scripts\maint10-deprecate-probe.mjs                 # 只读预检 + 打印将要发的请求
+ *   node .\scripts\maint10-deprecate-probe.mjs --apply         # 真的 deprecate
+ *   node .\scripts\maint10-deprecate-probe.mjs --apply --id=别的id
  *
  * 默认目标：deploy15-probe-private
- * 凭据：运行期从 C:\Users\admin\.dsh\profiles\web\cordis.patch.yml 读（不落盘、不打印 secret）。
+ * 凭据：运行期从 ~\.dsh\profiles\web\cordis.patch.yml 读（不落盘、不打印 secret）。
  * 身份：--agent（默认 admin-01）/ --role（默认 librarian-admin），可覆盖。
  *
  * 验证三段（--apply 时做）：

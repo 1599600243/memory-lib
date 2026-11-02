@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>记忆库概览 · 方案 C（深色优先）</title>
+<style>
+/* ===== 方案 C：Dark-first 风格 =====
+   关键词：深色默认、高对比、柔和分层（不用纯黑）、状态色更亮、长时间看不累 */
+:root{
+  --bg:#0b0d10; --panel:#12151a; --panel-2:#171b21; --line:#222831; --line-strong:#2d3540;
+  --fg:#e6e8eb; --fg-2:#9aa4b2; --fg-3:#6b7684;
+  --accent:#6ea8fe; --accent-dim:#1c2a3a;
+  --ok:#3fb950; --warn:#d29922; --bad:#f85149;
+  --radius:10px; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC",Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1000px;margin:0 auto;padding:32px 24px 72px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:28px}
+h1{font-size:22px;font-weight:600;letter-spacing:-.01em;margin:0 0 4px}
+.sub{color:var(--fg-2);font-size:12.5px}
+.nav{display:flex;gap:6px;flex-wrap:wrap}
+.nav a{color:var(--fg-2);text-decoration:none;font-size:13px;padding:7px 12px;border-radius:8px;border:1px solid transparent}
+.nav a[aria-current]{background:var(--accent-dim);border-color:#24405f;color:var(--accent);font-weight:600}
+.nav a:hover{border-color:var(--line-strong);color:var(--fg)}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;position:relative;overflow:hidden}
+.card::after{content:"";position:absolute;inset:0 0 auto 0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(110,168,254,.35),transparent)}
+.card .label{color:var(--fg-2);font-size:12px;margin-bottom:10px}
+.card .num{font-size:28px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+.card .hint{color:var(--fg-3);font-size:11.5px;margin-top:8px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:18px;overflow:hidden}
+.panel>h2{font-size:13px;font-weight:600;margin:0;padding:12px 18px;border-bottom:1px solid var(--line);
+  color:var(--fg);background:var(--panel-2);display:flex;align-items:center;gap:10px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:11px 18px;font-size:13px;border-bottom:1px solid var(--line)}
+th{color:var(--fg-2);font-weight:500;font-size:12px;background:var(--panel)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--panel-2)}
+td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+code{font-family:var(--mono);font-size:12px;color:var(--fg);background:var(--panel-2);
+  border:1px solid var(--line);padding:1px 6px;border-radius:5px}
+.state{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--fg-2)}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;box-shadow:0 0 8px currentColor}
+.dot.ok{background:var(--ok);color:var(--ok)} .dot.warn{background:var(--warn);color:var(--warn)}
+.toolbar{display:flex;gap:10px;padding:12px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap;align-items:center}
+input[type=search]{flex:1;min-width:220px;padding:8px 12px;border:1px solid var(--line-strong);border-radius:8px;
+  background:var(--bg);color:var(--fg);font:13px inherit}
+input[type=search]::placeholder{color:var(--fg-3)}
+input[type=search]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(110,168,254,.18)}
+select{padding:8px 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--bg);color:var(--fg);font-size:13px}
+.chip{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--line-strong);color:var(--fg-2)}
+.chip.blue{background:var(--accent-dim);border-color:#24405f;color:var(--accent)}
+.item{padding:14px 18px;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:none}
+.item:hover{background:var(--panel-2)}
+.item .id{font-family:var(--mono);font-size:11.5px;color:var(--fg-3)}
+.item .body{margin:6px 0 8px;font-size:13.5px;line-height:1.6;color:var(--fg)}
+.item .meta{display:flex;gap:10px;align-items:center;font-size:11.5px;color:var(--fg-3);flex-wrap:wrap}
+footer{margin-top:28px;color:var(--fg-3);font-size:12px;border-top:1px solid var(--line);padding-top:14px}
+@media(max-width:760px){.cards{grid-template-columns:repeat(2,1fr)}.wrap{padding:24px 16px 56px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>记忆库概览</h1>
+      <div class="sub">2026-10-30 · 只读视图 · 数据来源 /v1/memory/stats</div>
+    </div>
+    <nav class="nav">
+      <a href="#" aria-current="page">概览</a>
+      <a href="#">记忆浏览</a>
+      <a href="#">记忆搜索</a>
+      <a href="#">健康</a>
+      <a href="#">审计</a>
+    </nav>
+  </header>
+
+  <section class="cards">
+    <div class="card"><div class="label">长期记忆</div><div class="num">1,880</div><div class="hint">curated/shared</div></div>
+    <div class="card"><div class="label">原始证据</div><div class="num">2,186</div><div class="hint">evidence/conversations</div></div>
+    <div class="card"><div class="label">已索引</div><div class="num">4,078</div><div class="hint">fts + vector</div></div>
+    <div class="card"><div class="label">索引失败</div><div class="num" style="color:var(--ok)">0</div><div class="hint"><span class="state"><span class="dot ok"></span>healthy</span></div></div>
+  </section>
+
+  <section class="panel">
+    <h2>按身份分布</h2>
+    <table>
+      <thead><tr><th>user_id</th><th>归属</th><th class="num">库里</th><th class="num">可见</th><th>状态</th></tr></thead>
+      <tbody>
+        <tr><td><code>user-owner</code></td><td>我（DSH 开发会话）</td><td class="num">1,749</td><td class="num">1,749</td><td><span class="state"><span class="dot ok"></span>一致</span></td></tr>
+        <tr><td><code>u-owner</code></td><td>米汐（QQ 主人）</td><td class="num">98</td><td class="num">98</td><td><span class="state"><span class="dot ok"></span>一致</span></td></tr>
+        <tr><td><code>u_group_1000000</code></td><td>群线（老年闲聊群）</td><td class="num">33</td><td class="num">33</td><td><span class="state"><span class="dot ok"></span>一致</span></td></tr>
+        <tr><td><code>u_2b53219729</code></td><td>小号（测试）</td><td class="num">4</td><td class="num">4</td><td><span class="state"><span class="dot ok"></span>一致</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel">
+    <h2>记忆浏览 <span class="chip blue">u-owner</span></h2>
+    <div class="toolbar">
+      <select><option>身份：u-owner</option><option>身份：全部（仅管理员）</option></select>
+      <input type="search" placeholder="搜索正文、id 或标签" value="白米饭">
+      <span class="chip">3 条</span>
+    </div>
+    <div class="item">
+      <div class="id">soul-qq-bot-cbdb560d81d0</div>
+      <div class="body">米汐认定白米饭是主食。</div>
+      <div class="meta"><span>2026-10-30</span><span class="chip">soul</span><span>出处：聊天记录 L123</span></div>
+    </div>
+    <div class="item">
+      <div class="id">soul-qq-bot-4b71ec749feefaf8</div>
+      <div class="body">米汐被叫「大肥鱼」会立刻炸毛、拍水、要求再说一遍试试。</div>
+      <div class="meta"><span>2026-10-30</span><span class="chip">soul</span><span>出处：聊天记录 L427</span></div>
+    </div>
+    <div class="item">
+      <div class="id">group-turn-1000000-…</div>
+      <div class="body">[群友 ZERO]：我养了一只橘猫　米汐：橘猫？那本小姐记下了。</div>
+      <div class="meta"><span>2026-10-30</span><span class="chip">group</span><span>出处：群聊会话</span></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>异常检查</h2>
+    <table>
+      <tbody>
+        <tr><td>user_id 为空</td><td class="num">0</td><td><span class="state"><span class="dot ok"></span>通过</span></td></tr>
+        <tr><td>非法 visibility</td><td class="num">0</td><td><span class="state"><span class="dot ok"></span>通过</span></td></tr>
+        <tr><td>缺 evidence_refs</td><td class="num">423</td><td><span class="state"><span class="dot warn"></span>可接受（历史迁移条目）</span></td></tr>
+        <tr><td>索引失败文件</td><td class="num">0</td><td><span class="state"><span class="dot ok"></span>通过</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <footer>方案 C · Dark-first：深色默认、柔和不纯黑、状态色发光、10px 圆角。夜间长时间看最舒服。</footer>
+</div>
+</body>
+</html>

@@ -79,7 +79,9 @@ export function createProjectMemory({ dataRoot, graphStore = null } = {}) {
     evidence_refs = requireEvidenceRefs(evidence_refs);
     const occurredAt = occurred_at ?? new Date().toISOString();
     const day = String(occurredAt).slice(0, 10);
-    const fileSlug = slug ? slugify(slug) : slugify(String(sections["决定"] ?? "").slice(0, 32));
+    // 纯中文决定 slugify 会退化成 "unnamed"：此时用时间戳兜底，保证文件名可区分
+  let fileSlug = slug ? slugify(slug) : slugify(String(sections["决定"] ?? "").slice(0, 32));
+  if (!fileSlug || fileSlug === "unnamed") fileSlug = `d${Date.now().toString(36)}`;
     const filePath = path.join(projectDir(name), "decisions", `${day}-${fileSlug}.md`);
     // 追加式：同名 slug 追加序号，避免覆盖已有决策（不可变）。
     let finalPath = filePath;

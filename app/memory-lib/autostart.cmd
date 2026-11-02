@@ -2,9 +2,9 @@
 rem memory-lib core autostart wrapper (no pause; used by Task Scheduler / Startup folder).
 rem Reads production credentials from wincred. Exits quietly when the port is already busy.
 rem
-rem 2026-10-04: code + data MOVED. Code now lives in D:\MemoryLib\app (this file is inside it),
-rem   data in D:\MemoryLib\data. I:\OpenClaw\memory-data is kept as a junction pointing at
-rem   D:\MemoryLib\data so existing consumers (openclaw.json, clawdbot.json,
+rem 2026-10-04: code + data MOVED. Code now lives in .\app (this file is inside it),
+rem   data in .\data. I:\OpenClaw\memory-data is kept as a junction pointing at
+rem   .\data so existing consumers (openclaw.json, clawdbot.json,
 rem   Memory-Archive-Daily / snapshot.ps1) keep resolving. New starts use the real D: paths
 rem   and must not depend on that junction.
 rem
@@ -30,4 +30,4 @@ rem
 rem ASCII-only with CRLF on purpose: cmd.exe cannot read this file as UTF-8 without a
 rem BOM, and a non-ASCII revision of this file silently failed to start the service.
 cd /d "%~dp0"
-node server.mjs --host 127.0.0.1 --port 8787 --data-root "D:\MemoryLib\data\memory" --workspace-root "D:\MemoryLib\data" --registry "D:\MemoryLib\data\runtime\identity.json" --secrets-dir "D:\MemoryLib\data\runtime\secrets" --audit "D:\MemoryLib\data\runtime\audit\access.jsonl" --secret-store wincred --calendar-timezone Asia/Shanghai --summary-index none --capture-agent-id pilot-01 --capture-role-id capture-ingest
+node server.mjs --host 127.0.0.1 --port 8787 --data-root ".\data\memory" --workspace-root ".\data" --registry ".\data\runtime\identity.json" --secrets-dir ".\data\runtime\secrets" --audit ".\data\runtime\audit\access.jsonl" --secret-store wincred --calendar-timezone Asia/Shanghai --summary-index none --capture-agent-id pilot-01 --capture-role-id capture-ingest

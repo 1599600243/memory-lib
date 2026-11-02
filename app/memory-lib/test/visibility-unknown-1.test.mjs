@@ -23,11 +23,21 @@ async function setup() {
   const dataRoot = path.join(root, "memory");
   const dir = path.join(dataRoot, "curated", "shared");
   await fs.mkdir(dir, { recursive: true });
-  for (const id of COPY_IDS) {
-    const text = await fs.readFile(path.join(SOURCE, `${id}.md`), "utf8");
-    await fs.writeFile(path.join(dir, `${id}.md`), text, "utf8");
-  }
-  const marker = `---\nid: ${FIXTURE_ID}\nlayer: long-term\ncontainer: long-term\nvisibility: private\ntype: memory\nstatus: active\ntenant_id: default\nframework_id: deepseek-harness\ngroup_id: unknown\nuser_id: unknown\nagent_id: admin-01\nrole_id: librarian-admin\noccurred_at: \"${DAY}T03:00:00.000Z\"\nvalid_from: \"${DAY}T03:00:00.000Z\"\ncalendarDate: ${DAY}\n---\n${FIXTURE_ID} should only match real admin agent/role, not unknown user.\n`;
+
+  // 全部自造 fixture：不再依赖生产数据（那些文件 2026-10-30 已从 unknown/private 修正为 user-owner/user，
+  // 场景已不存在；测试不该绑在生产库内容上）。
+  const base = (id, extra = "", body = "") =>
+    "---\nid: " + id + "\nlayer: long-term\ncontainer: long-term\nvisibility: private\ntype: memory\nstatus: active\ntenant_id: default\nframework_id: deepseek-harness\ngroup_id: unknown\nuser_id: unknown\nagent_id: admin-01\nrole_id: librarian-admin\n" + extra + "---\n" + body + "\n";
+
+  // ① 带日期的记录：供 calendarDate 与 search 断言
+  await fs.writeFile(path.join(dir, COPY_IDS[0] + ".md"), base(COPY_IDS[0],
+    "occurred_at: \"" + DAY + "T03:00:00.000Z\"\nvalid_from: \"" + DAY + "T03:00:00.000Z\"\ncalendarDate: " + DAY + "\n",
+    "用户对本项目的唯一判据：同一件事不再被问第二遍。"), "utf8");
+  // ②③ 不带日期：只参与 search / brief / graph
+  await fs.writeFile(path.join(dir, COPY_IDS[1] + ".md"), base(COPY_IDS[1], "", "同一件事不再被问第二遍，这是第二条。"), "utf8");
+  await fs.writeFile(path.join(dir, COPY_IDS[2] + ".md"), base(COPY_IDS[2], "", "第三条私有记录，用于 graph 与检索边界。"), "utf8");
+
+  const marker = `---\nid: ${FIXTURE_ID}\nlayer: long-term\ncontainer: long-term\nvisibility: private\ntype: memory\nstatus: active\ntenant_id: default\nframework_id: deepseek-harness\ngroup_id: unknown\nuser_id: unknown\nagent_id: admin-01\nrole_id: librarian-admin\noccurred_at: "${DAY}T03:00:00.000Z"\nvalid_from: "${DAY}T03:00:00.000Z"\ncalendarDate: ${DAY}\n---\n${FIXTURE_ID} should only match real admin agent/role, not unknown user.\n`;
   await fs.writeFile(path.join(dir, `${FIXTURE_ID}.md`), marker, "utf8");
   return { root, dataRoot, dir };
 }

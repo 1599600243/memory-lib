@@ -29,6 +29,8 @@ import { atomicWriteJson } from "./atomic-write.mjs";
 import { workspaceKey } from "./conversation-memory.mjs";
 import { unquote } from "./frontmatter-util.mjs";
 import { WRITE_LAYERS } from "./write-memory.mjs";
+import { resultingWriteTarget } from "./write-authorization.mjs";
+import { externalVisibilityDenial } from "./external-source-guard.mjs";
 
 // 状态机的**全部**格（修复批次补全）：pending → claimed → completed / needs_review / failed。
 // 旧值只有前两格 —— 导出给别人看的枚举少三格，调用方就会把"已完成 / 需复核 / 失败"当成未知状态。
@@ -463,6 +465,11 @@ export function createRefinementJobs({ dataRoot, deadlineHours = DEFAULT_JOB_DEA
         await recordConflict({ record, conflicts: resolved.conflicts, payloadHash: plan.payloadHash });
         const primary = resolved.conflicts[0];
         return failure(409, primary.code, conflictMessage(primary), { conflicts: resolved.conflicts });
+      }
+      for (const item of resolved.planned) {
+        const target = resultingWriteTarget(item.writeInput);
+        const denial = externalVisibilityDenial({ evidenceRefs: item.writeInput.evidence_refs, visibility: target?.visibility });
+        if (denial) throw Object.assign(new Error(denial.message), { code: denial.code, status: 403, detail: denial.sources });
       }
 
       // --- 真正落盘。写在**共享 writer**上（服务端那一个：带 onIndexed，写完立刻进索引）。 ---

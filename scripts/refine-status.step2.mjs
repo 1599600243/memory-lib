@@ -4,7 +4,7 @@
  *
  *   node scripts/refine-status.mjs
  *   node scripts/refine-status.mjs --json
- *   node scripts/refine-status.mjs --logdir D:\MemoryLib\logs --state D:\MemoryLib\state\refine-state.json
+ *   node scripts/refine-status.mjs --logdir .\logs --state .\state\refine-state.json
  *
  * 为什么要有它：提炼现在活在代理里（不再是谁记得手动跑），那就必须能一眼回答
  * 「它还在跑吗 / 上次成功是什么时候 / 待提炼多少 / 失败多少 / 死信多少」——

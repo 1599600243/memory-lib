@@ -29,6 +29,7 @@ import { rotateAuditArchives } from "./audit-archive.mjs";
 import { queryAudit, registryView, setCredentialStatus } from "./admin.mjs";
 import { createFramework, rotateCredential, shouldWriteWincred } from "./identity-admin.mjs";
 import { createLearningApi } from "./learning.mjs";
+import { collectStats, listByIdentity, findMemories } from "./stats.mjs";
 import { createLlmClient, createLlmFailover } from "./llm.mjs";
 import { createPetApi, detectRememberIntent } from "./pet.mjs";
 import { makePetReply } from "./meapet-contract.mjs";
@@ -46,6 +47,8 @@ import { createRoleKey, issueRoleKey, authenticateRoleKey, revokeRoleKey, revoke
 
 import { createToolsMemory } from "./tools-memory.mjs";
 import { createProjectMemory } from "./project-memory.mjs";
+import { resolveCodeRefs, summarizeCodeGraph } from "./project-code-graph.mjs";
+import { listKnowledgeDocuments } from "./knowledge-list.mjs";
 import { createPlansMemory } from "./plans-memory.mjs";
 import { createRecall } from "./recall.mjs";
 import { createProfileMemory } from "./profile-memory.mjs";
@@ -55,10 +58,30 @@ import { createColdLayer } from "./cold-layer.mjs";
 import { createIndexStore } from "./index-store.mjs";
 import { createMemoryIngest } from "./memory-ingest.mjs";
 import { createMemoryWriter } from "./write-memory.mjs";
+import { externalAgentVisibilityDenial, isExternalAgent } from "./external-source-guard.mjs";
+import { missingEvidenceRefs } from "./evidence-ref-check.mjs";
+import { invalidReservedTags } from "./tag-contract.mjs";
 import { resultingWriteTarget, writeAuthorizationDenial, denialForWrite, supersedeDenialFor, claimedIdentityOf } from "./write-authorization.mjs";
-import { createGraphStore, jointSearch as graphJointSearch } from "./graph-retrieval.mjs";
+import { createGraphStore, dumpGraph, jointSearch as graphJointSearch } from "./graph-retrieval.mjs";
 import { createEvidenceRecoveryApi } from "./evidence-recovery.mjs";
 import { createRefinementObservability } from "./refinement-observability.mjs";
+
+import { unquote } from "./frontmatter-util.mjs";
+import { createSourceTrustReader } from "./source-trust-reader.mjs";
+
+const sourceTrustReader = createSourceTrustReader();
+
+async function withSourceTrustList(items) {
+  if (!Array.isArray(items)) return items;
+  return Promise.all(items.map(async (item) => {
+    let value = item?.frontmatter?.source_trust ?? item?.source_trust;
+    if (typeof value !== "string" && typeof item?.path === "string") {
+      // 走缓存：文件没变就不重复读盘（历史文件没有该字段时尤其明显）
+      value = await sourceTrustReader.trustOf(item.path);
+    }
+    return { ...item, source_trust: typeof value === "string" && unquote(value).trim() ? unquote(value) : "unknown" };
+  }));
+}
 
 
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "::1", "localhost"]);
@@ -558,7 +581,31 @@ export function createLocalhostServer(options) {
       // --- GET /console | / — serve the management console UI (static shell).
       // Page loads are NOT audited (they carry no data); every API call behind
       // the UI is audited as usual.
-      if (method === "GET" && (url === "/console" || url === "/")) {
+      // 2026-10-30：v2（A 密度 + 深色自动）成为默认首页；旧控制台保留在 /console-legacy。
+      const v2ConsolePath = path.join(path.dirname(consolePath), "v2", "index.html");
+      if (method === "GET" && (url === "/console" || url === "/" || url === "/console-v2")) {
+        let html = null;
+        try {
+          html = await fs.readFile(v2ConsolePath, "utf8");
+        } catch {
+          html = null;
+        }
+        if (html === null) {
+          try {
+            html = await fs.readFile(consolePath, "utf8");
+          } catch {
+            res.writeHead(503, { "content-type": "text/plain; charset=utf-8" });
+            res.end("console not found");
+            return;
+          }
+        }
+        res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+        res.end(html);
+        return;
+      }
+
+      // --- GET /console-legacy — the previous console (kept for side-by-side comparison).
+      if (method === "GET" && url === "/console-legacy") {
         let html;
         try {
           html = await fs.readFile(consolePath, "utf8");
@@ -1044,6 +1091,23 @@ data: ${JSON.stringify(result)}
         return;
       }
 
+      // --- POST /v1/graph/dump: 全局图谱快照（只读派生视图，与 search 同权限） ---
+      if (method === "POST" && url === "/v1/graph/dump") {
+        const action = "search";
+        const perm = authorizeAction(role, action);
+        auditEvent = { ...auditEvent, action: "graph_dump" };
+        if (!perm.ok) { auditEvent = { ...auditEvent, denyReason: perm.reason }; await respond(403, { ok: false, error: { code: "FORBIDDEN", message: perm.reason } }); return; }
+        const limit = Number.isInteger(body?.limit) ? Math.max(1, Math.min(2000, body.limit)) : 500;
+        const project = typeof body?.project === "string" && body.project.trim() ? body.project.trim() : null;
+        const tenantId = principal.tenant_id ?? "default";
+        let graph;
+        try { graph = dumpGraph({ dataRoot, tenantId, limit, project, principal }); }
+        catch (err) { auditEvent = { ...auditEvent, denyReason: "GRAPH_UNAVAILABLE" }; await respond(500, { ok: false, error: { code: "GRAPH_UNAVAILABLE", message: err.message } }); return; }
+        auditEvent = { ...auditEvent, allow: true, resourceId: `${graph.totals.nodes} nodes / ${graph.totals.edges} edges` };
+        await respond(200, { ok: true, principal: { framework: principal.framework_id, agent: principal.agent_id, role: principal.role_id }, ...graph });
+        return;
+      }
+
       // --- POST /v1/search/joint: read-only federated retrieval ---
       if (method === "POST" && url === "/v1/search/joint") {
         const action = "search";
@@ -1095,11 +1159,14 @@ data: ${JSON.stringify(result)}
          const as_of = typeof body?.as_of === "string" ? body.as_of : null;
          const include_superseded = body?.include_superseded === true;
          const page = query.trim() ? null : await lib.timeline({ limit, offset: body?.offset, cursor: body?.cursor, calendarDate, calendarTimezone: typeof body?.calendarTimezone === "string" ? body.calendarTimezone : calendarTimezone, workspace, tags, since, until, include_superseded });
-         const results = page?.results ?? await lib.search({ query, limit, documentQuota, rawQuota, searchMode, workspace, tags, since, until, as_of, include_superseded, lane, graphExpand, calendarDate, calendarTimezone: typeof body?.calendarTimezone === "string" ? body.calendarTimezone : calendarTimezone });
+         // 2026-11-02：把检索元信息（prefiltered / lanes）一并返回，便于排查"为什么这条没被召回"。
+         const searchOptions = { query, limit, documentQuota, rawQuota, searchMode, workspace, tags, since, until, as_of, include_superseded, lane, graphExpand, calendarDate, calendarTimezone: typeof body?.calendarTimezone === "string" ? body.calendarTimezone : calendarTimezone };
+         const searchOut = page ? null : (typeof lib.searchWithMeta === "function" ? await lib.searchWithMeta(searchOptions) : { results: await lib.search(searchOptions), meta: null });
+         const results = page?.results ?? searchOut.results;
         // D4F2：检索命中追加到 runtime sidecar（只动 runtime/，记忆内容文件零写）
         await recallStats.recordHits((results ?? []).map((r) => r.path));
         auditEvent = { ...auditEvent, allow: true, scope: scopeRes.scopes, resourceId: `${results.length} hits` };
-        await respond(200, { ok: true, principal: { framework: authed.framework.framework_id, agent: agent.agent_id, role: role.role_id }, ...(page ?? { count: results.length, results }) });
+        await respond(200, { ok: true, principal: { framework: authed.framework.framework_id, agent: agent.agent_id, role: role.role_id }, ...(page ? { ...page, results: await withSourceTrustList(page.results) } : { count: results.length, results: await withSourceTrustList(results), meta: searchOut?.meta ?? null }) });
         return;
       }
 
@@ -1130,7 +1197,64 @@ data: ${JSON.stringify(result)}
         return;
       }
 
-      if (method === "POST" && url === "/v1/memory/list") {
+        if (method === "POST" && url === "/v1/memory/stats") {
+          const action = "search";
+          const perm = authorizeAction(role, action);
+          auditEvent = { ...auditEvent, action };
+          if (!perm.ok) {
+            auditEvent = { ...auditEvent, denyReason: perm.reason };
+            await respond(403, { ok: false, error: { code: "FORBIDDEN", message: perm.reason } });
+            return;
+          }
+          const stats = await collectStats(dataRoot);
+          auditEvent = { ...auditEvent, allow: true, resourceId: "memory stats" };
+          await respond(200, { ok: true, ...stats });
+          return;
+        }
+
+        if (method === "POST" && url === "/v1/memory/find") {
+          const action = "admin";
+          const perm = authorizeAction(role, action);
+          auditEvent = { ...auditEvent, action };
+          if (!perm.ok) {
+            auditEvent = { ...auditEvent, denyReason: perm.reason };
+            await respond(403, { ok: false, error: { code: "FORBIDDEN", message: "全库字面检索需要 admin 权限" } });
+            return;
+          }
+          const q = typeof body?.query === "string" ? body.query.trim() : "";
+          if (!q) {
+            auditEvent = { ...auditEvent, denyReason: "BAD_REQUEST" };
+            await respond(400, { ok: false, error: { code: "BAD_REQUEST", message: "query is required" } });
+            return;
+          }
+          const found = await findMemories(dataRoot, q, { limit: body?.limit });
+          auditEvent = { ...auditEvent, allow: true, resourceId: "find:" + q + ":" + found.items.length };
+          await respond(200, { ok: true, query: q, total: found.total, items: await withSourceTrustList(found.items) });
+          return;
+        }
+
+        if (method === "POST" && url === "/v1/memory/by-identity") {
+          const action = "admin";
+          const perm = authorizeAction(role, action);
+          auditEvent = { ...auditEvent, action };
+          if (!perm.ok) {
+            auditEvent = { ...auditEvent, denyReason: perm.reason };
+            await respond(403, { ok: false, error: { code: "FORBIDDEN", message: "查看其他身份的记忆需要 admin 权限" } });
+            return;
+          }
+          const userId = typeof body?.userId === "string" ? body.userId.trim() : "";
+          if (!userId) {
+            auditEvent = { ...auditEvent, denyReason: "BAD_REQUEST" };
+            await respond(400, { ok: false, error: { code: "BAD_REQUEST", message: "userId is required" } });
+            return;
+          }
+          const listed = await listByIdentity(dataRoot, userId, { limit: body?.limit, offset: body?.offset });
+          auditEvent = { ...auditEvent, allow: true, resourceId: userId + ":" + listed.items.length };
+          await respond(200, { ok: true, userId, total: listed.total, items: listed.items });
+          return;
+        }
+
+        if (method === "POST" && url === "/v1/memory/list") {
         const action = "search";
         const perm = authorizeAction(role, action);
         auditEvent = { ...auditEvent, action };
@@ -1142,7 +1266,7 @@ data: ${JSON.stringify(result)}
         let workspace; let tags;
         try { workspace = normalizeWorkspace(body?.workspace); tags = normalizeTags(body?.tags); }
         catch (err) { auditEvent = { ...auditEvent, denyReason: "BAD_REQUEST" }; await respond(400, { ok: false, error: { code: "BAD_REQUEST", message: err.message } }); return; }
-        const items = await lib.listMemories({ limit: body?.limit, workspace, tags, since: typeof body?.since === "string" ? body.since : null, until: typeof body?.until === "string" ? body.until : null });
+        const items = await withSourceTrustList(await lib.listMemories({ limit: body?.limit, workspace, tags, since: typeof body?.since === "string" ? body.since : null, until: typeof body?.until === "string" ? body.until : null }));
         auditEvent = { ...auditEvent, allow: true, resourceId: `${items.length} memories` };
         await respond(200, { ok: true, principal: { framework: authed.framework.framework_id, agent: agent.agent_id, role: role.role_id }, count: items.length, items });
         return;
@@ -1206,6 +1330,8 @@ data: ${JSON.stringify(result)}
           // 旧实现只在 explicitVisibility 时零散比了几项，且缺字段/自报他人身份多半只到 400；
           // 现在把"自报身份位"交给共享门（identityDenialForWrite）统一判，拒绝一律是 403 WRITE_SCOPE_DENIED。
           const claimed = claimedIdentityOf(body);
+          const badTags = invalidReservedTags(body?.tags);
+          if (badTags.length) throw Object.assign(new Error("INVALID_TAG_FORMAT: " + badTags.map((b) => `${b.tag}(${b.reason})`).join(", ")), { code: "INVALID_TAG_FORMAT" });
           const keyLayer = keyScoped ? (requestedVisibility === "shared" || requestedVisibility === "user" ? "curated-shared" : body?.layer === "project-progress" ? "project-progress" : (["librarian-admin", "governance"].includes(String(role.role_id)) && body?.layer === "profile" ? "profile" : "agent")) : explicitVisibility && ["shared", "user"].includes(requestedVisibility) ? "curated-shared" : body?.layer === "project-progress" ? "project-progress" : (explicitVisibility && ["librarian-admin", "governance"].includes(String(role.role_id)) && body?.layer === "profile" ? "profile" : body?.layer);
           // WRITE-DENY-1：**写出来的可见性决定需要什么权限**（与提炼提交门禁同一把尺子）。
           // 这里必须在 writer 之前判定：调用方省略 visibility 时，document/tool 会落到容器默认的
@@ -1220,13 +1346,35 @@ data: ${JSON.stringify(result)}
             claimed,
           });
           if (writeDenial) throw Object.assign(new Error(`WRITE_SCOPE_DENIED: ${writeDenial.code}: ${writeDenial.message}`), { code: "WRITE_SCOPE_DENIED", detail: writeDenial.code });
+          // 外部通道 agent（qq-*/napcat-*）只能写自己的层：shared/platform 会放大到组/全员可见，一律拒绝。
+          // 注意：不动"propose-only 可写 curated-shared"的既有约定（MEMORY-LOOP-1），只限制外部身份。
+          const targetForAudit = resultingWriteTarget({ layer: keyLayer, visibility: explicitVisibility || keyScoped ? requestedVisibility : undefined });
+          // 拒绝也要能追溯目标层：先把 container/visibility 写进审计，再判
+          auditEvent = { ...auditEvent, container: targetForAudit?.container ?? null, visibility: targetForAudit?.visibility ?? null };
+          const externalDenial = externalAgentVisibilityDenial({ agentId: authenticated.agent_id, visibility: targetForAudit?.visibility });
+          if (externalDenial) throw Object.assign(new Error(`WRITE_SCOPE_DENIED: ${externalDenial.code}: ${externalDenial.message}`), { code: "WRITE_SCOPE_DENIED", detail: externalDenial.code });
+          // 外部通道（qq-*）写入必须引用真实存在的证据：合成 id（例如 being:self-time:...）不可核，直接拒。
+          if (isExternalAgent(authenticated.agent_id)) {
+            const missing = await missingEvidenceRefs({ dataRoot, refs: Array.isArray(body?.evidence_refs) ? body.evidence_refs : [] });
+            if (missing.length) throw Object.assign(new Error(`EVIDENCE_REFS_NOT_FOUND: ${missing.join(", ")}`), { code: "EVIDENCE_REFS_NOT_FOUND" });
+          }
           const payload = { ...body, ...(keyScoped ? { layer: keyLayer, visibility: requestedVisibility } : explicitVisibility ? { layer: keyLayer, visibility: requestedVisibility } : {}), agent: authenticated.agent_id, role_id: authenticated.role_id, evidence_refs: requireEvidenceRefs(body), principal: authenticated };
           const result = payload.layer === "project-progress" ? await memoryWriter.writeProgress(payload) : await memoryWriter.write(payload);
-          auditEvent = { ...auditEvent, allow: true, resourceId: result.path ?? payload.id ?? payload.project };
+          auditEvent = { ...auditEvent, allow: true, resourceId: result.path ?? payload.id ?? payload.project, container: targetForAudit?.container ?? null, visibility: targetForAudit?.visibility ?? null };
           await respond(200, { ok: true, principal: { framework: authed.framework.framework_id, agent: agent.agent_id, role: role.role_id }, ...result });
         } catch (err) {
           // WRITE-DENY-1：写授权拒绝是 403（不是 400）——它和"输入不合法"是两件事，
           // 且与提炼提交门禁的 403 WRITE_SCOPE_DENIED 同一口径。
+          if (err?.code === "INVALID_TAG_FORMAT") {
+            auditEvent = { ...auditEvent, denyReason: "INVALID_TAG_FORMAT" };
+            await respond(400, { ok: false, error: { code: "INVALID_TAG_FORMAT", message: err.message } });
+            return;
+          }
+          if (err?.code === "EVIDENCE_REFS_NOT_FOUND") {
+            auditEvent = { ...auditEvent, denyReason: "EVIDENCE_REFS_NOT_FOUND" };
+            await respond(400, { ok: false, error: { code: "EVIDENCE_REFS_NOT_FOUND", message: err.message } });
+            return;
+          }
           if (err?.code === "WRITE_SCOPE_DENIED") {
             auditEvent = { ...auditEvent, denyReason: err.detail ?? "WRITE_SCOPE_DENIED" };
             await respond(403, { ok: false, error: { code: "WRITE_SCOPE_DENIED", message: err.message, detail: err.detail ?? "WRITE_SCOPE_DENIED" } });
@@ -1352,10 +1500,44 @@ data: ${JSON.stringify(result)}
         auditEvent = { ...auditEvent, action: "project_list" };
         if (!perm.ok) { auditEvent = { ...auditEvent, denyReason: perm.reason }; await respond(403, { ok: false, error: { code: "FORBIDDEN", message: perm.reason } }); return; }
         const items = await projectMemory.listProjects(authenticatedPrincipal(authed, agent, role));
-        auditEvent = { ...auditEvent, allow: true, resourceId: `${items.length} projects` };
-        await respond(200, { ok: true, principal: { framework: authed.framework.framework_id, agent: agent.agent_id, role: role.role_id }, count: items.length, items });
+        // 代码图摘要（只读）：按项目名匹配 project-graphs.json；未登记的项目不动
+        const registryPath = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "var", "project-graphs.json");
+        const withCode = await Promise.all(items.map(async (item) => {
+          try {
+            const summary = await summarizeCodeGraph({ registryPath, project: item.project });
+            if (!summary?.registered) return item;
+            // 记忆↔代码：读该项目记忆正文，抽出文件/符号引用并对到代码图上
+            const memoryPaths = [
+              item.current_state?.path,
+              ...(Array.isArray(item.decisions) ? item.decisions.map((entry) => entry.path) : []),
+              item.progress?.path,
+            ].filter(Boolean);
+            const texts = [];
+            for (const memoryPath of memoryPaths.slice(0, 20)) texts.push(String(await fs.readFile(memoryPath, "utf8").catch(() => "")));
+            const codeRefs = await resolveCodeRefs({ graphPath: summary.graph, texts });
+            return { ...item, code_graph: summary, ...(codeRefs.length ? { code_refs: codeRefs } : {}) };
+          } catch { return item; }
+        }));
+        auditEvent = { ...auditEvent, allow: true, resourceId: `${withCode.length} projects` };
+        await respond(200, { ok: true, principal: { framework: authed.framework.framework_id, agent: agent.agent_id, role: role.role_id }, count: withCode.length, items: withCode });
         return;
       }
+      // --- POST /v1/knowledge/list: 知识库文档（evidence/documents 的只读视图，search 权限） ---
+      if (method === "POST" && url === "/v1/knowledge/list") {
+        const perm = authorizeAction(role, "search");
+        auditEvent = { ...auditEvent, action: "knowledge_list" };
+        if (!perm.ok) { auditEvent = { ...auditEvent, denyReason: perm.reason }; await respond(403, { ok: false, error: { code: "FORBIDDEN", message: perm.reason } }); return; }
+        try {
+          const result = await listKnowledgeDocuments({ dataRoot });
+          auditEvent = { ...auditEvent, allow: true, resourceId: `${result.count} documents` };
+          await respond(200, { ok: true, ...result });
+        } catch (err) {
+          auditEvent = { ...auditEvent, denyReason: "KNOWLEDGE_LIST_FAILED" };
+          await respond(500, { ok: false, error: { code: "KNOWLEDGE_LIST_FAILED", message: err.message } });
+        }
+        return;
+      }
+
       if (method === "POST" && url === "/v1/project/get") {
         const perm = authorizeAction(role, "search");
         auditEvent = { ...auditEvent, action: "project_get" };
@@ -1455,6 +1637,7 @@ data: ${JSON.stringify(result)}
           memories: Number.isInteger(body?.memories) ? body.memories : undefined,
           memory_limit_chars: Number.isInteger(body?.memory_limit_chars) ? body.memory_limit_chars : undefined,
           memory_only: body?.memory_only === true,
+      tags: Array.isArray(body?.tags) ? body.tags.map(String).filter(Boolean).slice(0, 10) : null,
         });
         auditEvent = { ...auditEvent, allow: true, resourceId: `${brief.total_chars} chars` };
         await respond(200, { ok: true, principal: { framework: authed.framework.framework_id, agent: agent.agent_id, role: role.role_id }, ...brief });
@@ -2163,7 +2346,7 @@ data: ${JSON.stringify(result)}
             result = await evidenceRecoveryApi.evidenceImport(id, content);
           } else if (url === "/v1/evidence/get") {
             if (!id) throw new Error("id is required");
-            result = await evidenceRecoveryApi.evidenceGet(id);
+            result = await evidenceRecoveryApi.evidenceGet(id, typeof body?.path === "string" ? body.path : null);
             if (!result) throw new Error("NOT_FOUND");
           } else if (url === "/v1/evidence/list") {
             result = await evidenceRecoveryApi.evidenceList();

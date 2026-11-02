@@ -37,8 +37,8 @@ QQ 手机/电脑客户端
 ```
 
 **进程独立性**：DSH 只用于开发和人工查看；关掉 DSH，米汐照常工作。
-**唯一外部依赖**：`C:\Users\admin\.dsh\.credentials.yaml`（DeepSeek key）与
-`C:\Users\admin\.dsh\profiles\web\cordis.patch.yml`（记忆凭证）。
+**唯一外部依赖**：`~\.dsh\.credentials.yaml`（DeepSeek key）与
+`~\.dsh\profiles\web\cordis.patch.yml`（记忆凭证）。
 
 ---
 
@@ -93,8 +93,8 @@ OneBot 事件
 
 | 场景 | 读谁 | 条数 | 说明 |
 |---|---|---|---|
-| 私聊 | 主人自己的层 `u_napcat_owner` | 5 | 额外合并"主人在的群"的群线记忆（最多 3 个群），带 `【群<id>】` 来源，去重后总长 ≤1200 字 |
-| 群聊 | 群级层 `u_group_478901737` | 8 | 只读该群；**绝不读任何人的私聊层** |
+| 私聊 | 主人自己的层 `u-owner` | 5 | 额外合并"主人在的群"的群线记忆（最多 3 个群），带 `【群<id>】` 来源，去重后总长 ≤1200 字 |
+| 群聊 | 群级层 `u_group_1000000` | 8 | 只读该群；**绝不读任何人的私聊层** |
 
 - 接口：`POST /v1/recall/brief`，`memory_only: true`
 - 返回"（明确的无）"时视为无记忆
@@ -160,8 +160,8 @@ POST /v1/conversations/capture
 
 | 身份 | agent_id | user_id | 用途 |
 |---|---|---|---|
-| 主人私聊 | qq-134c7898c9 | u_napcat_owner | 私聊记忆 |
-| 群线 | qq-ca61563f09 | u_group_478901737 | 群内见闻 |
+| 主人私聊 | qq-bot | u-owner | 私聊记忆 |
+| 群线 | qq-ca61563f09 | u_group_1000000 | 群内见闻 |
 | 小号 | qq-2b53219729 | u_2b53219729 | 独立 |
 | 群友（自动登记） | qq-<hash> | u_<hash> | 各自独立 |
 | DSH（我） | pilot-01 / admin-01 | user-owner | 开发会话记忆 |

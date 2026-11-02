@@ -20,7 +20,7 @@
 
 ### 2.1 Profile composition
 
-文件：`C:\Users\admin\.dsh\profiles\web\cordis.patch.yml`
+文件：`~\.dsh\profiles\web\cordis.patch.yml`
 
 - `10–30`：插入名为 `mcp-memory` 的 `@deepseek-ai/dsh-mcp-client`。
 - `32–47`：插入 `dsh-memory-capture`；禁用 override 是注释，故该 composition 将其启用。
@@ -31,8 +31,8 @@
 
 核实到两个插件文件：
 
-- `C:\Users\admin\.dsh\profiles\web\local-plugins\dsh-memory-capture\index.js`
-- `C:\Users\admin\.dsh\profiles\web\node_modules\dsh-memory-capture\index.js`
+- `~\.dsh\profiles\web\local-plugins\dsh-memory-capture\index.js`
+- `~\.dsh\profiles\web\node_modules\dsh-memory-capture\index.js`
 
 2026-10-28 执行 `Get-FileHash -Algorithm SHA256`，两者均为：
 
@@ -46,7 +46,7 @@
 
 ### 3.1 `dsh-memory-capture`
 
-文件：`C:\Users\admin\.dsh\profiles\web\local-plugins\dsh-memory-capture\index.js`
+文件：`~\.dsh\profiles\web\local-plugins\dsh-memory-capture\index.js`
 
 | 行 | 一手证据 |
 |---|---|
@@ -67,7 +67,7 @@
 
 ### 3.2 共享注入 helper
 
-文件：`D:\MemoryLib\scripts\inject-context.mjs`
+文件：`.\scripts\inject-context.mjs`
 
 | 行 | 一手证据 |
 |---|---|
@@ -78,7 +78,7 @@
 
 ### 3.3 去重/仲裁 helper
 
-文件：`D:\MemoryLib\scripts\inject-receipt.mjs`
+文件：`.\scripts\inject-receipt.mjs`
 
 | 行 | 一手证据 |
 |---|---|
@@ -89,7 +89,7 @@
 
 ### 3.4 MemoryLib recall
 
-文件：`D:\MemoryLib\app\memory-lib\src\recall.mjs`（本任务只读，未修改）
+文件：`app/memory-lib\src\recall.mjs`（本任务只读，未修改）
 
 | 行 | 一手证据 |
 |---|---|
@@ -99,16 +99,16 @@
 
 ### 3.5 REST 服务与审计
 
-文件：`D:\MemoryLib\app\memory-lib\src\localhost-server.mjs`（本任务只读，未修改）
+文件：`app/memory-lib\src\localhost-server.mjs`（本任务只读，未修改）
 
 - `539–547`：基础 REST audit 初始化为 `channel:"localhost"`。
 - `1437–1458`：`/v1/recall/brief` 设置 `action:"recall_brief"`，使用认证后的 principal，`resourceId` 记录为 `"<n> chars"`。
 
-文件：`D:\MemoryLib\app\memory-lib\src\audit.mjs`（本任务只读，未修改）
+文件：`app/memory-lib\src\audit.mjs`（本任务只读，未修改）
 
 - `153–194`：持久化 audit 字段白名单；没有独立 `chars`、`items` 或 `principal` 对象字段。
 
-文件：`D:\MemoryLib\app\memory-lib\web\console-agents.mjs`
+文件：`app/memory-lib\web\console-agents.mjs`
 
 - `16–53`：按 framework/agent/role 聚合 calls、actions、channels。
 - `55–78`：输出 identity 行、top actions 和 channel 分布。
@@ -130,13 +130,13 @@
 
 ### 4.1 已有真机日志
 
-文件：`C:\Users\admin\.dsh\memory-capture\realtime.log`
+文件：`~\.dsh\memory-capture\realtime.log`
 
 - 行 `37315`：固定 section 已 mount。
 - 行 `37909–37910`：一次成功注入的 `memoryChars=598`、`injectChars=659`、4 个 included IDs、`briefMs=694`。
 - 同一日志中存在超过 800ms 仍成功的请求，说明运行策略不是规范的 800ms 上限。
 
-文件：`D:\MemoryLib\logs\inject-receipt.json`
+文件：`.\logs\inject-receipt.json`
 
 - 观察到最近 plugin receipt 的完整 block `chars=659`；说明当前 600 仅约束 memory body，不约束完整 marker+body。
 

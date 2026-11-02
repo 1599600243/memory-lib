@@ -6,7 +6,7 @@ memory-lib 是框架无关的本地记忆服务。客户端注册身份后，通
 
 1. 在运行时注册 framework、agent、role、scope 和所需 action，并把 secret 放入受支持的凭据存储。
 2. 配置 MCP 或 REST 客户端连接 `http://127.0.0.1:8787`，提交 credential reference、secret 和 principal。
-3. 安装 `C:\Users\admin\.dsh\skills\automatic-memory-capture\SKILL.md`（或等价的 D29 捕获规范）。
+3. 安装 `~\.dsh\skills\automatic-memory-capture\SKILL.md`（或等价的 D29 捕获规范）。
 4. 每轮通过 conversation capture 保存脱敏原文证据；需要持久化的内容由对话模型直接调用 `memory_write` 或 `POST /v1/write` 写入目标层。
 5. 为每个直接写入提供非空 `evidence_refs`，并验证响应中的 layer、path、create/update 和 index 状态。
 

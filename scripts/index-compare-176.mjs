@@ -6,13 +6,13 @@
 //   node scripts/index-compare-176.mjs `
 //     --src-full D:\tmp\wt-621b08f\memory-lib\src `
 //     --src-i1   D:\tmp\wt-0acc142\memory-lib\src `
-//     --src-i2   D:\MemoryLib\app\memory-lib\src `
+//     --src-i2   app/memory-lib\src `
 //     --data-root D:\tmp\data-1445 `
 //     [--corpus reports/INDEX-1-acceptance-corpus-176.jsonl] [--out D:\tmp\cmp.json]
 //
 // ★ 数据规矩（必须遵守）：
-//   1. `--data-root` **只能是生产库的副本**（`D:\MemoryLib\index1-data\mem-1445` 或
-//      `D:\MemoryLib\data\memory` 的拷贝），绝不要直接指向生产 `data\memory` —— 本脚本对数据只读，
+//   1. `--data-root` **只能是生产库的副本**（`.\index1-data\mem-1445` 或
+//      `.\data\memory` 的拷贝），绝不要直接指向生产 `data\memory` —— 本脚本对数据只读，
 //      但把"只读"寄希望于脚本行为是不设防的做法；拷一份再跑。
 //   2. 副本要跑一次索引 refresh，把 `recall_df_docs` / `recall_df_bigrams` / `recall_df_fts`
 //      三张表建出来（INDEX-2 的 df 统计就在这三张表里）：

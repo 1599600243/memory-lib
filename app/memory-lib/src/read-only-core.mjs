@@ -1,6 +1,6 @@
 // memory-lib — read-only core, extracted VERBATIM from the live plugin.
 //
-// PROVENANCE: source = C:\Users\admin\.openclaw\workspace\openclaw-memory\src\service.ts
+// PROVENANCE: source = ~\.openclaw\workspace\openclaw-memory\src\service.ts
 // (live plugin, last modified 2026-08-16). Each function below is copied byte-for-byte
 // from that file; the source line numbers are recorded in the header comment of each
 // function. Do NOT "improve" these functions here — if the plugin changes, re-extract

@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>记忆库概览 · 方案 A（Primer 风）</title>
+<style>
+/* ===== 方案 A：GitHub Primer 风格 =====
+   关键词：紧凑、边框清晰、信息密度高、蓝色状态色、等宽数字 */
+:root{
+  --bg:#ffffff; --canvas:#f6f8fa; --border:#d0d7de; --border-muted:#d8dee4;
+  --fg:#1f2328; --fg-muted:#656d76; --accent:#0969da; --accent-subtle:#ddf4ff;
+  --success:#1a7f37; --attention:#9a6700; --danger:#cf222e;
+  --radius:6px; --row:32px; --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--canvas);color:var(--fg);
+  font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC",Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1040px;margin:0 auto;padding:24px 20px 56px}
+header{border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:20px}
+h1{font-size:18px;font-weight:600;margin:0 0 4px}
+.sub{color:var(--fg-muted);font-size:12px}
+.nav{display:flex;gap:4px;margin-top:14px;flex-wrap:wrap}
+.nav a{color:var(--fg);text-decoration:none;padding:5px 10px;border-radius:var(--radius);
+  border:1px solid transparent;font-size:12px}
+.nav a[aria-current]{background:var(--accent-subtle);border-color:#b6e3ff;color:var(--accent);font-weight:600}
+.nav a:hover{border-color:var(--border)}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px}
+.card .label{color:var(--fg-muted);font-size:12px;margin-bottom:6px}
+.card .num{font:600 22px/1.2 var(--mono);font-variant-numeric:tabular-nums}
+.card .hint{color:var(--fg-muted);font-size:11px;margin-top:4px}
+.panel{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;overflow:hidden}
+.panel>h2{font-size:13px;font-weight:600;margin:0;padding:10px 14px;border-bottom:1px solid var(--border-muted);background:var(--canvas)}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:0 14px;height:var(--row);font-size:12.5px;border-bottom:1px solid var(--border-muted)}
+th{color:var(--fg-muted);font-weight:500;background:var(--bg)}
+tr:last-child td{border-bottom:none}
+td.num,th.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+tr:hover td{background:#f6f8fa}
+code{font-family:var(--mono);font-size:12px;background:var(--canvas);border:1px solid var(--border-muted);
+  padding:1px 5px;border-radius:4px}
+.state{display:inline-flex;align-items:center;gap:5px;font-size:12px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.dot.ok{background:var(--success)} .dot.warn{background:var(--attention)} .dot.bad{background:var(--danger)}
+.toolbar{display:flex;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border-muted);flex-wrap:wrap;align-items:center}
+input[type=search]{flex:1;min-width:200px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--radius);
+  font:13px inherit;color:var(--fg);background:var(--bg)}
+input[type=search]:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:var(--accent)}
+select{padding:5px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);font-size:12.5px}
+.chip{font-size:11px;padding:1px 7px;border-radius:2em;border:1px solid var(--border);color:var(--fg-muted)}
+.chip.blue{background:var(--accent-subtle);border-color:#b6e3ff;color:var(--accent)}
+.item{padding:10px 14px;border-bottom:1px solid var(--border-muted)}
+.item:last-child{border-bottom:none}
+.item .id{font-family:var(--mono);font-size:11px;color:var(--fg-muted)}
+.item .body{margin:4px 0 6px;font-size:13px;line-height:1.55}
+.item .meta{display:flex;gap:10px;align-items:center;font-size:11px;color:var(--fg-muted);flex-wrap:wrap}
+.empty{padding:28px 14px;text-align:center;color:var(--fg-muted);font-size:12.5px}
+footer{margin-top:24px;color:var(--fg-muted);font-size:11.5px;border-top:1px solid var(--border);padding-top:12px}
+@media(max-width:760px){.cards{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>记忆库概览</h1>
+    <div class="sub">2026-10-30 · 只读视图 · 数据来源 /v1/memory/stats</div>
+    <nav class="nav">
+      <a href="#" aria-current="page">概览</a>
+      <a href="#">记忆浏览</a>
+      <a href="#">记忆搜索</a>
+      <a href="#">健康</a>
+      <a href="#">审计</a>
+    </nav>
+  </header>
+
+  <section class="cards">
+    <div class="card"><div class="label">长期记忆</div><div class="num">1,880</div><div class="hint">curated/shared</div></div>
+    <div class="card"><div class="label">原始证据</div><div class="num">2,186</div><div class="hint">evidence/conversations</div></div>
+    <div class="card"><div class="label">已索引文件</div><div class="num">4,078</div><div class="hint">fts + vector</div></div>
+    <div class="card"><div class="label">索引失败</div><div class="num" style="color:var(--success)">0</div><div class="hint"><span class="state"><span class="dot ok"></span>healthy</span></div></div>
+  </section>
+
+  <section class="panel">
+    <h2>按身份分布（谁有多少条）</h2>
+    <table>
+      <thead><tr><th>user_id</th><th>归属</th><th class="num">库里</th><th class="num">可见</th><th>状态</th></tr></thead>
+      <tbody>
+        <tr><td><code>user-owner</code></td><td>我（DSH 开发会话）</td><td class="num">1,749</td><td class="num">1,749</td><td><span class="state"><span class="dot ok"></span>一致</span></td></tr>
+        <tr><td><code>u-owner</code></td><td>米汐（QQ 主人）</td><td class="num">98</td><td class="num">98</td><td><span class="state"><span class="dot ok"></span>一致</span></td></tr>
+        <tr><td><code>u_group_1000000</code></td><td>群线（老年闲聊群）</td><td class="num">33</td><td class="num">33</td><td><span class="state"><span class="dot ok"></span>一致</span></td></tr>
+        <tr><td><code>u_2b53219729</code></td><td>小号（测试）</td><td class="num">4</td><td class="num">4</td><td><span class="state"><span class="dot ok"></span>一致</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel">
+    <h2>记忆浏览 <span class="chip blue" style="margin-left:8px">u-owner</span></h2>
+    <div class="toolbar">
+      <select><option>身份：u-owner</option><option>身份：全部（仅管理员）</option></select>
+      <input type="search" placeholder="搜索正文 / id / 标签…" value="白米饭">
+      <span class="chip">3 条结果</span>
+    </div>
+    <div class="item">
+      <div class="id">soul-qq-bot-cbdb560d81d0</div>
+      <div class="body">米汐认定白米饭是主食。</div>
+      <div class="meta"><span>2026-10-30</span><span class="chip">soul</span><span class="chip">migration</span><span>出处：聊天记录 L123</span></div>
+    </div>
+    <div class="item">
+      <div class="id">soul-qq-bot-4b71ec749feefaf8</div>
+      <div class="body">米汐被叫「大肥鱼」会立刻炸毛、拍水、要求再说一遍试试。</div>
+      <div class="meta"><span>2026-10-30</span><span class="chip">soul</span><span>出处：聊天记录 L427</span></div>
+    </div>
+    <div class="item">
+      <div class="id">group-turn-1000000-…</div>
+      <div class="body">[群友 ZERO]：我养了一只橘猫　米汐：橘猫？那本小姐记下了。</div>
+      <div class="meta"><span>2026-10-30</span><span class="chip">group</span><span>出处：群聊会话</span></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>异常检查</h2>
+    <table>
+      <tbody>
+        <tr><td>user_id 为空</td><td class="num">0</td><td><span class="state"><span class="dot ok"></span>通过</span></td></tr>
+        <tr><td>非法 visibility</td><td class="num">0</td><td><span class="state"><span class="dot ok"></span>通过</span></td></tr>
+        <tr><td>缺 evidence_refs</td><td class="num">423</td><td><span class="state"><span class="dot warn"></span>可接受（历史迁移条目）</span></td></tr>
+        <tr><td>索引失败文件</td><td class="num">0</td><td><span class="state"><span class="dot ok"></span>通过</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <footer>方案 A · Primer 风：13px 字号、6px 圆角、1px 边框、32px 行高、蓝色强调。信息密度最高。</footer>
+</div>
+</body>
+</html>

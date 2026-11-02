@@ -1,7 +1,7 @@
 # set-persona.ps1 —— 设置 QQ 机器人的性格（人格），自动重载
 #
 # 用法:
-#   pwsh -NoProfile -File scripts\set-persona.ps1 -File D:\MemoryLib\persona\dafeiyu.md
+#   pwsh -NoProfile -File scripts\set-persona.ps1 -File .\persona\dafeiyu.md
 #   pwsh -NoProfile -File scripts\set-persona.ps1 -Show          # 看当前人格
 #   pwsh -NoProfile -File scripts\set-persona.ps1 -File ... -NoRestart
 #
@@ -96,7 +96,7 @@ if (-not $NoRestart) {
     Start-Sleep -Seconds 3
     Start-ScheduledTask -TaskName 'dsh-qqbot'
     Start-Sleep -Seconds 25
-    $log = 'D:\MemoryLib\logs\qqbot-service.log'
+    $log = '.\logs\qqbot-service.log'
     if (Test-Path $log) { Get-Content $log -Tail 3 | ForEach-Object { "  " + ($_ -replace '\x1b\[[0-9;]*m', '') } }
   } else {
     Write-Output "`n⚠️ 没找到计划任务 dsh-qqbot，请手工重启机器人"
