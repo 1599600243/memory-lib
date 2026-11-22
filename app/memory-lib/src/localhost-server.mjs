@@ -468,6 +468,23 @@ export function createLocalhostServer(options) {
     };
   }
 
+  // GHOST-1：capture 被拒时给出可诊断原因，写进审计的 reason 字段（denyReason 保持不变，兼容既有统计）。
+  // 认证阶段已经挡住大多数未知主体，这里覆盖两种残余：认证之后主体被删/改，以及已认证但缺 group_id/user_id。
+  // 判定顺序：登记表里还在不在（幽灵 agent 优先）→ 角色还绑不绑 → 是否缺 group/user → 原始错误码。
+  async function captureRejectionReason(error, frameworkId, agentId, roleId) {
+    let framework = null;
+    try {
+      framework = (await loadRegistry(registryPath)).frameworks?.find((item) => item.framework_id === frameworkId) ?? null;
+    } catch { /* 登记表读不到时不要掩盖原始拒绝原因 */ }
+    if (framework) {
+      const registeredAgent = framework.agents?.find((item) => item.agent_id === agentId);
+      if (!registeredAgent) return "UNKNOWN_AGENT";
+      if (!registeredAgent.roles?.some((item) => item.role_id === roleId)) return "UNKNOWN_ROLE";
+    }
+    if (error?.captureReason === "unattributed") return "MISSING_PRINCIPAL";
+    return typeof error?.code === "string" && error.code ? error.code : "CAPTURE_FAILED";
+  }
+
   function applyPetReadDenylist(scopes, policy) {
     const deny = Array.isArray(policy?.deny) ? policy.deny : [];
     if (!deny.length) return scopes;
@@ -864,7 +881,7 @@ data: ${JSON.stringify(result)}
       // --- GET /v1/health (weak auth: minimal, no paths/roots) ---
       if (method === "GET" && url === "/v1/health") {
         const lib = libFactory({ scopes: null });
-        const h = await lib.health();
+        const h = await lib.health({ refinementCacheTtlMs: 60_000 });
         auditEvent = { ...auditEvent, action: "health", allow: true };
         // F2: 向量车道不可用时 health 会降级为 degraded；这里同时给出最小状态+原因，
         // 调用方能区分「语义车道挂了」与「库真健康」。保持 path-free：不带 checks/roots/dataRoot。
@@ -1358,6 +1375,16 @@ data: ${JSON.stringify(result)}
             const missing = await missingEvidenceRefs({ dataRoot, refs: Array.isArray(body?.evidence_refs) ? body.evidence_refs : [] });
             if (missing.length) throw Object.assign(new Error(`EVIDENCE_REFS_NOT_FOUND: ${missing.join(", ")}`), { code: "EVIDENCE_REFS_NOT_FOUND" });
           }
+          // MEMORY-LOOP-1：stable_key 是"同一件事"的稳定标识。同一作用域里已有同键、且不是同一条 id
+          // ⇒ 409（调用方按"已写过"处理）；同 id 重复提交则视为更新，继续写。
+          if (body?.stable_key) {
+            const existing = await memoryWriter.findActiveByStableKey({ stable_key: body.stable_key, layer: keyLayer, project: body?.project ?? null, principal: authenticated });
+            if (existing?.found && String(existing.id) !== String(body.id ?? "")) {
+              auditEvent = { ...auditEvent, denyReason: "STABLE_KEY_CONFLICT" };
+              await respond(409, { ok: false, error: { code: "STABLE_KEY_CONFLICT", message: "a memory with the same stable_key already exists", conflicts: [{ stable_key: String(body.stable_key), active_id: existing.id, path: existing.path }] } });
+              return;
+            }
+          }
           const payload = { ...body, ...(keyScoped ? { layer: keyLayer, visibility: requestedVisibility } : explicitVisibility ? { layer: keyLayer, visibility: requestedVisibility } : {}), agent: authenticated.agent_id, role_id: authenticated.role_id, evidence_refs: requireEvidenceRefs(body), principal: authenticated };
           const result = payload.layer === "project-progress" ? await memoryWriter.writeProgress(payload) : await memoryWriter.write(payload);
           auditEvent = { ...auditEvent, allow: true, resourceId: result.path ?? payload.id ?? payload.project, container: targetForAudit?.container ?? null, visibility: targetForAudit?.visibility ?? null };
@@ -1638,6 +1665,7 @@ data: ${JSON.stringify(result)}
           memory_limit_chars: Number.isInteger(body?.memory_limit_chars) ? body.memory_limit_chars : undefined,
           memory_only: body?.memory_only === true,
       tags: Array.isArray(body?.tags) ? body.tags.map(String).filter(Boolean).slice(0, 10) : null,
+      include_episodes: body?.include_episodes === true,
         });
         auditEvent = { ...auditEvent, allow: true, resourceId: `${brief.total_chars} chars` };
         await respond(200, { ok: true, principal: { framework: authed.framework.framework_id, agent: agent.agent_id, role: role.role_id }, ...brief });
@@ -1776,7 +1804,8 @@ data: ${JSON.stringify(result)}
            auditEvent = { ...auditEvent, allow: true, scope: captureScopes, resourceId: result.evidenceId };
           await respond(200, { ok: true, ...result, refinement });
         } catch (err) {
-          auditEvent = { ...auditEvent, denyReason: "CONVERSATION_CAPTURE_REJECTED" };
+          const detail = await captureRejectionReason(err, authed.framework?.framework_id, agent.agent_id, role.role_id);
+          auditEvent = { ...auditEvent, denyReason: "CONVERSATION_CAPTURE_REJECTED", reason: detail };
           await respond(400, { ok: false, error: { code: "BAD_REQUEST", message: err.message, detail: "CONVERSATION_CAPTURE_REJECTED" } });
         }
         return;
@@ -1795,7 +1824,8 @@ data: ${JSON.stringify(result)}
           await respond(200, { ok: true, ...result });
         } catch (error) {
           if (error?.captureReason !== "unattributed") throw error;
-          auditEvent = { ...auditEvent, denyReason: "CONVERSATION_CAPTURE_REJECTED" };
+          const detail = await captureRejectionReason(error, authed.framework?.framework_id, agent.agent_id, role.role_id);
+          auditEvent = { ...auditEvent, denyReason: "CONVERSATION_CAPTURE_REJECTED", reason: detail };
           await respond(400, { ok: false, error: { code: "BAD_REQUEST", message: error.message, detail: "CONVERSATION_CAPTURE_REJECTED" } });
         }
         return;
@@ -2625,7 +2655,13 @@ data: ${JSON.stringify(result)}
     listen() {
       return new Promise((resolve, reject) => {
         server.once("error", reject);
-        server.listen(port, host, () => resolve(server.address()));
+        server.listen(port, host, () => {
+          resolve(server.address());
+          // 预热 health 的两段重计算（容量/refinement），让重启后的第一个 /v1/health 不再是 9s。
+          setTimeout(() => {
+            try { void libFactory({ scopes: null }).health({ refinementCacheTtlMs: 60_000 }).catch(() => {}); } catch { /* warm-up 失败不影响服务 */ }
+          }, 50).unref?.();
+        });
       });
     },
     async flushCaptures() {

@@ -19,6 +19,8 @@ function redactSensitiveText(text) { return String(text ?? "").replace(LOCAL_PAT
 // Searchable containers. Raw conversation evidence is indexed as a separate low-priority tier.
 const REL_ROOTS = ["curated/shared", "curated/agents", "project-state", "tools-memory", "plans", "profile", "evidence/documents", "evidence/conversations"];
 const INDEX_REL = path.join("indexes", "sqlite", "memory-lib-index.sqlite");
+// stats() 结果缓存（30s）：健康检查轮询不应每次重算 15k 文件的 sha256。
+const STATS_CACHE = new Map();
 function sha(value) { return crypto.createHash("sha256").update(value).digest("hex"); }
 function id(prefix, value) { return `${prefix}_${sha(value).slice(0, 24)}`; }
 function posix(value) { return String(value).split(path.sep).join("/"); }
@@ -302,7 +304,11 @@ export function createIndexStore({ dataRoot, ollama = {}, fetchImpl = globalThis
     finally { try { db?.close(); } catch { /* noop */ } }
   }
   let lastIndexResult = null;
+  // stats() 会遍历全部文件并逐个 sha256（15k 文件实测 3.7s）。健康检查/控制台轮询每次都要它，
+  // 这里缓存 30s：/v1/health 从 ~9s 降到毫秒级；索引跑完立即失效。
   async function stats() {
+    const cached = STATS_CACHE.get(dataRoot);
+    if (cached && Date.now() - cached.at < 30000) return cached.value;
     const scanned = await scanFiles();
     const current = withDb((db) => {
       const files = db.prepare("SELECT path,sha256 FROM files WHERE status='active'").all();
@@ -318,9 +324,11 @@ export function createIndexStore({ dataRoot, ollama = {}, fetchImpl = globalThis
     }
     pendingChanges += [...current.indexed.keys()].filter((filePath) => !scanned.some((entry) => entry.rel === filePath)).length;
     const { indexed, ...summary } = current;
-    return { ...summary, libraryFiles: scanned.length, pendingChanges, skippedSensitive: lastIndexResult?.skippedSensitive ?? 0, skippedSensitivePaths: lastIndexResult?.skippedSensitivePaths ?? [], lastIndexMs: lastIndexResult?.ms ?? null, path: dbPath };
+    const value = { ...summary, libraryFiles: scanned.length, pendingChanges, skippedSensitive: lastIndexResult?.skippedSensitive ?? 0, skippedSensitivePaths: lastIndexResult?.skippedSensitivePaths ?? [], lastIndexMs: lastIndexResult?.ms ?? null, path: dbPath };
+    STATS_CACHE.set(dataRoot, { at: Date.now(), value });
+    return value;
   }
-  async function runIndex(options = {}) { lastIndexResult = await index(options); return lastIndexResult; }
+  async function runIndex(options = {}) { lastIndexResult = await index(options); STATS_CACHE.delete(dataRoot); return lastIndexResult; }
   return { index: runIndex, stats, dbPath, dataRoot, embeddingConfig };
 }
 export async function indexMemoryRoot(options) { return createIndexStore(options).index(options); }

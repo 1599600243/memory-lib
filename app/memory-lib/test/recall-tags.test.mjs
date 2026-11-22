@@ -36,6 +36,7 @@ async function fixture() {
   await fs.writeFile(path.join(dir, "a.md"), memory("ev-a", ["place:group:111", "speaker:甲", "audience:group"], "在群 111，甲说要买菜。"), "utf8");
   await fs.writeFile(path.join(dir, "b.md"), memory("ev-b", ["place:group:222", "speaker:乙", "audience:group"], "在群 222，乙说要买米。"), "utf8");
   await fs.writeFile(path.join(dir, "c.md"), memory("ev-c", ["place:group:111", "speaker:丙", "audience:group"], "在群 111，丙说要买油。"), "utf8");
+  await fs.writeFile(path.join(dir, "d.md"), memory("ev-episode", ["being", "episode", "grain:episode", "place:group:111"], "在群 111，大家聊了很久，最后决定要买酱油。"), "utf8");
   return { dataRoot };
 }
 
@@ -65,4 +66,14 @@ test("brief tag filter uses AND semantics", async () => {
   assert.deepEqual(result.included.map((row) => row.id), ["ev-c"], JSON.stringify(result.included));
   const empty = await brief(dataRoot, { tags: ["place:group:222", "speaker:丙"] });
   assert.equal(empty.included.length, 0, JSON.stringify(empty.included));
+});
+
+test("episodes are excluded from brief by default, includable on request", async () => {
+  const { dataRoot } = await fixture();
+  const byDefault = await brief(dataRoot);
+  const defaultIds = byDefault.included.map((row) => row.id);
+  assert.ok(!defaultIds.includes("ev-episode"), JSON.stringify(defaultIds));
+  const withEpisodes = await brief(dataRoot, { include_episodes: true });
+  assert.ok(withEpisodes.included.some((row) => row.id === "ev-episode"), JSON.stringify(withEpisodes.included.map((row) => row.id)));
+  await fs.rm(dataRoot, { recursive: true, force: true });
 });

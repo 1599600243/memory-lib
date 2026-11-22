@@ -168,3 +168,13 @@ test("evidence records use camelCase identity fields (groupId/userId) and stay s
   assert.deepEqual(mine.results.map((row) => path.basename(row.path, ".md")), ["conversation-aaaaaaaaaaaaaaaaaaaaaaaa"], JSON.stringify(mine.results.map((r) => r.path)));
   await fs.rm(dataRoot, { recursive: true, force: true });
 });
+
+test("A′: evidence recency window becomes an SQL clause and a bound param", () => {
+  const base = { principal: OWNER, scopes: [{ layer: "memory", visibility: "user" }], tenantId: "default" };
+  const withWindow = buildAuthFilter({ authz: { ...base, evidenceSinceMs: 1_700_000_000_000 }, authRoots: null, dataRoot: "D:/data", hasPrincipals: true });
+  assert.match(withWindow.sql, /evidence\/conversations/u);
+  assert.equal(withWindow.params.evidenceSince, 1_700_000_000_000);
+  const noWindow = buildAuthFilter({ authz: { ...base, evidenceSinceMs: null }, authRoots: null, dataRoot: "D:/data", hasPrincipals: true });
+  assert.doesNotMatch(noWindow.sql, /evidenceSince/u);
+  assert.equal(noWindow.params.evidenceSince, undefined);
+});

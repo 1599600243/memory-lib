@@ -23,7 +23,7 @@ import {
 import { unquote, updateFrontmatterFields } from "./frontmatter-util.mjs";
 import { hybridSearch, inAuthRoots, ledgerFileState } from "./ledger-search.mjs";
 import { identifierRerankEnabled, queryIdentifiers, rerankByIdentifiers } from "./identifier-rerank.mjs";
-import { memoryIndexSearch } from "./index-search.mjs";
+import { memoryIndexSearch, loadIndexFileMtimes } from "./index-search.mjs";
 import { semanticSearch } from "./semantic-index.mjs";
 import { attachZhSummary, loadSummaryIndex } from "./zh-summary-index.mjs";
 import { timestampValue, parseTimestamp, eventClockValue } from "./time-util.mjs";
@@ -62,6 +62,9 @@ export function scopeToString(scope) {
 
 
 // --- library-level: API surface -------------------------------------------------
+// health 分段缓存必须跨 lib 实例共享：/v1/health 每次请求都会 createMemoryLib() 一次。
+const healthPartsCache = new Map();
+
 export function createMemoryLib(options = {}) {
   const dataRoot = options.dataRoot;
   if (!dataRoot) throw new Error("memory-lib: dataRoot is required");
@@ -171,7 +174,26 @@ export function createMemoryLib(options = {}) {
   // had silently degraded to file-first/FTS while /v1/health still said "healthy".
   // The vector lane is therefore probed (read-only) and an unusable lane
   // (down/stale) clamps the overall status to "degraded" with a reason.
-  async function health({ group_id = null, user_id = null } = {}) {
+  // 容量报告是 health 里最贵的一段；缓存 10s（refinement 快照默认实时：admin health 要反映刚写入的提炼状态；
+  // 只有公开的 /v1/health 轮询才允许带 TTL）。
+  async function cachedRefinement(root, opts, ttlMs) {
+    if (!(ttlMs > 0)) return refinementObservability.snapshot(opts);
+    const key = "refinement:" + root + ":" + String(opts.group_id ?? "") + ":" + String(opts.user_id ?? "");
+    const hit = healthPartsCache.get(key);
+    if (hit && Date.now() - hit.at < ttlMs) return hit.value;
+    const value = await refinementObservability.snapshot(opts);
+    healthPartsCache.set(key, { at: Date.now(), value });
+    return value;
+  }
+  async function cachedCapacity(root) {
+    const key = "capacity:" + root;
+    const hit = healthPartsCache.get(key);
+    if (hit && Date.now() - hit.at < 300_000) return hit.value;
+    const value = await buildCapacityReport(root);
+    healthPartsCache.set(key, { at: Date.now(), value });
+    return value;
+  }
+  async function health({ group_id = null, user_id = null, refinementCacheTtlMs = 0 } = {}) {
     const [checks, vector] = await Promise.all([
       Promise.all(buildHealthChecks(dataRoot, workspaceRoot, recoveryRoot).map(async ([name, checkPath]) => ({
         name,
@@ -193,8 +215,8 @@ export function createMemoryLib(options = {}) {
       backend: "file-first",
       scopeMode: scopes === null ? "unrestricted" : "restricted",
       roots: resolvedRoots,
-      capacity: await buildCapacityReport(dataRoot),
-      refinement: await refinementObservability.snapshot({ group_id, user_id }),
+      capacity: await cachedCapacity(dataRoot),
+      refinement: await cachedRefinement(dataRoot, { group_id, user_id }, refinementCacheTtlMs),
     };
   }
 
@@ -249,10 +271,15 @@ export function createMemoryLib(options = {}) {
     if (mode === "hybrid" && authRoots !== null && authRoots.length === 0) {
       results = [];
     } else if (mode === "hybrid") {
+      // A′：默认检索只把最近 7 天的原文证据纳入候选；evidence/raw 模式不设窗口。
+      // 实测 30d 窗口几乎不省（42% 证据都在 30d 内），7d 才把向量扫描从 686ms 降到 436ms。
+      const evidenceDays = Number(options.evidenceDays ?? 7);
+      const evidenceSinceMs = mode === "evidence" || mode === "raw" || !(evidenceDays > 0) ? null : Date.now() - evidenceDays * 86_400_000;
       const owned = await memoryIndexSearch(dataRoot, query, candidateLimit, authRoots, options.ollama, options.embeddingFetch ?? globalThis.fetch, {
         principal: optionsPrincipal,
         scopes,
         tenantId: optionsPrincipal?.tenant_id ?? "default",
+        evidenceSinceMs,
       });
       if (owned) {
         usedOwnedIndex = true;
@@ -327,7 +354,8 @@ export function createMemoryLib(options = {}) {
     // 每次都做 bounded file-first 补差：ledger 的常见词结果可能已填满 limit，
     // 但刚写入的文件仍未进入 ledger，不能因此跳过新文件可见性校准。
     const ledgerState = ledgerFileState(dataRoot);
-    let extra = await fileFirstTop(query, roots, fileFirstNeed, seen, options.fileFirstScanCap ?? 600, ledgerState, statusOpts, dayPaths);
+    const fileMtimes = loadIndexFileMtimes(dataRoot);
+    let extra = await fileFirstTop(query, roots, fileFirstNeed, seen, options.fileFirstScanCap ?? 600, ledgerState, statusOpts, dayPaths, fileMtimes, dataRoot);
     traceSearch(options.trace, "file-first", { query, results: extra });
     const settingToken = query.match(/\bconfiguration\s+setting\s+([a-z0-9])\b/iu)?.[1]?.toLowerCase();
     if (settingToken) {
@@ -339,7 +367,7 @@ export function createMemoryLib(options = {}) {
       for (const e of extra ?? []) seen.add(e.path);
       const tokens = query.toLowerCase().split(/[^\p{L}\p{N}_-]+/u).filter((token) => token.length > 2 && !SEARCH_STOPWORDS.has(token)).sort((a, b) => b.length - a.length);
       for (const token of tokens.slice(0, 6)) {
-        const tokenExtra = await fileFirstTop(token, roots, fileFirstNeed, seen, options.fileFirstScanCap ?? 600, ledgerState, statusOpts, dayPaths);
+        const tokenExtra = await fileFirstTop(token, roots, fileFirstNeed, seen, options.fileFirstScanCap ?? 600, ledgerState, statusOpts, dayPaths, fileMtimes, dataRoot);
         traceSearch(options.trace, "token-fallback", { query, token, results: tokenExtra });
         extra = [...extra, ...tokenExtra];
       }
@@ -741,7 +769,7 @@ async function findExactIdResult(id, roots, statusOpts = {}) {
   return null;
 }
 
-async function fileFirstTop(query, roots, need, seen, scanCap, ledgerState = null, statusOpts = {}, allowPaths = null) {
+async function fileFirstTop(query, roots, need, seen, scanCap, ledgerState = null, statusOpts = {}, allowPaths = null, fileMtimes = null, dataRootForMtimes = null) {
   if (need <= 0 || !Array.isArray(roots) || roots.length === 0) return [];
   const q = String(query ?? "").trim();
   if (!q) return [];
@@ -760,10 +788,16 @@ async function fileFirstTop(query, roots, need, seen, scanCap, ledgerState = nul
   // scanCap 在收窄后的宇宙里重新计数，所以"那一天"的文件是全量可扫的。
   const allowKey = allowPaths ? new Set([...allowPaths].map((p) => path.normalize(p))) : null;
   const candidates = allowKey ? allFiles.filter((filePath) => allowKey.has(path.normalize(filePath))) : allFiles;
+  const mtimeFor = (filePath) => {
+    if (!fileMtimes || !dataRootForMtimes) return null;
+    const rel = path.relative(dataRootForMtimes, filePath).split(path.sep).join("/");
+    const known = fileMtimes.get(rel);
+    return Number.isFinite(known) ? known : null;
+  };
   const prioritizedFiles = await Promise.all(candidates.map(async (filePath, index) => ({
       filePath,
       index,
-      mtimeMs: (await fs.stat(filePath).catch(() => ({ mtimeMs: 0 }))).mtimeMs,
+      mtimeMs: mtimeFor(filePath) ?? (await fs.stat(filePath).catch(() => ({ mtimeMs: 0 }))).mtimeMs,
   })));
   prioritizedFiles.sort((a, b) => b.mtimeMs - a.mtimeMs || a.index - b.index);
   for (const { filePath } of prioritizedFiles) {

@@ -20,6 +20,8 @@ const NONE = "（明确的无）";
 // INJECT-1：注入用的记忆段。范围单要求 ≤600 字、top 5~8、带 included 回执。
 const MEMORY_TITLE = "近期记忆";
 const MEMORY_BUDGET_CHARS = 600;
+// episode 是"一段的结论"，已由本地 recentEpisodes 注入；brief 默认不再重复召回同一段。
+const EPISODE_EXCLUDE_TAGS = ["episode", "grain:episode"];
 const MEMORY_TOP_DEFAULT = 6;
 const MEMORY_TOP_MAX = 8;
 const MEMORY_EXCERPT_CHARS = 90;
@@ -158,7 +160,7 @@ export function createRecall({ dataRoot, workspaceRoot } = {}) {
   //   这里刻意不走向量：brief 在每次对话前都会被调一次，要便宜、要确定、要能被单测钉死。
   //   相关度不够的条目不进段——范围单明确禁止"为了看起来命中而放宽到返噪"。
   // 可见性：沿用本模块同一套 container-policy 判据（visible()），不另写一套。
-  async function recentMemories({ query = null, principal = null, days = 7, max = MEMORY_TOP_DEFAULT, budgetChars = MEMORY_BUDGET_CHARS, filterTags = null } = {}) {
+  async function recentMemories({ query = null, principal = null, days = 7, max = MEMORY_TOP_DEFAULT, budgetChars = MEMORY_BUDGET_CHARS, filterTags = null, excludeTags = null } = {}) {
     const wanted = Math.max(1, Math.min(MEMORY_TOP_MAX, Number(max) || MEMORY_TOP_DEFAULT));
     const budget = Math.max(80, Number(budgetChars) || MEMORY_BUDGET_CHARS);
     // CJK-FILLER-1：自然问句（"我上次说我对什么过敏来着"）切出来的 bigram 里混着
@@ -215,6 +217,7 @@ export function createRecall({ dataRoot, workspaceRoot } = {}) {
       if (!fact) continue;
     const tags = Array.isArray(frontmatter.tags) ? frontmatter.tags.map(String) : [];
     if (Array.isArray(filterTags) && filterTags.length && !filterTags.every((tag) => tags.includes(tag))) continue;
+    if (Array.isArray(excludeTags) && excludeTags.length && excludeTags.some((tag) => tags.includes(tag))) continue;
       const calendarDate = String(frontmatter.calendarDate ?? frontmatter.valid_from ?? frontmatter.occurred_at ?? "").slice(0, 10);
       const id = frontmatter.id ?? path.basename(filePath, ".md");
       if (!tokens.length && calendarDate && calendarDate < cutoffDay) continue; // 没有 query 就只给近 N 天
@@ -380,14 +383,14 @@ export function createRecall({ dataRoot, workspaceRoot } = {}) {
     return notes.map((n) => `[${n.kind}] ${n.sections?.["经验"] ?? ""}`).join("\n");
   }
 
-  async function recallBrief({ project = null, days = 7, limit_chars = 2000, agent_id = null, role_id = null, format = "markdown", principal = null, query = null, memories = MEMORY_TOP_DEFAULT, memory_limit_chars = MEMORY_BUDGET_CHARS, memory_only = false, tags = null } = {}) {
+  async function recallBrief({ project = null, days = 7, limit_chars = 2000, agent_id = null, role_id = null, format = "markdown", principal = null, query = null, memories = MEMORY_TOP_DEFAULT, memory_limit_chars = MEMORY_BUDGET_CHARS, memory_only = false, tags = null, include_episodes = false } = {}) {
     const [state, plans, tool, ep, experience, memoryBlock] = await Promise.all([
       projectStates(project, principal),
       activePlans(principal),
       tools(principal),
       recentEpisodes(days),
       myExperience(agent_id, role_id, principal),
-      recentMemories({ query, principal, days, max: memories, budgetChars: memory_limit_chars, filterTags: Array.isArray(tags) && tags.length ? tags.map(String) : null }),
+      recentMemories({ query, principal, days, max: memories, budgetChars: memory_limit_chars, filterTags: Array.isArray(tags) && tags.length ? tags.map(String) : null, excludeTags: include_episodes ? null : EPISODE_EXCLUDE_TAGS }),
     ]);
     const episodes = ep.text;
     // 未决与风险：项目阻塞 + 计划卡点 + 经历未决项

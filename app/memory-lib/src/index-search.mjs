@@ -92,6 +92,13 @@ export function buildAuthFilter({ authz = null, authRoots = null, dataRoot, hasP
   })();
   if (prefixSql === " AND 0") return { sql: " AND 0", params };
 
+  // A′（证据新鲜度窗口）：默认检索只扫最近 N 天的原文证据，老证据不参与向量/FTS 候选；
+  // 显式 searchMode=evidence/raw 时 authz.evidenceSinceMs 为 null ⇒ 不过滤。
+  const evidenceSince = Number(authz?.evidenceSinceMs);
+  const evidenceClause = Number.isFinite(evidenceSince) && evidenceSince > 0
+    ? (() => { params.evidenceSince = evidenceSince; return " AND (f.path NOT LIKE 'evidence/conversations/%' OR f.mtime >= :evidenceSince)"; })()
+    : "";
+
   const p = authz.principal;
   const tenant = p.tenant_id ?? authz.tenantId ?? "default";
   const group = p.group_id ?? null;
@@ -144,8 +151,31 @@ export function buildAuthFilter({ authz = null, authRoots = null, dataRoot, hasP
   clauses.push(`(p.group_id IS NULL AND p.user_id IS NULL AND p.agent_id IS NULL AND p.role_id IS NULL AND p.container IN ('long-term','tool','knowledge','project'))`);
 
   params.tenant = tenant;
-  const sql = prefixSql + ` AND (p.tenant_id IS NULL OR p.tenant_id = '' OR p.tenant_id = :tenant) AND (${clauses.join(" OR ")})`;
+  const sql = prefixSql + ` AND (p.tenant_id IS NULL OR p.tenant_id = '' OR p.tenant_id = :tenant) AND (${clauses.join(" OR ")})` + evidenceClause;
   return { sql, params };
+}
+
+function attachChunkTexts(db, rows) {
+  const ids = rows.map((row) => row?.chunk_id).filter(Boolean);
+  if (!ids.length) return;
+  const byId = new Map();
+  for (let i = 0; i < ids.length; i += 400) {
+    const batch = ids.slice(i, i + 400);
+    const params = {};
+    const ph = batch.map((id, index) => { params["id" + index] = id; return ":id" + index; }).join(",");
+    for (const row of db.prepare("SELECT id, text FROM chunks WHERE id IN (" + ph + ")").all(params)) byId.set(row.id, row.text);
+  }
+  for (const row of rows) if (row && byId.has(row.chunk_id)) row.text = byId.get(row.chunk_id);
+}
+
+export function loadIndexFileMtimes(dataRoot) {
+  const db = open(dataRoot);
+  if (!db) return null;
+  try {
+    const map = new Map();
+    for (const row of db.prepare("SELECT path, mtime FROM files WHERE status='active'").all()) map.set(row.path, Number(row.mtime));
+    return map;
+  } catch { return null; } finally { db.close(); }
 }
 
 export async function memoryIndexSearch(dataRoot, query, limit, authRoots, ollama = {}, fetchImpl = globalThis.fetch, authz = null) {
@@ -177,7 +207,7 @@ export async function memoryIndexSearch(dataRoot, query, limit, authRoots, ollam
         const embedding = (await response.json())?.embedding;
         if (Array.isArray(embedding) && embedding.length === dimension && embedding.every((v) => Number.isFinite(Number(v)))) {
           const q = embedding.map(Number); const qn = norm(q); const scored = [];
-          const vectorRows = db.prepare(`SELECT e.chunk_id,e.vector_blob,c.text,f.path,f.status AS file_status FROM embeddings e JOIN chunks c ON c.id=e.chunk_id JOIN files f ON f.id=c.file_id${joinPrincipals} WHERE e.vector_status='active' AND f.status='active' AND e.model=:model AND e.dimension=:dim${auth.sql}`)
+          const vectorRows = db.prepare(`SELECT e.chunk_id,e.vector_blob,f.path,f.status AS file_status FROM embeddings e JOIN chunks c ON c.id=e.chunk_id JOIN files f ON f.id=c.file_id${joinPrincipals} WHERE e.vector_status='active' AND f.status='active' AND e.model=:model AND e.dimension=:dim${auth.sql}`)
             .all({ ...auth.params, model, dim: dimension });
           for (const row of vectorRows) {
             const blob = row.vector_blob;
@@ -188,7 +218,9 @@ export async function memoryIndexSearch(dataRoot, query, limit, authRoots, ollam
             scored.push({ row, score: dot / (qn * vn) });
           }
           scored.sort((a, b) => b.score - a.score);
-          lists.push(scored.slice(0, Math.max(limit * 8, 32)).map(({ row, score }) => ({ ...rowToCandidate(row, dataRoot, authRoots, "vector"), score })).filter((r) => r?.path));
+          const top = scored.slice(0, Math.max(limit * 8, 32));
+          attachChunkTexts(db, top.map(({ row }) => row));
+          lists.push(top.map(({ row, score }) => ({ ...rowToCandidate(row, dataRoot, authRoots, "vector"), score })).filter((r) => r?.path));
         }
       }
     } catch { /* embedding lane unavailable; FTS remains usable */ }
