@@ -1502,6 +1502,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
   let rgModel = null;
   let rgActorTier = "admin";
   let rgRefs = {};
+  let rgPacks = [];
   let rgRows = [];
   const rgState = { q: "", tier: "all", onlyEmpty: false, open: null, fw: null };
   const RG_TIER_ORDER = ["管理员", "框架主体", "框架成员", "会话", "访客", "其他"];
@@ -1629,8 +1630,8 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
       '<div class="rg-role-head"><code>#' + (i + 1) + "</code>" +
       '<button class="btn rg-mini" data-act="rm-role" data-ri="' + i + '" type="button">删除</button></div>' +
       '<label>权限包 <input class="rg-input rg-in" data-k="role_id" data-ri="' + i + '" value="' + esc(r.role_id) + '"></label>' +
-      '<label>actions <input class="rg-input rg-in" data-k="actions" data-ri="' + i + '" value="' + esc((r.actions || []).join(",")) + '" placeholder="search,get"></label>' +
-      '<label>scopes <input class="rg-input rg-in" data-k="scopes" data-ri="' + i + '" value="' + esc((r.scopes || []).map((s) => s.layer + ":" + s.visibility).join(",")) + '" placeholder="memory:user"></label>' +
+      '<label>actions（由权限包定义）<input class="rg-input" value="' + esc((r.actions || []).join(",")) + '" disabled></label>' +
+      '<label>scopes（由权限包定义）<input class="rg-input" value="' + esc((r.scopes || []).map((s) => s.layer + ":" + s.visibility).join(",")) + '" disabled></label>' +
       '<label>user_id <input class="rg-input rg-in" data-k="user_id" data-ri="' + i + '" value="' + esc(r.user_id || "") + '"></label>' +
       "</div>").join("") +
       '<button class="btn" data-act="add-role" type="button">+ 添加权限包</button>';
@@ -1775,29 +1776,22 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
   };
   function rgRenderPacks() {
     if (!rgModel) return;
-    const byPack = new Map();
-    for (const fw of rgModel.frameworks) {
-      for (const a of fw.agents) {
-        for (const r of a.roles ?? []) {
-          const cur = byPack.get(r.role_id) ?? { actions: r.actions ?? [], scopes: r.scopes ?? [], holders: new Map() };
-          cur.actions = r.actions ?? cur.actions;
-          cur.scopes = r.scopes ?? cur.scopes;
-          cur.holders.set(a.agent_id, fw.framework_id);
-          byPack.set(r.role_id, cur);
-        }
-      }
-    }
-    $("rgPacksRight").textContent = byPack.size + " 个权限包";
-    $("rgPackList").innerHTML = '<table class="rg-table"><thead><tr><th>权限包</th><th>能力</th><th>actions</th><th>scopes</th><th class="num">授予主体</th></tr></thead><tbody>' +
-      [...byPack.entries()].map(([roleId, v]) =>
-        '<tr><td><code>' + esc(roleId) + "</code></td>" +
-        '<td><span class="tag">' + esc(RG_CAP_LABEL[roleId] ?? roleId) + "</span></td>" +
-        '<td class="rg-dim">' + esc((v.actions || []).join(",")) + "</td>" +
-        '<td class="rg-dim">' + esc((v.scopes || []).map((s) => s.layer + ":" + s.visibility).join(",")) + "</td>" +
-        '<td class="num">' + v.holders.size + "</td></tr>").join("") +
+    const packs = rgPacks.length ? rgPacks : [];
+    const holders = new Map();
+    for (const x of rgRows) holders.set(x.role.role_id, (holders.get(x.role.role_id) ?? 0) + 1);
+    $("rgPacksRight").textContent = packs.length + " 个权限包 · 记忆库能力";
+    if (!packs.length) { $("rgPackList").innerHTML = '<div class="empty">注册表还没有顶层 packs 定义。</div>'; return; }
+    $("rgPackList").innerHTML = '<table class="rg-table"><thead><tr><th>权限包</th><th>能力</th><th>actions</th><th>scopes</th><th class="num">授予</th></tr></thead><tbody>' +
+      packs.map((p) =>
+        '<tr><td><code>' + esc(p.pack_id) + "</code></td>" +
+        '<td><span class="tag">' + esc(RG_CAP_LABEL[p.pack_id] ?? p.pack_id) + "</span></td>" +
+        '<td class="rg-dim">' + esc((p.actions || []).join(",")) + "</td>" +
+        '<td class="rg-dim">' + esc((p.scopes || []).map((s) => s.layer + ":" + s.visibility).join(",")) + "</td>" +
+        '<td class="num">' + (holders.get(p.pack_id) ?? 0) + "</td></tr>").join("") +
       "</tbody></table>" +
-      '<div class="rg-dim" style="padding:8px 12px">权限包是记忆库自己的能力定义，不属于任何框架；这里显示的是「定义 + 被谁持有」。</div>';
+      '<div class="rg-dim" style="padding:8px 12px">这些是<b>记忆库自己的能力定义</b>（服务端资产），不属于任何框架；框架只持有「被授予」。</div>';
   }
+
   async function rgLoad() {
     $("rgList").innerHTML = '<div class="empty"><div class="skeleton"></div></div>';
     try {
@@ -1807,6 +1801,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
       if (!fws.length) { $("rgList").innerHTML = '<div class="err">注册表为空</div>'; return; }
       rgActorTier = d.actor?.tier || "admin";
       try { const st = await post("/v1/admin/identity/stats", {}); rgRefs = st.counts || {}; } catch { rgRefs = {}; }
+      rgPacks = Array.isArray(identity.packs) ? identity.packs : [];
       rgModel = {
         frameworks: fws.map((fw) => ({
           framework_id: fw.framework_id,

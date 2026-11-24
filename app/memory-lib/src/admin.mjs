@@ -11,6 +11,7 @@ import { atomicWriteFile as sharedAtomicWriteFile } from "./atomic-write.mjs";
 // registry view: credential_ref + status only, NO secrets
 export function registryView(registry) {
   return {
+    packs: (registry.packs ?? []).map((p) => ({ pack_id: p.pack_id, actions: p.actions ?? [], scopes: p.scopes ?? [] })),
     frameworks: (registry.frameworks ?? []).map((f) => ({
       framework_id: f.framework_id,
       credential_ref: f.credential_ref,
@@ -166,13 +167,48 @@ export async function updateIdentity(registryPath, patch = {}, { actor = null, a
   }
   const tierChanged =
     JSON.stringify((before.agents ?? []).map((a) => a.tier ?? null)) !== JSON.stringify((next.agents ?? []).map((a) => a.tier ?? null));
+  const packsChanged = JSON.stringify(reg.packs ?? null) !== JSON.stringify(next.packs ?? reg.packs ?? null);
   const coreChange =
+    packsChanged ||
     JSON.stringify(before.claim_allowlist ?? null) !== JSON.stringify(next.claim_allowlist ?? null) ||
     JSON.stringify(adminRoles(before.agents)) !== JSON.stringify(adminRoles(next.agents)) ||
     JSON.stringify((before.agents ?? []).filter((a) => adminRoles([a]).length).map((a) => a.agent_id).sort()) !==
       JSON.stringify((next.agents ?? []).filter((a) => adminRoles([a]).length).map((a) => a.agent_id).sort()) ||
     tierChanged;
 
+  // packs 是唯一权威：授予里只允许写 role_id / user_id / group_id，
+  // actions/scopes 一律从 packs 回填（防止调用方绕过定义改权限）。
+  if (Array.isArray(reg.packs) && reg.packs.length) {
+    const byPack = new Map(reg.packs.map((p) => [p.pack_id, p]));
+    for (const agent of next.agents) {
+      for (const role of agent.roles ?? []) {
+        const pack = byPack.get(role.role_id);
+        if (!pack) return { ok: false, reason: "UNKNOWN_PACK", pack_id: role.role_id, status: 400 };
+        role.actions = pack.actions;
+        role.scopes = pack.scopes;
+      }
+    }
+  }
+  if ("packs" in patch) {
+    if (!Array.isArray(patch.packs)) return { ok: false, reason: "PACKS_MUST_BE_ARRAY", status: 400 };
+    const seen = new Set();
+    const packsNext = [];
+    for (const p of patch.packs) {
+      const id = String(p?.pack_id ?? "").trim();
+      if (!id) return { ok: false, reason: "PACK_ID_REQUIRED", status: 400 };
+      if (seen.has(id)) return { ok: false, reason: "DUPLICATE_PACK", pack_id: id, status: 400 };
+      seen.add(id);
+      const actions = Array.isArray(p.actions) ? [...new Set(p.actions.map(String))] : [];
+      for (const act of actions) if (!IDENT_ACTIONS.has(act)) return { ok: false, reason: "INVALID_ACTION", action: act, status: 400 };
+      const scopes = Array.isArray(p.scopes) ? p.scopes.map((s) => ({ ...s, layer: String(s?.layer ?? ""), visibility: String(s?.visibility ?? "") })) : [];
+      for (const s of scopes) {
+        if (!IDENT_LAYERS.has(s.layer)) return { ok: false, reason: "INVALID_LAYER", layer: s.layer, status: 400 };
+        if (!IDENT_VISIBILITY.has(s.visibility)) return { ok: false, reason: "INVALID_VISIBILITY", visibility: s.visibility, status: 400 };
+      }
+      packsNext.push({ pack_id: id, actions, scopes });
+    }
+    next.packs = packsNext;
+  }
   const diff = diffIdentity(before, next);
   if (diff.length === 0) return { ok: true, dry_run: true, changed: 0, diff };
 
@@ -189,6 +225,7 @@ export async function updateIdentity(registryPath, patch = {}, { actor = null, a
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const backup = `${registryPath}.bak-identity-ui-${stamp}`;
   await fs.copyFile(registryPath, backup);
+  if (next.packs) reg.packs = next.packs;
   fw.claim_allowlist = next.claim_allowlist;
   fw.agents = next.agents;
   await atomicWriteFile(registryPath, JSON.stringify(reg, null, 2) + "\n");

@@ -27,6 +27,19 @@ export async function loadRegistry(registryPath) {
   } catch {
     throw new Error(`identity registry invalid JSON: ${registryPath}`);
   }
+  // packs 是记忆库自己的能力定义；agents 里只存授予（role_id + user_id/group_id）。
+  // 加载时把 packs 的 actions/scopes 合并回 role，调用方无需感知两种结构。
+  if (Array.isArray(parsed.packs) && parsed.packs.length) {
+    const byId = new Map(parsed.packs.map((p) => [p.pack_id, p]));
+    for (const fw of parsed.frameworks) {
+      for (const a of fw.agents ?? []) {
+        a.roles = (a.roles ?? []).map((role) => {
+          const pack = byId.get(role.role_id);
+          return { ...role, actions: pack?.actions ?? role.actions ?? [], scopes: pack?.scopes ?? role.scopes ?? [] };
+        });
+      }
+    }
+  }
   if (parsed?.version !== 1 || !Array.isArray(parsed.frameworks)) {
     throw new Error(`identity registry schema unsupported (expected version 1 with frameworks[]): ${registryPath}`);
   }
