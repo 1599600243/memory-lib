@@ -367,6 +367,10 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
       <section class="view" id="view-registry">
         <div class="cards" id="rgCards"></div>
         <div class="panel">
+          <h2>权限包定义（记忆库能力） <span class="right" id="rgPacksRight"></span></h2>
+          <div id="rgPackList"><div class="empty"><div class="skeleton"></div></div></div>
+        </div>
+        <div class="panel">
           <div class="rg-head">
             <h2>身份与权限 <span class="right" id="rgRight"></span></h2>
             <div class="rg-toolbar">
@@ -1753,6 +1757,47 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
   }
   let rgBound = false;
   function rgBindOnce() { if (!rgBound) { rgBound = true; rgBind(); } }
+  // 权限包定义（属于记忆库的能力，不归属任何框架）
+  const RG_CAP_LABEL = {
+    reader: "memory.read",
+    researcher: "memory.read.cross",
+    learner: "learning.use",
+    pet: "pet.use",
+    steward: "memory.review",
+    "capture-ingest": "capture.ingest",
+    "chat-reader": "memory.read.self",
+    "chat-writer": "memory.write.self",
+    "librarian-admin": "admin.all",
+    "home-owner-agent": "scene.home.owner",
+    "home-friend-agent": "scene.home.friend",
+    "ops-collector": "scene.work.collector",
+    "ops-agent": "scene.work.agent",
+  };
+  function rgRenderPacks() {
+    if (!rgModel) return;
+    const byPack = new Map();
+    for (const fw of rgModel.frameworks) {
+      for (const a of fw.agents) {
+        for (const r of a.roles ?? []) {
+          const cur = byPack.get(r.role_id) ?? { actions: r.actions ?? [], scopes: r.scopes ?? [], holders: new Map() };
+          cur.actions = r.actions ?? cur.actions;
+          cur.scopes = r.scopes ?? cur.scopes;
+          cur.holders.set(a.agent_id, fw.framework_id);
+          byPack.set(r.role_id, cur);
+        }
+      }
+    }
+    $("rgPacksRight").textContent = byPack.size + " 个权限包";
+    $("rgPackList").innerHTML = '<table class="rg-table"><thead><tr><th>权限包</th><th>能力</th><th>actions</th><th>scopes</th><th class="num">授予主体</th></tr></thead><tbody>' +
+      [...byPack.entries()].map(([roleId, v]) =>
+        '<tr><td><code>' + esc(roleId) + "</code></td>" +
+        '<td><span class="tag">' + esc(RG_CAP_LABEL[roleId] ?? roleId) + "</span></td>" +
+        '<td class="rg-dim">' + esc((v.actions || []).join(",")) + "</td>" +
+        '<td class="rg-dim">' + esc((v.scopes || []).map((s) => s.layer + ":" + s.visibility).join(",")) + "</td>" +
+        '<td class="num">' + v.holders.size + "</td></tr>").join("") +
+      "</tbody></table>" +
+      '<div class="rg-dim" style="padding:8px 12px">权限包是记忆库自己的能力定义，不属于任何框架；这里显示的是「定义 + 被谁持有」。</div>';
+  }
   async function rgLoad() {
     $("rgList").innerHTML = '<div class="empty"><div class="skeleton"></div></div>';
     try {
@@ -1782,6 +1827,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
       ].map(([l, v, h]) => '<div class="card"><div class="label">' + l + '</div><div class="num">' + nf.format(v) + '</div><div class="hint">' + esc(h) + '</div></div>').join("");
       rgRenderAllowSelect();
       rgRenderList();
+      rgRenderPacks();
       rgRenderDrawer();
       rgBindOnce();
     } catch (e) {
