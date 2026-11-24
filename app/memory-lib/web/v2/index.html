@@ -141,6 +141,32 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
 @media(max-width:900px){#app.on{grid-template-columns:1fr}aside{position:static;height:auto}.cards{grid-template-columns:repeat(2,1fr)}}
   .graph-detail{margin-top:8px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);min-height:46px}
   .graph-detail-title{font-weight:600;margin-bottom:4px;line-height:1.4}
+
+  /* ===== 运行全景（#/flow） ===== */
+  .fl-issues{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+  .fl-issue{display:flex;align-items:flex-start;gap:8px;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:9px 12px;font-size:12.5px;line-height:1.5}
+  .fl-issue.bad{border-color:color-mix(in srgb,var(--bad) 45%,var(--line));background:color-mix(in srgb,var(--bad) 7%,var(--panel))}
+  .fl-issue.warn{border-color:color-mix(in srgb,var(--warn) 45%,var(--line));background:color-mix(in srgb,var(--warn) 8%,var(--panel))}
+  .fl-issue.ok{border-color:var(--line);color:var(--muted)}
+  .fl-issue b{font-weight:650}
+  .fl-pipe{display:flex;align-items:stretch;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px}
+  .fl-stage{flex:1 1 0;min-width:148px;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:10px 12px;position:relative}
+  .fl-stage .nm{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:6px}
+  .fl-stage .big{font-size:22px;font-weight:650;line-height:1.25;margin-top:4px;font-variant-numeric:tabular-nums}
+  .fl-stage .sub{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.45}
+  .fl-stage .dot2{width:8px;height:8px;border-radius:50%;display:inline-block;background:var(--muted)}
+  .fl-stage.ok .dot2{background:var(--ok)}
+  .fl-stage.warn .dot2{background:var(--warn)}
+  .fl-stage.bad .dot2{background:var(--bad)}
+  .fl-stage.bad{border-color:color-mix(in srgb,var(--bad) 40%,var(--line))}
+  .fl-stage.warn{border-color:color-mix(in srgb,var(--warn) 40%,var(--line))}
+  .fl-arrow{align-self:center;color:var(--muted);font-size:14px;flex:0 0 auto}
+  .fl-rows{max-height:340px;overflow:auto}
+  .fl-rows table{width:100%}
+  .fl-rows td,.fl-rows th{padding:7px 12px;font-size:12.5px}
+
+  .rg-in{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:6px;padding:4px 6px;font-size:12px}
+  .rg-in:focus{outline:2px solid color-mix(in srgb,var(--accent) 40%,transparent);outline-offset:0}
 </style>
 </head>
 <body>
@@ -164,6 +190,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
       <div class="nav-group">
         <h4>数据</h4>
         <a href="#/overview" data-view="overview"><span class="ico">▦</span>概览</a>
+      <a href="#/flow" data-view="flow"><span class="ico">⇄</span>运行全景</a>
         <a href="#/browse" data-view="browse"><span class="ico">☰</span>记忆</a>
         <a href="#/evidence" data-view="evidence"><span class="ico">❏</span>证据</a>
         <a href="#/graph" data-view="graph"><span class="ico">◇</span>记忆图谱</a>
@@ -171,7 +198,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
       <div class="nav-group">
         <h4>治理</h4>
         <a href="#/registry" data-view="registry"><span class="ico">⚿</span>身份权限</a>
-        <a href="#/roles" data-view="roles"><span class="ico">◉</span>角色</a>
+        <a href="#/roles" data-view="roles"><span class="ico">◉</span>权限包</a>
         <a href="#/audit" data-view="audit"><span class="ico">≡</span>审计日志</a>
         <a href="#/recovery" data-view="recovery"><span class="ico">↺</span>恢复中心</a>
         <a href="#/health" data-view="health"><span class="ico">✚</span>系统健康</a>
@@ -296,15 +323,38 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
       <section class="view" id="view-registry">
         <div class="cards" id="rgCards"></div>
         <div class="panel">
-          <h2>框架 / 智能体 / 角色 <span class="right" id="rgRight"></span></h2>
+          <h2>层级 / 权限包 / 数据域 <span class="right" id="rgTierRight"></span></h2>
+          <div style="padding:8px 14px 0;display:flex;gap:8px;align-items:center"><button class="btn" id="rgGuestGc" type="button" style="display:none">清理过期访客</button><span class="who" id="rgGcMsg"></span></div>
+          <div style="padding:10px 14px 0"><p class="who" style="margin:0 0 8px">只读视图：<b>层级</b>决定管谁，<b>权限包</b>决定能做什么，<b>数据域</b>决定看得见哪几条。编辑仍在下方。</p></div>
+          <div id="rgTierBody"><div class="empty"><div class="skeleton"></div></div></div>
+        </div>
+        <div class="panel">
+          <h2>声明白名单 claim_allowlist <span class="right" id="rgAllowRight"></span></h2>
+          <div style="padding:12px 14px">
+            <p class="who" style="margin:0 0 8px">一行一条，格式 <code>agent/role</code>，支持通配 <code>qq-*/chat-reader</code>；清空 = 不限制。改完先点「预览变更」。<span id="rgActor" style="margin-left:8px"></span></p>
+            <textarea id="rgAllow" rows="6" spellcheck="false" style="width:100%;font-family:var(--mono);font-size:12px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);color:var(--text)"></textarea>
+            <div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap">
+              <button class="btn" id="rgPreview" type="button">预览变更</button>
+              <button class="btn" id="rgSave" type="button" disabled>保存</button>
+              <span class="who" id="rgMsg"></span>
+            </div>
+            <pre id="rgDiff" style="display:none;margin:8px 0 0;padding:10px;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;font-size:11.5px;white-space:pre-wrap"></pre>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>主体 / 权限包 <span class="right" id="rgRight"></span></h2>
           <div id="rgBody"><div class="empty"><div class="skeleton"></div></div></div>
+          <div style="display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--line-soft);align-items:center;flex-wrap:wrap">
+            <button class="btn" id="rgAddAgent" type="button">+ 添加智能体</button>
+            <span class="who">权限包改动与 allowlist 一起预览、一起保存。</span>
+          </div>
         </div>
       </section>
 
-      <!-- 角色 -->
+      <!-- 权限包 -->
       <section class="view" id="view-roles">
         <div class="panel">
-          <h2>角色记忆 <span class="right" id="rlCount"></span></h2>
+          <h2>权限包记忆 <span class="right" id="rlCount"></span></h2>
           <div id="rlBody"><div class="empty"><div class="skeleton"></div></div></div>
         </div>
       </section>
@@ -338,7 +388,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
           <div style="padding:14px">
             <div class="field">
               <label for="igPaths">路径（每行一个，或逗号分隔）</label>
-              <textarea id="igPaths" rows="4" placeholder="例如 .\inbox\notes.md 或 .\inbox" style="width:100%;font-family:var(--mono);font-size:12px"></textarea>
+              <textarea id="igPaths" rows="4" placeholder="例如 D:\MemoryLib\inbox\notes.md 或 D:\MemoryLib\inbox" style="width:100%;font-family:var(--mono);font-size:12px"></textarea>
             </div>
             <div class="toolbar" style="padding:0 0 12px;border:0">
               <label class="who" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="igRecursive" checked> 递归目录</label>
@@ -363,13 +413,13 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
       <section class="view" id="view-agents">
         <div class="cards" id="agCards"></div>
         <div class="panel">
-          <h2>框架 / 智能体 / 角色 <span class="right" id="agRight"></span></h2>
-          <table><thead><tr><th>框架</th><th>凭证</th><th>智能体</th><th>角色</th><th>动作</th><th>范围（layer/visibility）</th></tr></thead><tbody id="agBody"><tr><td colspan="6" class="empty">读取中…</td></tr></tbody></table>
+          <h2>框架 / 主体 / 权限包 <span class="right" id="agRight"></span></h2>
+          <table><thead><tr><th>框架</th><th>凭证</th><th>主体</th><th>权限包</th><th>动作</th><th>范围（layer/visibility）</th></tr></thead><tbody id="agBody"><tr><td colspan="6" class="empty">读取中…</td></tr></tbody></table>
         </div>
         <div class="panel">
           <h2>API Key（控制台/脚本签发） <span class="right" id="akRight"></span></h2>
-          <p class="who" style="margin:0;padding:8px 14px;border-bottom:1px solid var(--line-soft)">这里列的是 <code>data/runtime/api-keys.json</code> 里由控制台/CLI 签发的角色密钥（当前 4 把：home-circle 2、work-circle 2）。只存 prefix + secret_hash，明文不可恢复；吊销立刻失效。MCP 的身份凭证（credential_ref）不走这张表，上面的 39 条是「角色实例」。</p>
-          <table><thead><tr><th>key id</th><th>角色</th><th>user / group</th><th>创建</th><th>吊销</th><th>最近使用</th></tr></thead><tbody id="akBody"><tr><td colspan="6" class="empty">读取中…</td></tr></tbody></table>
+          <p class="who" style="margin:0;padding:8px 14px;border-bottom:1px solid var(--line-soft)">这里列的是 <code>data/runtime/api-keys.json</code> 里由控制台/CLI 签发的权限包密钥（当前 4 把：home-circle 2、work-circle 2）。只存 prefix + secret_hash，明文不可恢复；吊销立刻失效。MCP 的身份凭证（credential_ref）不走这张表，上面的 39 条是「权限包实例」。</p>
+          <table><thead><tr><th>key id</th><th>权限包</th><th>user / group</th><th>创建</th><th>吊销</th><th>最近使用</th></tr></thead><tbody id="akBody"><tr><td colspan="6" class="empty">读取中…</td></tr></tbody></table>
         </div>
       </section>
 
@@ -426,6 +476,22 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
         <div class="graph-subviews">
           <div class="panel"><h2>边列表 <span class="right" id="grEdgeRight"></span></h2><div class="graph-rows" id="grEdges"><div class="empty">加载图谱后显示关系</div></div></div>
           <div class="panel"><h2>节点列表 <span class="right" id="grNodeRight"></span></h2><div class="graph-rows" id="grNodes"><div class="empty">加载图谱后显示节点</div></div></div>
+        </div>
+      </section>
+
+
+      <!-- 运行全景 -->
+      <section class="view" id="view-flow">
+        <div id="flIssues" class="fl-issues"></div>
+        <div class="fl-pipe" id="flPipe"></div>
+        <div class="cards" id="flCards"></div>
+        <div class="panel">
+          <h2>失败热点 <span class="right" id="flDenyRight"></span></h2>
+          <div id="flDeny" class="fl-rows"><div class="empty">加载中…</div></div>
+        </div>
+        <div class="panel">
+          <h2>阶段明细 <span class="right" id="flDetailRight"></span></h2>
+          <div id="flDetail" class="fl-rows"><div class="empty">加载中…</div></div>
         </div>
       </section>
 
@@ -514,12 +580,13 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
   // ---------- 路由 ----------
   const VIEWS = {
     overview: ["概览", "只读 · /v1/memory/stats"],
+    flow: ["运行全景", "记忆流水线健康 · 问题一眼可见"],
     browse: ["记忆", "空=按时间浏览 · 有词=全库检索"],
     health: ["系统健康", "/v1/health"],
     evidence: ["证据", "原始对话与来源"],
     graph: ["记忆图谱", "节点与边"],
-    registry: ["身份权限", "框架 / 智能体 / 角色"],
-    roles: ["角色", "权限能力"],
+    registry: ["身份权限", "框架 / 主体 / 权限包"],
+    roles: ["权限包", "能做什么 + 范围"],
     audit: ["审计日志", "访问与拒绝记录"],
     recovery: ["恢复中心", "备份与还原"],
     ingest: ["采集 / 导入", "外部记忆导入"],
@@ -533,7 +600,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
     plans: ["计划", "计划记忆"],
     profile: ["画像", "学习者画像"],
   };
-  const IMPLEMENTED = new Set(["overview", "browse", "health", "evidence", "registry", "roles", "audit", "recovery", "ingest", "agents", "runtime", "knowledge", "tools", "projects", "plans", "profile", "learning", "pet", "graph"]);
+  const IMPLEMENTED = new Set(["overview", "flow", "browse", "health", "evidence", "registry", "roles", "audit", "recovery", "ingest", "agents", "runtime", "knowledge", "tools", "projects", "plans", "profile", "learning", "pet", "graph"]);
 
   function route() {
     const name = (location.hash.replace(/^#\//, "") || "overview").split("?")[0];
@@ -547,6 +614,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
     $("pageTitle").textContent = VIEWS[key][0];
     $("pageSub").textContent = VIEWS[key][1];
     if (key === "overview") loadOverview();
+    if (key === "flow") loadFlow();
     if (key === "browse") { if ($("brFilter").value.trim()) runQuery(); else loadBrowse(true); }
     if (key === "health") loadHealth();
     if (key === "evidence") loadEvidence();
@@ -567,6 +635,141 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
     if (key === "graph") loadGraph();
   }
   window.addEventListener("hashchange", route);
+
+  // ---------- 运行全景（#/flow） ----------
+  // 一条记忆流水线：capture → evidence → refine → curated → index → retrieval。
+  // 统计窗口固定最近 24h；把「生产身份」与「未认证/测试探针」分开，避免探针把页面刷成一片红。
+  const FL_DENY_HINT = {
+    EVIDENCE_REFS_NOT_FOUND: "being 写失败：adapters/napcat/index.mjs:715 失败时应 return null，且只在成功时 appendMemoryRef",
+    CONVERSATION_CAPTURE_REJECTED: "capture 主体缺 group_id/user_id：检查主体与权限包绑定",
+    CLAIM_NOT_ALLOWED: "identity.json 的 claim_allowlist 未覆盖该 agent/role",
+    UNKNOWN_AGENT: "注册表里没有这个 agent：要么注册，要么停用调用方",
+    UNKNOWN_ROLE: "该主体没有这个权限包（如 chat-writer 已冻结）",
+    ACTION_DENIED: "权限包缺对应 action（search/get/propose）",
+    UNAUTHENTICATED: "凭据缺失或过期（多为探针/健康检查）",
+    PRINCIPAL_MISMATCH: "自报身份与服务端解析不一致",
+  };
+  const FL_WINDOW_MS = 24 * 3600 * 1000;
+  function flPct(values, p) {
+    const list = (values || []).map(Number).filter((v) => Number.isFinite(v) && v >= 0).sort((a, b) => a - b);
+    if (!list.length) return null;
+    return list[Math.min(list.length - 1, Math.max(0, Math.floor(list.length * p)))];
+  }
+  function flAgo(ts) {
+    if (!ts) return "—";
+    const t = Date.parse(ts);
+    if (!Number.isFinite(t)) return "—";
+    const s = Math.max(0, Math.round((Date.now() - t) / 1000));
+    if (s < 60) return s + "s 前";
+    if (s < 3600) return Math.round(s / 60) + "m 前";
+    if (s < 86400) return Math.round(s / 3600) + "h 前";
+    return Math.round(s / 86400) + "d 前";
+  }
+  function flNum(v) { return typeof v === "number" && Number.isFinite(v) ? nf.format(v) : (v ?? "—"); }
+  let flSeq = 0;
+  async function loadFlow() {
+    const mine = ++flSeq;
+    $("flIssues").innerHTML = '<div class="fl-issue ok">加载中…</div>';
+    $("flPipe").innerHTML = "";
+    $("flCards").innerHTML = "";
+    $("flDeny").innerHTML = '<div class="empty"><div class="skeleton"></div></div>';
+    $("flDetail").innerHTML = '<div class="empty"><div class="skeleton"></div></div>';
+    const [health, stats, admin, pending, audit] = await Promise.all([
+      getJson("/v1/health").catch(() => null),
+      post("/v1/memory/stats", {}).catch(() => null),
+      post("/v1/admin/health", {}).catch(() => null),
+      post("/v1/refinement/pending", { limit: 1 }).catch(() => null),
+      post("/v1/admin/audit", { limit: 5000 }).catch(() => null),
+    ]);
+    if (mine !== flSeq) return;
+
+    const allEvents = (audit && audit.events) || [];
+    const since = Date.now() - FL_WINDOW_MS;
+    const events = allEvents.filter((e) => { const t = Date.parse(e.ts); return Number.isFinite(t) && t >= since; });
+    const prod = (e) => Boolean(e && e.agent); // 未认证/探针事件没有 agent
+    const capOk = events.filter((e) => /capture/i.test(String(e.action || "")) && e.allow && prod(e));
+    const capDeny = events.filter((e) => /capture/i.test(String(e.action || "")) && !e.allow && prod(e));
+    const searches = events.filter((e) => /search/i.test(String(e.action || "")) && e.allow && prod(e));
+    const denyRows = events.filter((e) => e.denyReason && prod(e));
+    const probeDeny = events.filter((e) => e.denyReason && !prod(e));
+    const denyBy = {};
+    for (const e of denyRows) denyBy[e.denyReason] = (denyBy[e.denyReason] || 0) + 1;
+    const evDeny = denyBy.EVIDENCE_REFS_NOT_FOUND || 0;
+    const authDeny = (denyBy.CLAIM_NOT_ALLOWED || 0) + (denyBy.UNKNOWN_AGENT || 0) + (denyBy.UNKNOWN_ROLE || 0) + (denyBy.UNAUTHENTICATED || 0);
+    const capP50 = flPct(capOk.map((e) => e.latencyMs), 0.5);
+    const capP90 = flPct(capOk.map((e) => e.latencyMs), 0.9);
+    const srchP50 = flPct(searches.map((e) => e.latencyMs), 0.5);
+    const srchP90 = flPct(searches.map((e) => e.latencyMs), 0.9);
+    const idx = (health && health.index) || {};
+    const ref = (admin && admin.refinement) || {};
+    const refined24 = ref.refined_last_24h;
+    const alert = (ref.alert || {});
+    const pendingCount = (pending && (pending.total_count ?? pending.count)) ?? null;
+    const totals = (stats && stats.totals) || {};
+
+    const issues = [];
+    if (!health) issues.push({ level: "bad", text: "健康接口不可用（/v1/health 失败）", fix: "检查 memory-lib 服务是否在 8787 监听" });
+    else if (health.health && health.health !== "healthy") issues.push({ level: "bad", text: "健康状态 = " + health.health, fix: health.reason || "看下方阶段明细" });
+    if ((idx.failed || 0) > 0) issues.push({ level: "bad", text: "索引失败 " + idx.failed + " 项", fix: "跑 repair 或看 /v1/health 的 index.last_error" });
+    if (evDeny > 0) issues.push({ level: evDeny > 5 ? "bad" : "warn", text: "生产写入证据引用缺失 " + evDeny + " 次（24h）", fix: FL_DENY_HINT.EVIDENCE_REFS_NOT_FOUND });
+    if (capP90 !== null && capP90 > 15000) issues.push({ level: capP90 > 30000 ? "bad" : "warn", text: "capture p90 " + (capP90 / 1000).toFixed(1) + "s（24h，生产写入）", fix: "being 写路径慢：先看 episode/embedding 是否阻塞" });
+    if (refined24 === 0) issues.push({ level: "warn", text: "24h 内提炼产出为 0", fix: "确认 refine 流水线是否在跑（或明确由 episode 取代）" });
+    if (pendingCount !== null && pendingCount > 50) issues.push({ level: "warn", text: "提炼积压 " + pendingCount + " 条", fix: "看 refine worker 日志与 /v1/refinement/pending" });
+    if (srchP90 !== null && srchP90 > 4000) issues.push({ level: srchP90 > 8000 ? "bad" : "warn", text: "检索 p90 " + (srchP90 / 1000).toFixed(1) + "s（24h）", fix: "看索引规模与 evidence 占比" });
+    if (authDeny > 0) issues.push({ level: "warn", text: "生产身份/白名单拒绝 " + authDeny + " 次（24h）", fix: FL_DENY_HINT.CLAIM_NOT_ALLOWED });
+    if ((idx.pending_changes || 0) > 0) issues.push({ level: "warn", text: "待索引变更 " + idx.pending_changes, fix: "等索引器追上，或手动触发 reindex" });
+
+    const head = issues.length
+      ? issues.slice(0, 6).map((i) => '<div class="fl-issue ' + i.level + '"><b>' + (i.level === "bad" ? "✕" : "!") + '</b><div><div>' + esc(i.text) + '</div><div style="color:var(--muted);font-size:11.5px">' + esc(i.fix) + '</div></div></div>').join("")
+      : '<div class="fl-issue ok"><b>✓</b><div>24h 内没有发现生产故障</div></div>';
+    const probeNote = probeDeny.length
+      ? '<div class="fl-issue ok" style="font-size:11.5px"><b>·</b><div>另有 ' + nf.format(probeDeny.length) + ' 次未认证/探针请求（无 agent，不算生产问题）</div></div>'
+      : "";
+    $("flIssues").innerHTML = head + probeNote;
+
+    const stage = (name, big, sub, level) =>
+      '<div class="fl-stage ' + level + '"><div class="nm"><span class="dot2"></span>' + name + '</div><div class="big">' + big + '</div><div class="sub">' + sub + '</div></div>';
+    const lvlCap = capP90 === null ? "ok" : capP90 > 15000 ? (capP90 > 30000 ? "bad" : "warn") : "ok";
+    const lvlEv = evDeny === 0 ? "ok" : evDeny > 5 ? "bad" : "warn";
+    const lvlRef = refined24 === 0 ? "warn" : (pendingCount || 0) > 50 ? "warn" : "ok";
+    const lvlIdx = (idx.failed || 0) > 0 ? "bad" : (idx.pending_changes || 0) > 0 ? "warn" : "ok";
+    const lvlSrch = srchP90 === null ? "ok" : srchP90 > 8000 ? "bad" : srchP90 > 4000 ? "warn" : "ok";
+    const srcTop = ((stats && stats.sources) || []).slice(0, 2).map((s) => s.name + " " + nf.format(s.count)).join(" · ") || "—";
+    $("flPipe").innerHTML = [
+      stage("capture", flNum(capOk.length), "p50 " + (capP50 === null ? "—" : capP50 + "ms") + " · p90 " + (capP90 === null ? "—" : capP90 + "ms") + "<br>最近 " + flAgo(capOk.length ? capOk[capOk.length - 1].ts : null), lvlCap),
+      stage("evidence", flNum(totals.evidence), "refs 缺失 " + evDeny + "<br>拒绝 capture " + capDeny.length, lvlEv),
+      stage("refine", pendingCount === null ? "—" : flNum(pendingCount), "24h 产出 " + flNum(refined24) + "<br>alert " + esc(alert.status || "—"), lvlRef),
+      stage("curated", flNum(totals.memories), esc(srcTop), "ok"),
+      stage("index", flNum(idx.indexed_files), "failed " + flNum(idx.failed || 0) + " · pending " + flNum(idx.pending_changes || 0) + "<br>最近 " + flAgo(idx.last_indexed_at), lvlIdx),
+      stage("retrieval", srchP90 === null ? "—" : srchP90 + "ms", "p90 · p50 " + (srchP50 === null ? "—" : srchP50 + "ms") + "<br>" + flNum(searches.length) + " 次检索", lvlSrch),
+    ].join('<div class="fl-arrow">→</div>');
+
+    $("flCards").innerHTML = [
+      ["健康", health ? health.health : "—", health ? "memory-lib" : "接口失败"],
+      ["索引失败", idx.failed ?? "—", (idx.failed || 0) === 0 ? "无失败项" : "需要 repair"],
+      ["证据引用缺失", evDeny, "24h · 仅生产身份"],
+      ["检索 p90", srchP90 === null ? "—" : srchP90 + "ms", "24h · " + searches.length + " 次"],
+    ].map(([l, v, h]) => '<div class="card"><div class="label">' + l + '</div><div class="num">' + (typeof v === "number" ? nf.format(v) : esc(String(v))) + '</div><div class="hint">' + esc(h) + '</div></div>').join("");
+
+    const denyList = Object.entries(denyBy).sort((a, b) => b[1] - a[1]);
+    $("flDenyRight").textContent = denyList.length + " 类 · 生产拒绝 " + denyRows.length + " 次 · 探针 " + probeDeny.length + " 次";
+    $("flDeny").innerHTML = denyList.length
+      ? '<table><thead><tr><th>拒绝原因</th><th class="num">次数</th><th>怎么修</th></tr></thead><tbody>' + denyList.map(([r, c]) =>
+        '<tr><td><code>' + esc(r) + '</code></td><td class="num">' + nf.format(c) + '</td><td class="who">' + esc(FL_DENY_HINT[r] || "看审计里对应的 action 与 agent") + '</td></tr>'
+      ).join("") + '</tbody></table>'
+      : '<div class="empty">24h 内没有生产拒绝记录</div>';
+
+    $("flDetailRight").textContent = "统计窗口：最近 24h · 事件 " + nf.format(events.length) + " 条";
+    $("flDetail").innerHTML = '<table><thead><tr><th>阶段</th><th>关键指标</th><th>状态</th></tr></thead><tbody>' + [
+      ["capture", "成功 " + capOk.length + " · 拒绝 " + capDeny.length + " · p50 " + (capP50 ?? "—") + "ms · p90 " + (capP90 ?? "—") + "ms", lvlCap],
+      ["evidence", "证据 " + flNum(totals.evidence) + " · refs 缺失 " + evDeny, lvlEv],
+      ["refine", "积压 " + (pendingCount ?? "—") + " · 24h 产出 " + (refined24 ?? "—") + " · alert " + (alert.status || "—"), lvlRef],
+      ["curated", "记忆 " + flNum(totals.memories) + " · " + esc(srcTop), "ok"],
+      ["index", "文件 " + flNum(idx.indexed_files) + " · 原始证据 " + flNum(idx.raw_indexed_files) + " · 失败 " + flNum(idx.failed || 0) + " · 待索引 " + flNum(idx.pending_changes || 0), lvlIdx],
+      ["retrieval", "检索 " + searches.length + " 次 · p50 " + (srchP50 ?? "—") + "ms · p90 " + (srchP90 ?? "—") + "ms", lvlSrch],
+      ["identity", "生产身份拒绝 " + authDeny + " · 探针 " + probeDeny.length, authDeny > 0 ? "warn" : "ok"],
+    ].map(([s, m, l]) => '<tr><td><b>' + s + '</b></td><td class="who">' + m + '</td><td>' + (l === "ok" ? '<span class="pill ok"><span class="dot"></span>正常</span>' : l === "warn" ? '<span class="pill warn"><span class="dot"></span>关注</span>' : '<span class="pill bad"><span class="dot"></span>异常</span>') + '</td></tr>').join("") + '</tbody></table>';
+  }
 
   // ---------- 概览 ----------
   async function loadOverview() {
@@ -1066,7 +1269,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
       const queued = files.filter((f) => f.status === "queued").length;
       $("igCards").innerHTML = [
         igCard("导入根目录", '<span style="font-size:12px;font-family:var(--mono)">' + esc(status.imports_path || "—") + "</span>", "外部资料放这里"),
-        igCard("角色范围", esc(status.role_range === "any-path" ? "任意路径" : "imports 限定"), "由角色 actions 决定"),
+        igCard("权限包范围", esc(status.role_range === "any-path" ? "任意路径" : "imports 限定"), "由权限包 actions 决定"),
         igCard("转录已处理", nf.format(files.length), "队列文件数"),
         igCard("待处理", nf.format(queued), "状态 queued"),
       ].join("");
@@ -1123,10 +1326,10 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
       $("agCards").innerHTML = [
         igCard("框架", nf.format(frameworks.length), "凭证主体"),
         igCard("智能体", nf.format(agentCount), "接入的 agent"),
-        igCard("角色", nf.format(roleCount), "动作 + 范围"),
+        igCard("权限包", nf.format(roleCount), "动作 + 范围"),
         igCard("已吊销凭证", nf.format(revoked), revoked ? "需要处理" : "全部正常"),
       ].join("");
-      $("agRight").textContent = frameworks.length + " 个框架 · " + agentCount + " 个智能体 · " + roleCount + " 条角色实例";
+      $("agRight").textContent = frameworks.length + " 个框架 · " + agentCount + " 个智能体 · " + roleCount + " 个权限包";
       const rows = [];
       for (const f of frameworks) {
         const fAgents = f.agents || [];
@@ -1228,37 +1431,255 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
   }
 
   // ---------- 身份权限 ----------
+  // ---------- 身份权限（可视化编辑）----------
+  // 数据：POST /v1/admin/identity（admin）。只读时返回 identity 视图；
+  // 带 framework_id + claim_allowlist/agents 时走 updateIdentity（dry_run 先预览）。
+  let rgModel = null;
+  let rgDirty = false;
+  let rgActorTier = "admin";
+  let rgRefs = {};
+  function rgParseRules(text) {
+    return String(text || "").split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+  }
+  function rgParseScopes(text) {
+    return String(text || "").split(",").map((x) => x.trim()).filter(Boolean).map((pair) => {
+      const [layer, visibility] = pair.split(":").map((s) => s.trim());
+      return { layer: layer || "", visibility: visibility || "" };
+    });
+  }
+  function rgRenderAllow() {
+    $("rgAllow").value = (rgModel.allow || []).join("\n");
+    $("rgAllowRight").textContent = (rgModel.allow || []).length + " 条规则";
+  }
+  function rgRenderAgents() {
+    const agents = (rgModel && rgModel.agents) || [];
+    $("rgBody").innerHTML = agents.map((a, ai) => {
+      const rows = (a.roles || []).map((r, ri) =>
+        '<tr>' +
+        '<td><input class="rg-in" data-k="role_id" data-ai="' + ai + '" data-ri="' + ri + '" value="' + esc(r.role_id || "") + '" style="width:130px"></td>' +
+        '<td><input class="rg-in" data-k="actions" data-ai="' + ai + '" data-ri="' + ri + '" value="' + esc((r.actions || []).join(",")) + '" style="width:190px" placeholder="search,get"></td>' +
+        '<td><input class="rg-in" data-k="scopes" data-ai="' + ai + '" data-ri="' + ri + '" value="' + esc((r.scopes || []).map((s) => s.layer + ":" + s.visibility).join(",")) + '" style="width:190px" placeholder="memory:user"></td>' +
+        '<td><input class="rg-in" data-k="user_id" data-ai="' + ai + '" data-ri="' + ri + '" value="' + esc(r.user_id || "") + '" style="width:150px"></td>' +
+        '<td><button class="btn" data-act="rm-role" data-ai="' + ai + '" data-ri="' + ri + '" type="button">删</button></td></tr>'
+      ).join("");
+      return '<div class="rg-agent" style="padding:10px 14px;border-bottom:1px solid var(--line-soft)">' +
+        '<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">' +
+        '<input class="rg-in" data-k="agent_id" data-ai="' + ai + '" value="' + esc(a.agent_id || "") + '" style="width:240px;font-family:var(--mono)">' +
+        '<button class="btn" data-act="rm-agent" data-ai="' + ai + '" type="button">删除该智能体</button></div>' +
+        '<table><thead><tr><th>role_id</th><th>actions</th><th>scopes</th><th>user_id</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>' +
+        '<button class="btn" data-act="add-role" data-ai="' + ai + '" type="button" style="margin-top:6px">+ 权限包</button></div>';
+    }).join("") || '<div class="empty">没有智能体</div>';
+    $("rgRight").textContent = agents.length + " 个主体 / " + agents.reduce((n, a) => n + (a.roles || []).length, 0) + " 个权限包";
+  }
+  function rgMarkDirty() {
+    rgDirty = true;
+    $("rgSave").disabled = true;
+    $("rgMsg").textContent = "有未预览的修改";
+  }
+  function rgUpdateFromInput(el) {
+    if (!rgModel) return;
+    const ai = Number(el.dataset.ai);
+    const ri = el.dataset.ri === undefined ? null : Number(el.dataset.ri);
+    const k = el.dataset.k;
+    const a = rgModel.agents[ai];
+    if (!a) return;
+    if (k === "agent_id") { a.agent_id = el.value.trim(); rgMarkDirty(); return; }
+    const r = a.roles && a.roles[ri];
+    if (!r) return;
+    if (k === "actions") r.actions = el.value.split(",").map((x) => x.trim()).filter(Boolean);
+    else if (k === "scopes") r.scopes = rgParseScopes(el.value);
+    else if (k === "role_id") r.role_id = el.value.trim();
+    else if (k === "user_id") r.user_id = el.value.trim() || null;
+    rgMarkDirty();
+  }
+  function rgBind() {
+    $("rgBody").addEventListener("input", (e) => {
+      if (e.target.classList.contains("rg-in")) rgUpdateFromInput(e.target);
+    });
+    $("rgBody").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-act]");
+      if (!btn || !rgModel) return;
+      const ai = Number(btn.dataset.ai);
+      const ri = btn.dataset.ri === undefined ? null : Number(btn.dataset.ri);
+      if (btn.dataset.act === "add-role") {
+        rgModel.agents[ai].roles.push({ role_id: "new-role", actions: ["search", "get"], scopes: [{ layer: "memory", visibility: "user" }], user_id: null });
+      } else if (btn.dataset.act === "rm-role") {
+        rgModel.agents[ai].roles.splice(ri, 1);
+      } else if (btn.dataset.act === "rm-agent") {
+        rgModel.agents.splice(ai, 1);
+      } else return;
+      rgMarkDirty();
+      rgRenderAgents();
+    });
+    $("rgAddAgent").addEventListener("click", () => {
+      if (!rgModel) return;
+      rgModel.agents.push({ agent_id: "new-agent", roles: [{ role_id: "chat-reader", actions: ["search", "get"], scopes: [{ layer: "memory", visibility: "user" }], user_id: null }] });
+      rgMarkDirty();
+      rgRenderAgents();
+    });
+    const gcBtn2 = $("rgGuestGc");
+    if (gcBtn2) gcBtn2.addEventListener("click", async () => {
+      if (!confirm("清理已过期且名下 0 条记忆的访客身份？（会先备份 identity.json）")) return;
+      $("rgGcMsg").textContent = "清理中…";
+      try {
+        const r = await post("/v1/admin/identity/gc", {});
+        $("rgGcMsg").textContent = "已移除 " + (r.removed?.length ?? 0) + " 个，转会话 " + (r.kept?.length ?? 0) + " 个" + (r.backup ? "，备份 " + r.backup.split(/[\\/]/).pop() : "");
+        await loadRegistry();
+      } catch (e) { $("rgGcMsg").textContent = "清理失败：" + e.message; }
+    });
+    $("rgAllow").addEventListener("input", rgMarkDirty);
+    $("rgPreview").addEventListener("click", rgPreview);
+    $("rgSave").addEventListener("click", () => rgSave(false));
+  }
+  async function rgPreview() {
+    if (!rgModel) return;
+    $("rgMsg").textContent = "预览中…";
+    $("rgDiff").style.display = "none";
+    try {
+      const r = await post("/v1/admin/identity", { framework_id: rgModel.framework_id, claim_allowlist: rgParseRules($("rgAllow").value), agents: rgModel.agents, dry_run: true });
+      $("rgAllowRight").textContent = rgParseRules($("rgAllow").value).length + " 条规则";
+      if (!r.changed) {
+        $("rgMsg").textContent = "没有变化";
+        $("rgSave").disabled = true;
+        return;
+      }
+      $("rgDiff").textContent = r.diff.map((x) => "• " + x).join("\n");
+      $("rgDiff").style.display = "block";
+      $("rgMsg").textContent = r.changed + " 处变更，确认后保存";
+      $("rgSave").disabled = false;
+    } catch (e) {
+      $("rgMsg").textContent = "预览失败：" + e.message;
+      $("rgSave").disabled = true;
+    }
+  }
+  async function rgSave(opts = {}) {
+    if (!rgModel) return;
+    $("rgMsg").textContent = "保存中…";
+    try {
+      const body = { framework_id: rgModel.framework_id, claim_allowlist: rgParseRules($("rgAllow").value), agents: rgModel.agents };
+      if (opts.confirmSelf) body.confirm_self_lockout = true;
+      if (opts.confirmCore) body.confirm_core = true;
+      const r = await post("/v1/admin/identity", body);
+      $("rgMsg").textContent = "已保存（" + (r.changed || 0) + " 处）" + (r.backup ? "，备份：" + r.backup.split(/[\\/]/).pop() : "");
+      rgDirty = false;
+      await loadRegistry();
+    } catch (e) {
+      if (/SELF_LOCKOUT/.test(e.message || "")) {
+        if (confirm("这次保存会让你自己的 admin/claim 能力失效。确定继续？")) return rgSave({ confirmSelf: true });
+      }
+      if (/CORE_CONFIRM_REQUIRED/.test(e.message || "")) {
+        if (confirm("这是核心变更（声明白名单 / 管理员权限包）。确认由超级管理员保存？")) return rgSave({ confirmCore: true });
+      }
+      $("rgMsg").textContent = "保存失败：" + e.message;
+    }
+  }
+  // ---------- 身份页：层级 / 权限包 / 数据域（只读视图） ----------
+  // 只做展示映射，不改 identity.json：
+  //   层级 tier   = 管谁（管理员 / 框架 / 访客）
+  //   权限包 pack = 能做什么（role.actions + scopes 的组合，旧名「角色」）
+  //   数据域 doma = 看得见哪几条（role.user_id / scopes 里的共享层）
+  const RG_PACK_LABEL = {
+    "librarian-admin": "管理（含 admin）",
+    reader: "只读（共享+经历）",
+    researcher: "研究（跨库检索+写入）",
+    learner: "学习模块",
+    pet: "宠物模块",
+    steward: "审核（review/promote/deprecate）",
+    "capture-ingest": "采集（只写候选）",
+    "chat-reader": "只读（本人）",
+    "chat-writer": "写入（候选）",
+    "home-owner-agent": "家用-主人",
+    "home-friend-agent": "家用-访客",
+    "ops-collector": "工作-采集",
+    "ops-agent": "工作-代理",
+  };
+  const RG_FRAMEWORK_AGENTS = new Set(["pilot-01", "admin-01", "home-circle", "work-circle"]);
+  function rgTierOf(agentId, role) {
+    if (Array.isArray(role?.actions) && role.actions.includes("admin")) return "管理员";
+    if (agentId === "qq-134c7898c9") return "框架（主体）";
+    if (RG_FRAMEWORK_AGENTS.has(agentId)) return "框架";
+    if (String(agentId).startsWith("qq-")) return "访客";
+    return "其他";
+  }
+  function rgDomainOf(role) {
+    if (role?.user_id) return "user:" + role.user_id;
+    const scopes = role?.scopes ?? [];
+    if (scopes.some((s) => s.visibility === "platform")) return "platform";
+    if (scopes.some((s) => s.visibility === "shared")) return "shared";
+    return "—";
+  }
+  function rgRenderTiers() {
+    if (!rgModel) return;
+    const rows = [];
+    for (const a of rgModel.agents) {
+      for (const r of a.roles ?? []) {
+        const tier = rgTierOf(a.agent_id, r);
+        const refs = rgRefs[r.user_id] ?? 0;
+        const status = refs > 0 ? "使用中" : (tier === "访客" ? "空壳" : "—");
+        rows.push({ agent: a.agent_id, role: r, tier, pack: RG_PACK_LABEL[r.role_id] ?? r.role_id, domain: rgDomainOf(r), refs, status });
+      }
+    }
+    const byTier = {};
+    for (const x of rows) byTier[x.tier] = (byTier[x.tier] || 0) + 1;
+    const emptyGuests = rows.filter((x) => x.status === "空壳").length;
+    $("rgTierRight").textContent = rows.length + " 个权限包实例 · 空壳 " + emptyGuests;
+    $("rgTierBody").innerHTML = '<table><thead><tr><th>层级</th><th>主体</th><th>权限包</th><th>数据域</th><th class="num">引用数</th><th>状态</th><th>actions / scopes</th></tr></thead><tbody>' +
+      rows.map((x) =>
+        '<tr><td>' + esc(x.tier) + '</td><td><code>' + esc(x.agent) + '</code></td><td>' + esc(x.pack) + '</td><td><code>' + esc(x.domain) + '</code></td>' +
+        '<td class="num">' + nf.format(x.refs) + '</td><td>' + (x.status === "空壳" ? '<span class="pill warn"><span class="dot"></span>空壳</span>' : x.status === "使用中" ? '<span class="pill ok"><span class="dot"></span>使用中</span>' : "—") + '</td>' +
+        '<td class="who">' + esc((x.role.actions || []).join(",")) + ' · ' + esc((x.role.scopes || []).map((s) => s.layer + ":" + s.visibility).join(",")) + '</td></tr>'
+      ).join("") + '</tbody></table>' +
+      '<div class="who" style="padding:8px 14px;border-top:1px solid var(--line-soft)">' +
+      '<b>名词对照</b>：角色 → <b>权限包</b>；agent → <b>主体</b>；framework → <b>框架</b>；user_id/group_id → <b>数据域</b>。' +
+      '当前分布：' + Object.entries(byTier).map(([k, v]) => k + " " + v).join(" · ") +
+      (emptyGuests ? '。空壳访客可在过期后清理（右上「清理过期访客」）。' : '') + '</div>';
+  }
+
   async function loadRegistry() {
     $("rgBody").innerHTML = '<div class="empty"><div class="skeleton"></div></div>';
     try {
-      const d = await post("/v1/admin/registry", {});
-      const fws = d.frameworks || [];
-      const agents = fws.reduce((n, f) => n + (f.agents || []).length, 0);
-      const roles = fws.reduce((n, f) => n + (f.agents || []).reduce((m, a) => m + (a.roles || []).length, 0), 0);
+      const d = await post("/v1/admin/identity", {});
+      const identity = d.identity || {};
+      const fws = identity.frameworks || [];
+      const fw = fws[0];
+      if (!fw) { $("rgBody").innerHTML = '<div class="err">注册表为空</div>'; return; }
+      rgActorTier = (d.actor && d.actor.tier) || "admin";
+      const actorEl = $("rgActor");
+      if (actorEl) {
+        actorEl.textContent = "当前层级：" + (rgActorTier === "superadmin" ? "超级管理员" : rgActorTier === "admin" ? "管理员" : rgActorTier) + (rgActorTier === "superadmin" ? "（可改核心）" : "（核心只读）");
+        actorEl.style.color = rgActorTier === "superadmin" ? "var(--ok)" : "var(--muted)";
+      }
+      $("rgAllow").disabled = rgActorTier !== "superadmin";
+      $("rgPreview").disabled = false;
+      rgModel = {
+        framework_id: fw.framework_id,
+        allow: Array.isArray(fw.claim_allowlist) ? [...fw.claim_allowlist] : [],
+        agents: JSON.parse(JSON.stringify(fw.agents || [])),
+      };
+      const agents = rgModel.agents;
+      const roleCount = agents.reduce((n, a) => n + (a.roles || []).length, 0);
       $("rgCards").innerHTML = [
-        ["框架", fws.length, "credential 维度"],
-        ["智能体", agents, "agent_id"],
-        ["角色实例", roles, "actions + scopes"],
-        ["控制台账号", (d.accounts || []).length, "username/password"],
+        ["框架", fws.length, fw.framework_id],
+        ["智能体", agents.length, "agent_id"],
+        ["权限包实例", roleCount, "actions + scopes"],
+        ["控制台账号", (identity.accounts || []).length, "username/password"],
       ].map(([l, v, h]) => '<div class="card"><div class="label">' + l + '</div><div class="num">' + nf.format(v) + '</div><div class="hint">' + esc(h) + '</div></div>').join("");
-      $("rgRight").textContent = fws.map((f) => f.framework_id).join(", ");
-      $("rgBody").innerHTML = fws.map((f) => {
-        const rows = (f.agents || []).map((a) =>
-          (a.roles || []).map((r, i) =>
-            '<tr>' + (i === 0 ? '<td rowspan="' + a.roles.length + '"><code>' + esc(a.agent_id) + '</code></td>' : '') +
-            '<td><code>' + esc(r.role_id) + '</code></td>' +
-            '<td>' + (r.actions || []).map((x) => '<span class="tag">' + esc(x) + '</span>').join(" ") + '</td>' +
-            '<td class="who">' + (r.scopes || []).map((s) => esc((s.layer || s.container || "") + "/" + (s.visibility || ""))).join(", ") + '</td>' +
-            '<td><code>' + esc(r.user_id || "—") + '</code></td></tr>').join("")).join("");
-        return '<div style="padding:10px 14px;border-bottom:1px solid var(--line-soft)"><b>' + esc(f.framework_id) + '</b> <span class="who">' + esc(f.credential_ref || "") + '</span></div>' +
-          '<table><thead><tr><th>智能体</th><th>角色</th><th>动作</th><th>范围</th><th>user_id</th></tr></thead><tbody>' + rows + '</tbody></table>';
-      }).join("") || '<div class="empty">注册表为空</div>';
+      try { const st = await post("/v1/admin/identity/stats", {}); rgRefs = st.counts || {}; } catch { rgRefs = {}; }
+      rgRenderAllow();
+      rgRenderAgents();
+      rgRenderTiers();
+      const gcBtn = $("rgGuestGc");
+      if (gcBtn) gcBtn.style.display = rgActorTier === "superadmin" ? "" : "none";
+      $("rgMsg").textContent = "";
+      $("rgSave").disabled = true;
+      rgDirty = false;
     } catch (e) {
       $("rgBody").innerHTML = '<div class="err">加载失败：' + esc(e.message) + '（需要 admin 权限）</div>';
     }
   }
+  rgBind();
 
-  // ---------- 角色 ----------
+  // ---------- 权限包 ----------
   async function loadRoles() {
     $("rlBody").innerHTML = '<div class="empty"><div class="skeleton"></div></div>';
     try {
@@ -1269,7 +1690,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
         ? '<table><thead><tr><th>id</th><th>类型</th><th>置信</th><th>经验</th><th>状态</th></tr></thead><tbody>' + items.map((m) =>
             '<tr><td><code>' + esc(m.id) + '</code></td><td>' + esc(m.kind || "lesson") + '</td><td>' + esc(m.confidence || "—") +
             '</td><td>' + esc(String(m.sections?.["经验"] || m.body || "").slice(0, 160)) + '</td><td>' + esc(m.status || "—") + '</td></tr>').join("") + '</tbody></table>'
-        : '<div class="empty">角色记忆为空：这一层记"我这类角色学到的经验"，用 memory_role_note 或 scripts/note-role.mjs 写入。</div>';
+        : '<div class="empty">权限包记忆为空：这一层记"我这类权限包学到的经验"，用 memory_role_note 或 scripts/note-role.mjs 写入。</div>';
     } catch (e) {
       $("rlBody").innerHTML = '<div class="err">加载失败：' + esc(e.message) + '</div>';
     }
@@ -1409,7 +1830,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
     const topic = $("lrTopic").value.trim(); if (!topic) return;
     ["lrPlan", "lrProgress", "lrReview"].forEach((id) => { $(id).innerHTML = '<div class="empty"><div class="skeleton"></div></div>'; });
     const calls = [["/v1/learning/plan_get", "lrPlan", "plan"], ["/v1/learning/progress_get", "lrProgress", "progress"], ["/v1/learning/review_get", "lrReview", "review"]];
-    const vals = await Promise.all(calls.map(async ([path, area, key]) => { try { const d = await post(path, { topic }); const value = d[key] ?? d; const entries = Array.isArray(value) ? value.map((v, i) => [i, v]) : Object.entries(value && typeof value === "object" ? value : { value }); $(area).innerHTML = dataTable(entries, [["字段", x => x[0]], ["值", x => typeof x[1] === "object" ? JSON.stringify(x[1]) : x[1]]], "主题暂无数据"); return true; } catch (e) { errorBox(e, area, "该角色没有 learning 动作"); return false; } }));
+    const vals = await Promise.all(calls.map(async ([path, area, key]) => { try { const d = await post(path, { topic }); const value = d[key] ?? d; const entries = Array.isArray(value) ? value.map((v, i) => [i, v]) : Object.entries(value && typeof value === "object" ? value : { value }); $(area).innerHTML = dataTable(entries, [["字段", x => x[0]], ["值", x => typeof x[1] === "object" ? JSON.stringify(x[1]) : x[1]]], "主题暂无数据"); return true; } catch (e) { errorBox(e, area, "该权限包没有 learning 动作"); return false; } }));
     newCards("lrCards", "主题", vals.filter(Boolean).length + "/3", topic + " · 计划 / 进度 / 复习接口成功数");
   }
   $("lrLoad").addEventListener("click", loadLearning);
@@ -1417,8 +1838,8 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
   async function loadPet() {
     ["ptPersonas", "ptDrafts"].forEach((id) => { $(id).innerHTML = '<div class="empty"><div class="skeleton"></div></div>'; });
     const jobs = [["/v1/pet/runtime/persona/list", "ptPersonas", "personas"], ["/v1/pet/runtime/drafts/list", "ptDrafts", "drafts"]];
-    const counts = await Promise.all(jobs.map(async ([path, area, key]) => { try { const d = await post(path, { limit: 100 }); const xs = asList(d, key); $(area).innerHTML = dataTable(xs, [["标识", x => x.id || x.role_id || x.name || x.mode], ["内容", x => String(x.content || x.body || x.summary || JSON.stringify(x)).slice(0, 220)], ["更新时间", x => fmtTime(x.updated_at || x.updatedAt) ]], "当前角色没有对应数据"); $(area === "ptPersonas" ? "ptPersonaRight" : "ptDraftRight").textContent = xs.length + " 条"; return xs.length; } catch (e) { errorBox(e, area, "该角色没有 pet 动作"); return null; } }));
-    newCards("ptCards", "Persona / 草稿", counts.reduce((n, x) => n + (x || 0), 0), counts.includes(null) ? "至少一个接口不可读" : "当前角色范围");
+    const counts = await Promise.all(jobs.map(async ([path, area, key]) => { try { const d = await post(path, { limit: 100 }); const xs = asList(d, key); $(area).innerHTML = dataTable(xs, [["标识", x => x.id || x.role_id || x.name || x.mode], ["内容", x => String(x.content || x.body || x.summary || JSON.stringify(x)).slice(0, 220)], ["更新时间", x => fmtTime(x.updated_at || x.updatedAt) ]], "当前权限包没有对应数据"); $(area === "ptPersonas" ? "ptPersonaRight" : "ptDraftRight").textContent = xs.length + " 条"; return xs.length; } catch (e) { errorBox(e, area, "该权限包没有 pet 动作"); return null; } }));
+    newCards("ptCards", "Persona / 草稿", counts.reduce((n, x) => n + (x || 0), 0), counts.includes(null) ? "至少一个接口不可读" : "当前权限包范围");
   }
   // ---------- 图谱：项目筛选 + legacy 力导向 SVG ----------
   const GRAPH_NS = "http://www.w3.org/2000/svg";
@@ -1478,7 +1899,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
       renderGraph({ nodes, edges, totals });
     } catch (e) {
       const code = String(e.message || e);
-      const message = /403|FORBIDDEN|ACTION_DENIED/i.test(code) ? "该角色没有 search 动作（403）" : /404|NOT_FOUND/i.test(code) ? "图谱端点不存在（404）" : "读取失败：" + code;
+      const message = /403|FORBIDDEN|ACTION_DENIED/i.test(code) ? "该权限包没有 search 动作（403）" : /404|NOT_FOUND/i.test(code) ? "图谱端点不存在（404）" : "读取失败：" + code;
       $("grOut").innerHTML = '<div class="err">' + esc(message) + '</div>';
       $("grNodes").innerHTML = '<div class="err">' + esc(message) + '</div>';
       $("grEdges").innerHTML = '<div class="err">' + esc(message) + '</div>';
