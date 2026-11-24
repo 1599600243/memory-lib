@@ -65,9 +65,9 @@ export async function atomicWriteFile(targetPath, content) {
   return sharedAtomicWriteFile(targetPath, content);
 }
 
-const IDENT_ACTIONS = new Set(["search", "get", "propose", "admin", "capture", "pet", "learn", "write"]);
-const IDENT_LAYERS = new Set(["memory", "learning", "pet", "role", "project", "tool", "knowledge", "plan", "evidence", "curated", "shared"]);
-const IDENT_VISIBILITY = new Set(["user", "shared", "platform", "agent", "private", "project", "role", "daily"]);
+const IDENT_ACTIONS = new Set(["search", "get", "propose", "admin", "capture", "pet", "learn", "learning", "write", "review", "promote", "deprecate"]);
+const IDENT_LAYERS = new Set(["memory", "learning", "pet", "role", "project", "tool", "knowledge", "plan", "evidence", "curated", "shared", "runtime"]);
+const IDENT_VISIBILITY = new Set(["user", "shared", "platform", "agent", "private", "project", "role", "daily", "episodic"]);
 
 function claimRuleMatches(rule, agentId, roleId) {
   const [a, r] = String(rule).split("/");
@@ -99,7 +99,7 @@ export async function updateIdentity(registryPath, patch = {}, { actor = null, a
   const frameworkId = typeof patch.framework_id === "string" ? patch.framework_id : "";
   const fw = (reg.frameworks ?? []).find((f) => f.framework_id === frameworkId);
   if (!fw) return { ok: false, reason: "UNKNOWN_FRAMEWORK", status: 404 };
-  const before = { claim_allowlist: fw.claim_allowlist ?? null, agents: fw.agents ?? [] };
+  const before = { claim_allowlist: fw.claim_allowlist ?? null, agents: fw.agents ?? [], packs: reg.packs ?? null };
   const next = { claim_allowlist: before.claim_allowlist, agents: before.agents };
 
   if ("claim_allowlist" in patch) {
@@ -167,7 +167,7 @@ export async function updateIdentity(registryPath, patch = {}, { actor = null, a
   }
   const tierChanged =
     JSON.stringify((before.agents ?? []).map((a) => a.tier ?? null)) !== JSON.stringify((next.agents ?? []).map((a) => a.tier ?? null));
-  const packsChanged = JSON.stringify(reg.packs ?? null) !== JSON.stringify(next.packs ?? reg.packs ?? null);
+  const packsChanged = "packs" in patch && JSON.stringify(patch.packs) !== JSON.stringify(reg.packs ?? null);
   const coreChange =
     packsChanged ||
     JSON.stringify(before.claim_allowlist ?? null) !== JSON.stringify(next.claim_allowlist ?? null) ||
@@ -209,7 +209,10 @@ export async function updateIdentity(registryPath, patch = {}, { actor = null, a
     }
     next.packs = packsNext;
   }
-  const diff = diffIdentity(before, next);
+  const packsDiff = JSON.stringify(before.packs ?? null) !== JSON.stringify(next.packs ?? before.packs ?? null)
+    ? ["packs: " + JSON.stringify(before.packs ?? null) + " -> " + JSON.stringify(next.packs ?? before.packs ?? null)]
+    : [];
+  const diff = diffIdentity(before, next).concat(packsDiff);
   if (diff.length === 0) return { ok: true, dry_run: true, changed: 0, diff };
 
   if (coreChange) {

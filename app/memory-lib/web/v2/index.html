@@ -211,6 +211,8 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
   .rg-tier>summary{cursor:pointer;padding:6px 12px;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--fg-2);background:var(--panel-2);list-style:none;border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft)}
   .rg-tier>summary::-webkit-details-marker{display:none}
   .rg-tier .rg-table{margin:0}
+  .rg-packs-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 12px 0}
+  .rg-pin{min-width:120px}
 </style>
 </head>
 <body>
@@ -368,6 +370,13 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
         <div class="cards" id="rgCards"></div>
         <div class="panel">
           <h2>权限包定义（记忆库能力） <span class="right" id="rgPacksRight"></span></h2>
+          <div class="rg-packs-head">
+            <button class="btn" id="rgPackAdd" type="button">+ 新增权限包</button>
+            <button class="btn" id="rgPackPreview" type="button">预览变更</button>
+            <button class="btn" id="rgPackSave" type="button" disabled>保存</button>
+            <span class="rg-dim" id="rgPackMsg"></span>
+          </div>
+          <pre id="rgPackDiff" class="rg-diff" hidden></pre>
           <div id="rgPackList"><div class="empty"><div class="skeleton"></div></div></div>
         </div>
         <div class="panel">
@@ -1503,6 +1512,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
   let rgActorTier = "admin";
   let rgRefs = {};
   let rgPacks = [];
+  let rgPacksModel = [];
   let rgRows = [];
   const rgState = { q: "", tier: "all", onlyEmpty: false, open: null, fw: null };
   const RG_TIER_ORDER = ["管理员", "框架主体", "框架成员", "会话", "访客", "其他"];
@@ -1743,6 +1753,23 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
     $("rgDrawerClose").addEventListener("click", () => { rgState.open = null; rgRenderDrawer(); });
     $("rgFwSelect").addEventListener("change", (e) => { rgCaptureAllow(); rgState.fw = e.target.value; rgSyncAllowText(); });
     $("rgAllow").addEventListener("input", rgMarkDirty);
+    $("rgPackAdd").addEventListener("click", () => {
+      rgPacksModel.push({ pack_id: "new.pack", actions: ["search"], scopes: [{ layer: "memory", visibility: "user" }] });
+      rgRenderPacks();
+      $("rgPackMsg").textContent = "有未预览的修改";
+      $("rgPackSave").disabled = true;
+    });
+    $("rgPackList").addEventListener("input", (e) => { if (e.target.classList.contains("rg-pin")) rgPackUpdate(e.target); });
+    $("rgPackList").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-pack-del]");
+      if (!btn) return;
+      rgPacksModel.splice(Number(btn.dataset.packDel), 1);
+      rgRenderPacks();
+      $("rgPackMsg").textContent = "有未预览的修改";
+      $("rgPackSave").disabled = true;
+    });
+    $("rgPackPreview").addEventListener("click", rgPackPreview);
+    $("rgPackSave").addEventListener("click", rgPackSave);
     $("rgPreview").addEventListener("click", rgPreview);
     $("rgSave").addEventListener("click", () => rgSave({}));
     const gc = $("rgGuestGc");
@@ -1776,22 +1803,71 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
   };
   function rgRenderPacks() {
     if (!rgModel) return;
-    const packs = rgPacks.length ? rgPacks : [];
+    const editable = rgActorTier === "superadmin";
     const holders = new Map();
     for (const x of rgRows) holders.set(x.role.role_id, (holders.get(x.role.role_id) ?? 0) + 1);
-    $("rgPacksRight").textContent = packs.length + " 个权限包 · 记忆库能力";
-    if (!packs.length) { $("rgPackList").innerHTML = '<div class="empty">注册表还没有顶层 packs 定义。</div>'; return; }
-    $("rgPackList").innerHTML = '<table class="rg-table"><thead><tr><th>权限包</th><th>能力</th><th>actions</th><th>scopes</th><th class="num">授予</th></tr></thead><tbody>' +
-      packs.map((p) =>
-        '<tr><td><code>' + esc(p.pack_id) + "</code></td>" +
+    $("rgPacksRight").textContent = rgPacksModel.length + " 个权限包 · 记忆库能力";
+    $("rgPackAdd").hidden = !editable;
+    $("rgPackPreview").hidden = !editable;
+    $("rgPackSave").hidden = !editable;
+    if (!rgPacksModel.length) { $("rgPackList").innerHTML = '<div class="empty">还没有权限包定义。</div>'; return; }
+    $("rgPackList").innerHTML = '<table class="rg-table"><thead><tr><th>权限包</th><th>能力</th><th>actions</th><th>scopes</th><th class="num">授予</th>' + (editable ? "<th></th>" : "") + "</tr></thead><tbody>" +
+      rgPacksModel.map((p, i) =>
+        '<tr data-pi="' + i + '"><td>' + (editable
+          ? '<input class="rg-input rg-pin" data-pi="' + i + '" data-k="pack_id" value="' + esc(p.pack_id) + '">'
+          : "<code>" + esc(p.pack_id) + "</code>") + "</td>" +
         '<td><span class="tag">' + esc(RG_CAP_LABEL[p.pack_id] ?? p.pack_id) + "</span></td>" +
-        '<td class="rg-dim">' + esc((p.actions || []).join(",")) + "</td>" +
-        '<td class="rg-dim">' + esc((p.scopes || []).map((s) => s.layer + ":" + s.visibility).join(",")) + "</td>" +
-        '<td class="num">' + (holders.get(p.pack_id) ?? 0) + "</td></tr>").join("") +
+        '<td>' + (editable
+          ? '<input class="rg-input rg-pin" data-pi="' + i + '" data-k="actions" value="' + esc((p.actions || []).join(",")) + '">'
+          : '<span class="rg-dim">' + esc((p.actions || []).join(",")) + "</span>") + "</td>" +
+        '<td>' + (editable
+          ? '<input class="rg-input rg-pin" data-pi="' + i + '" data-k="scopes" value="' + esc((p.scopes || []).map((s) => s.layer + ":" + s.visibility).join(",")) + '">'
+          : '<span class="rg-dim">' + esc((p.scopes || []).map((s) => s.layer + ":" + s.visibility).join(",")) + "</span>") + "</td>" +
+        '<td class="num">' + (holders.get(p.pack_id) ?? 0) + "</td>" +
+        (editable ? '<td><button class="btn rg-mini" data-pack-del="' + i + '" type="button">删除</button></td>' : "") +
+        "</tr>").join("") +
       "</tbody></table>" +
       '<div class="rg-dim" style="padding:8px 12px">这些是<b>记忆库自己的能力定义</b>（服务端资产），不属于任何框架；框架只持有「被授予」。</div>';
   }
-
+  function rgPackUpdate(el) {
+    const i = Number(el.dataset.pi);
+    const p = rgPacksModel[i];
+    if (!p) return;
+    if (el.dataset.k === "pack_id") p.pack_id = el.value.trim();
+    else if (el.dataset.k === "actions") p.actions = el.value.split(",").map((x) => x.trim()).filter(Boolean);
+    else if (el.dataset.k === "scopes") p.scopes = el.value.split(",").map((x) => x.trim()).filter(Boolean).map((pair) => {
+      const [layer, visibility] = pair.split(":").map((s) => s.trim());
+      return { layer: layer || "", visibility: visibility || "" };
+    });
+    $("rgPackMsg").textContent = "有未预览的修改";
+    $("rgPackSave").disabled = true;
+  }
+  async function rgPackPreview() {
+    $("rgPackMsg").textContent = "预览中…";
+    $("rgPackDiff").hidden = true;
+    try {
+      const r = await post("/v1/admin/identity", { framework_id: rgModel.frameworks[0].framework_id, packs: rgPacksModel, dry_run: true });
+      if (!r.changed) { $("rgPackMsg").textContent = "没有变化"; $("rgPackSave").disabled = true; return; }
+      $("rgPackDiff").textContent = (r.diff || []).map((x) => "• " + x).join("\n");
+      $("rgPackDiff").hidden = false;
+      $("rgPackMsg").textContent = r.changed + " 处变更，确认后保存";
+      $("rgPackSave").disabled = false;
+    } catch (e) {
+      $("rgPackMsg").textContent = "预览失败：" + e.message;
+      $("rgPackSave").disabled = true;
+    }
+  }
+  async function rgPackSave() {
+    if (!confirm("权限包定义属于核心配置，保存后立即影响所有主体。继续？")) return;
+    $("rgPackMsg").textContent = "保存中…";
+    try {
+      const r = await post("/v1/admin/identity", { framework_id: rgModel.frameworks[0].framework_id, packs: rgPacksModel, confirm_core: true });
+      $("rgPackMsg").textContent = "已保存（" + (r.changed || 0) + " 处）" + (r.backup ? "，备份 " + r.backup.split(/[\\/]/).pop() : "");
+      await rgLoad();
+    } catch (e) {
+      $("rgPackMsg").textContent = "保存失败：" + e.message;
+    }
+  }
   async function rgLoad() {
     $("rgList").innerHTML = '<div class="empty"><div class="skeleton"></div></div>';
     try {
@@ -1802,6 +1878,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
       rgActorTier = d.actor?.tier || "admin";
       try { const st = await post("/v1/admin/identity/stats", {}); rgRefs = st.counts || {}; } catch { rgRefs = {}; }
       rgPacks = Array.isArray(identity.packs) ? identity.packs : [];
+      rgPacksModel = JSON.parse(JSON.stringify(rgPacks));
       rgModel = {
         frameworks: fws.map((fw) => ({
           framework_id: fw.framework_id,
