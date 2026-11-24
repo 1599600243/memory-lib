@@ -26,7 +26,7 @@ import { accountFingerprint, createAccountPasswordStore, hashPassword, verifyPas
 import { createLoginLimiter } from "./login-limiter.mjs";
 import { createAuditLog, countAuditLines, readAuditTail } from "./audit.mjs";
 import { rotateAuditArchives } from "./audit-archive.mjs";
-import { queryAudit, registryView, setCredentialStatus } from "./admin.mjs";
+import { queryAudit, registryView, setCredentialStatus, updateIdentity, memoryCountsByUser, gcExpiredGuests } from "./admin.mjs";
 import { createFramework, rotateCredential, shouldWriteWincred } from "./identity-admin.mjs";
 import { createLearningApi } from "./learning.mjs";
 import { collectStats, listByIdentity, findMemories } from "./stats.mjs";
@@ -85,6 +85,7 @@ async function withSourceTrustList(items) {
 
 
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "::1", "localhost"]);
+let lastGuestGcAt = 0;
 const DEFAULT_CONSOLE_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "web", "console.html");
 const DEFAULT_PET_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "web", "pet.html");
 
@@ -2080,13 +2081,55 @@ data: ${JSON.stringify(result)}
             await respond(200, { ok: true, ...registryView(registry), api_keys: (await apiKeyRegistryView(apiKeyFile)).api_keys });
             return;
           }
-          case "/v1/admin/identity": {
-             const keyView = await apiKeyRegistryView(apiKeyFile);
-             auditEvent = { ...auditEvent, allow: true };
-             await respond(200, { ok: true, identity: { ...registryView(registry), ...keyView } });
-             return;
-           }
-           case "/v1/admin/registry/revoke":
+          case "/v1/admin/identity/gc": {
+          const actorAgentGc = (registry.frameworks ?? []).flatMap((f) => f.agents ?? []).find((a) => a.agent_id === agent?.agent_id);
+          const tierGc = actorAgentGc?.tier ?? (Array.isArray(role?.actions) && role.actions.includes("admin") ? "admin" : "framework");
+          if (tierGc !== "superadmin") {
+            auditEvent = { ...auditEvent, denyReason: "CORE_PROTECTED" };
+            await respond(403, { ok: false, error: { code: "CORE_PROTECTED", message: "清理访客属于核心操作" } });
+            return;
+          }
+          const counts = await memoryCountsByUser(dataRoot);
+          const gc = await gcExpiredGuests(registryPath, { counts: counts.counts });
+          auditEvent = { ...auditEvent, allow: true, resourceId: "guest-gc:" + gc.changed };
+          await respond(200, gc);
+          return;
+        }
+        case "/v1/admin/identity/stats": {
+          const stats = await memoryCountsByUser(dataRoot);
+          auditEvent = { ...auditEvent, allow: true, resourceId: "identity-stats" };
+          await respond(200, { ok: true, ...stats });
+          return;
+        }
+        case "/v1/admin/identity": {
+          if (body && typeof body === "object" && (typeof body.framework_id === "string" || "claim_allowlist" in body || "agents" in body)) {
+            const actorAgent = (registry.frameworks ?? []).flatMap((f) => f.agents ?? []).find((a) => a.agent_id === agent?.agent_id);
+            const actorTier = actorAgent?.tier ?? (Array.isArray(role?.actions) && role.actions.includes("admin") ? "admin" : "framework");
+            const result = await updateIdentity(registryPath, body, { actor: { framework_id: authed.framework?.framework_id, agent_id: agent?.agent_id, role_id: role?.role_id }, actorTier });
+            if (!result.ok) {
+              auditEvent = { ...auditEvent, denyReason: result.reason };
+              await respond(result.status || 400, { ok: false, error: result });
+              return;
+            }
+            auditEvent = { ...auditEvent, allow: true, resourceId: "identity:" + String(body.framework_id ?? "") };
+            await respond(200, result);
+            return;
+          }
+          const actorAgent2 = (registry.frameworks ?? []).flatMap((f) => f.agents ?? []).find((a) => a.agent_id === agent?.agent_id);
+          const actorTier2 = actorAgent2?.tier ?? (Array.isArray(role?.actions) && role.actions.includes("admin") ? "admin" : "framework");
+          // 访客 TTL 懒回收：超管打开身份页时最多每小时跑一次（异步，不阻塞响应）
+          if (actorTier2 === "superadmin" && Date.now() - lastGuestGcAt > 3_600_000) {
+            lastGuestGcAt = Date.now();
+            void memoryCountsByUser(dataRoot)
+              .then((c) => gcExpiredGuests(registryPath, { counts: c.counts }))
+              .catch(() => {});
+          }
+          const keyView = await apiKeyRegistryView(apiKeyFile);
+          auditEvent = { ...auditEvent, allow: true };
+          await respond(200, { ok: true, identity: { ...registryView(registry), ...keyView }, actor: { agent_id: agent?.agent_id ?? null, role_id: role?.role_id ?? null, tier: actorTier2 } });
+          return;
+        }
+        case "/v1/admin/registry/revoke":
           case "/v1/admin/registry/activate": {
             const frameworkId = typeof body?.framework_id === "string" ? body.framework_id : "";
             if (!frameworkId) {

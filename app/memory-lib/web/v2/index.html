@@ -388,7 +388,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
           <div style="padding:14px">
             <div class="field">
               <label for="igPaths">路径（每行一个，或逗号分隔）</label>
-              <textarea id="igPaths" rows="4" placeholder="例如 D:\MemoryLib\inbox\notes.md 或 D:\MemoryLib\inbox" style="width:100%;font-family:var(--mono);font-size:12px"></textarea>
+              <textarea id="igPaths" rows="4" placeholder="例如 .\inbox\notes.md 或 .\inbox" style="width:100%;font-family:var(--mono);font-size:12px"></textarea>
             </div>
             <div class="toolbar" style="padding:0 0 12px;border:0">
               <label class="who" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="igRecursive" checked> 递归目录</label>
@@ -1596,7 +1596,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
   const RG_FRAMEWORK_AGENTS = new Set(["pilot-01", "admin-01", "home-circle", "work-circle"]);
   function rgTierOf(agentId, role) {
     if (Array.isArray(role?.actions) && role.actions.includes("admin")) return "管理员";
-    if (agentId === "qq-134c7898c9") return "框架（主体）";
+    if (agentId === "qq-bot") return "框架（主体）";
     if (RG_FRAMEWORK_AGENTS.has(agentId)) return "框架";
     if (String(agentId).startsWith("qq-")) return "访客";
     return "其他";
