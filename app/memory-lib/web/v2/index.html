@@ -1540,7 +1540,10 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
         rgRows.push({
           agent: a.agent_id,
           role: r,
-          framework: rgModel.framework_id,
+          // 显示归属：qq-* 属于米汐（being）这条线，其余属于注册表框架本身。
+          // 注意：identity.json 里目前只有一个 framework，这里先按主体前缀做归属分组；
+          // 真正拆框架需要单独迁移（认证凭证跟着走），见后续计划。
+          framework: String(a.agent_id).startsWith("qq-") ? "米汐（being）" : rgModel.framework_id,
           tier: rgTierOf(a.agent_id, r),
           pack: RG_PACK_LABEL[r.role_id] ?? r.role_id,
           domain: rgDomainOf(r),
