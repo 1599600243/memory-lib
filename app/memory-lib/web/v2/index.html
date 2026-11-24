@@ -387,6 +387,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
           </summary>
           <div class="rg-core-body">
             <p class="rg-dim">一行一条，格式 <code>agent/role</code>，支持通配 <code>qq-*/chat-reader</code>；清空 = 不限制。只有超级管理员能改。</p>
+            <div class="rg-actions"><label class="rg-dim">框架 <select id="rgFwSelect" class="rg-input"></select></label></div>
             <textarea id="rgAllow" class="rg-input rg-textarea" rows="6" spellcheck="false"></textarea>
             <div class="rg-actions">
               <button class="btn" id="rgPreview" type="button">预览变更</button>
@@ -1490,18 +1491,15 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
   }
 
   // ---------- 身份权限 ----------
-  // ---------- 身份与权限（列表 + 抽屉） ----------
-  // 设计：默认给一眼能扫完的列表（层级分组 + 搜索 + 只看空壳），
-  // 单条编辑放进右侧抽屉，避免整页都是输入框。
+  // ---------- 身份与权限（多框架 + 列表 + 抽屉） ----------
   function rgParseRules(text) {
     return String(text || "").split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
   }
-  async function loadRegistry() { return rgLoad(); }
   let rgModel = null;
   let rgActorTier = "admin";
   let rgRefs = {};
   let rgRows = [];
-  const rgState = { q: "", tier: "all", onlyEmpty: false, open: null };
+  const rgState = { q: "", tier: "all", onlyEmpty: false, open: null, fw: null };
   const RG_TIER_ORDER = ["管理员", "框架（主体）", "框架", "会话", "访客", "其他"];
   const RG_PACK_LABEL = {
     "librarian-admin": "管理（含 admin）",
@@ -1523,7 +1521,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
     if (Array.isArray(role?.actions) && role.actions.includes("admin")) return "管理员";
     if (agentId === "qq-bot") return "框架（主体）";
     if (RG_FRAMEWORK_AGENTS.has(agentId)) return "框架";
-    if (String(agentId).startsWith("qq-")) return rgRefs[role?.user_id] > 0 ? "会话" : "访客";
+    if (String(agentId).startsWith("qq-")) return (rgRefs[role?.user_id] ?? 0) > 0 ? "会话" : "访客";
     return "其他";
   }
   function rgDomainOf(role) {
@@ -1535,20 +1533,19 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
   }
   function rgBuildRows() {
     rgRows = [];
-    for (const a of rgModel.agents) {
-      for (const r of a.roles ?? []) {
-        rgRows.push({
-          agent: a.agent_id,
-          role: r,
-          // 显示归属：qq-* 属于米汐（being）这条线，其余属于注册表框架本身。
-          // 注意：identity.json 里目前只有一个 framework，这里先按主体前缀做归属分组；
-          // 真正拆框架需要单独迁移（认证凭证跟着走），见后续计划。
-          framework: String(a.agent_id).startsWith("qq-") ? "米汐（being）" : rgModel.framework_id,
-          tier: rgTierOf(a.agent_id, r),
-          pack: RG_PACK_LABEL[r.role_id] ?? r.role_id,
-          domain: rgDomainOf(r),
-          refs: rgRefs[r.user_id] ?? 0,
-        });
+    for (const fw of rgModel.frameworks) {
+      for (const a of fw.agents) {
+        for (const r of a.roles ?? []) {
+          rgRows.push({
+            fw: fw.framework_id,
+            agent: a.agent_id,
+            role: r,
+            tier: rgTierOf(a.agent_id, r),
+            pack: RG_PACK_LABEL[r.role_id] ?? r.role_id,
+            domain: rgDomainOf(r),
+            refs: rgRefs[r.user_id] ?? 0,
+          });
+        }
       }
     }
   }
@@ -1558,7 +1555,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
       if (rgState.tier !== "all" && x.tier !== rgState.tier) return false;
       if (rgState.onlyEmpty && x.refs > 0) return false;
       if (!q) return true;
-      return (x.agent + " " + x.pack + " " + x.domain + " " + (x.role.role_id ?? "")).toLowerCase().includes(q);
+      return (x.fw + " " + x.agent + " " + x.pack + " " + x.domain + " " + (x.role.role_id ?? "")).toLowerCase().includes(q);
     });
   }
   function rgPill(level, text) {
@@ -1584,46 +1581,47 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
       $("rgList").innerHTML = '<div class="empty">没有匹配的主体。试试清空搜索，或把层级切回「全部」。</div>';
       return;
     }
-    // 按框架 → 层级两级分组，框架与层级都可折叠；访客默认收起。
-    const byFramework = {};
-    for (const x of rows) (byFramework[x.framework] ??= []).push(x);
-    const tierOrder = RG_TIER_ORDER.filter((t) => rows.some((x) => x.tier === t));
+    const byFw = {};
+    for (const x of rows) (byFw[x.fw] ??= []).push(x);
     const head = '<thead><tr><th>主体</th><th>层级</th><th>权限包</th><th>数据域</th><th class="num">引用</th><th>状态</th><th class="num">操作</th></tr></thead>';
-    const rowHtml = (x) => '<tr class="rg-row" data-agent="' + esc(x.agent) + '">' +
+    const rowHtml = (x) => '<tr class="rg-row" data-agent="' + esc(x.agent) + '" data-fw="' + esc(x.fw) + '">' +
       '<td><code>' + esc(x.agent) + "</code></td>" +
       '<td>' + rgPill(x.tier === "管理员" ? "bad" : x.tier === "访客" ? "warn" : "ok", x.tier) + "</td>" +
       '<td><span class="tag">' + esc(x.pack) + "</span></td>" +
       '<td><code class="rg-dim">' + esc(x.domain) + "</code></td>" +
       '<td class="num">' + nf.format(x.refs) + "</td>" +
       '<td>' + (x.refs > 0 ? rgPill("ok", "使用中") : x.tier === "访客" ? rgPill("warn", "空壳") : "—") + "</td>" +
-      '<td class="num"><button class="btn rg-mini" data-open="' + esc(x.agent) + '" type="button">编辑</button></td></tr>';
+      '<td class="num"><button class="btn rg-mini" data-open="' + esc(x.agent) + '" data-fw="' + esc(x.fw) + '" type="button">编辑</button></td></tr>';
 
-    $("rgList").innerHTML = Object.entries(byFramework).map(([fw, list]) => {
+    $("rgList").innerHTML = Object.entries(byFw).map(([fwId, list]) => {
       const agents = new Set(list.map((x) => x.agent)).size;
       const refs = list.reduce((n, x) => n + x.refs, 0);
-      const tiers = tierOrder.filter((t) => list.some((x) => x.tier === t));
+      const tiers = RG_TIER_ORDER.filter((t) => list.some((x) => x.tier === t));
       return '<details class="rg-fw" open>' +
-        '<summary class="rg-fw-summary"><b>' + esc(fw) + '</b>' +
+        '<summary class="rg-fw-summary"><b>' + esc(fwId) + '</b>' +
         '<span class="rg-dim">' + agents + ' 主体 · ' + list.length + ' 权限包 · 引用 ' + nf.format(refs) + '</span></summary>' +
         tiers.map((tier) => {
           const g = list.filter((x) => x.tier === tier);
-          const open = tier !== "访客" ? " open" : "";
-          return '<details class="rg-tier"' + open + '><summary>' + esc(tier) + ' · ' + g.length + '</summary>' +
+          return '<details class="rg-tier"' + (tier === "访客" ? "" : " open") + '><summary>' + esc(tier) + ' · ' + g.length + '</summary>' +
             '<table class="rg-table">' + head + '<tbody>' + g.map(rowHtml).join("") + '</tbody></table></details>';
         }).join("") + '</details>';
     }).join("");
   }
-
+  function rgFind(agentId, fwId) {
+    const fw = rgModel.frameworks.find((f) => f.framework_id === (fwId ?? rgState.open?.fw));
+    const agent = fw?.agents.find((a) => a.agent_id === agentId);
+    return { fw, agent };
+  }
   function rgRenderDrawer() {
     const box = $("rgDrawer");
     if (!rgState.open) { box.hidden = true; return; }
-    const agent = rgModel.agents.find((a) => a.agent_id === rgState.open);
-    if (!agent) { rgState.open = null; box.hidden = true; return; }
+    const { fw, agent } = rgFind(rgState.open.agent, rgState.open.fw);
+    if (!fw || !agent) { rgState.open = null; box.hidden = true; return; }
     box.hidden = false;
     $("rgDrawerTitle").textContent = agent.agent_id;
-    $("rgDrawerMeta").innerHTML = "层级：<b>" + esc(rgTierOf(agent.agent_id, agent.roles?.[0])) + "</b> · 权限包 " + (agent.roles?.length ?? 0) + " 个";
+    $("rgDrawerMeta").innerHTML = "框架 <b>" + esc(fw.framework_id) + "</b> · 层级 <b>" + esc(rgTierOf(agent.agent_id, agent.roles?.[0])) + "</b> · 权限包 " + (agent.roles?.length ?? 0) + " 个";
     $("rgDrawerBody").innerHTML = (agent.roles ?? []).map((r, i) =>
-      '<div class="rg-role" data-ri="' + i + '">' +
+      '<div class="rg-role">' +
       '<div class="rg-role-head"><code>#' + (i + 1) + "</code>" +
       '<button class="btn rg-mini" data-act="rm-role" data-ri="' + i + '" type="button">删除</button></div>' +
       '<label>权限包 <input class="rg-input rg-in" data-k="role_id" data-ri="' + i + '" value="' + esc(r.role_id) + '"></label>' +
@@ -1633,15 +1631,11 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
       "</div>").join("") +
       '<button class="btn" data-act="add-role" type="button">+ 添加权限包</button>';
   }
-  function rgMarkDirty() {
-    $("rgMsg").textContent = "有未预览的修改";
-    $("rgSave").disabled = true;
-  }
+  function rgMarkDirty() { $("rgMsg").textContent = "有未预览的修改"; $("rgSave").disabled = true; }
   function rgUpdateFromInput(el) {
-    const a = rgModel?.agents.find((x) => x.agent_id === rgState.open);
-    if (!a) return;
-    const ri = Number(el.dataset.ri);
-    const r = a.roles?.[ri];
+    const { agent } = rgFind(rgState.open.agent, rgState.open.fw);
+    if (!agent) return;
+    const r = agent.roles?.[Number(el.dataset.ri)];
     if (!r) return;
     const k = el.dataset.k;
     if (k === "actions") r.actions = el.value.split(",").map((x) => x.trim()).filter(Boolean);
@@ -1653,16 +1647,37 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
     else if (k === "user_id") r.user_id = el.value.trim() || null;
     rgMarkDirty();
   }
+  function rgRenderAllowSelect() {
+    const sel = $("rgFwSelect");
+    sel.innerHTML = rgModel.frameworks.map((f) => '<option value="' + esc(f.framework_id) + '">' + esc(f.framework_id) + "</option>").join("");
+    if (!rgState.fw || !rgModel.frameworks.some((f) => f.framework_id === rgState.fw)) rgState.fw = rgModel.frameworks[0]?.framework_id ?? null;
+    sel.value = rgState.fw ?? "";
+    rgSyncAllowText();
+  }
+  function rgSyncAllowText() {
+    const fw = rgModel.frameworks.find((f) => f.framework_id === rgState.fw);
+    $("rgAllow").value = (fw?.allow ?? []).join("\n");
+    $("rgAllowRight").textContent = (fw?.allow ?? []).length + " 条规则 · " + (rgState.fw ?? "");
+  }
+  function rgCaptureAllow() {
+    const fw = rgModel.frameworks.find((f) => f.framework_id === rgState.fw);
+    if (fw) fw.allow = rgParseRules($("rgAllow").value);
+  }
   async function rgPreview() {
     if (!rgModel) return;
+    rgCaptureAllow();
     $("rgMsg").textContent = "预览中…";
     $("rgDiff").hidden = true;
     try {
-      const r = await post("/v1/admin/identity", { framework_id: rgModel.framework_id, claim_allowlist: rgParseRules($("rgAllow").value), agents: rgModel.agents, dry_run: true });
-      if (!r.changed) { $("rgMsg").textContent = "没有变化"; $("rgSave").disabled = true; return; }
-      $("rgDiff").textContent = r.diff.map((x) => "• " + x).join("\n");
+      const diffs = [];
+      for (const fw of rgModel.frameworks) {
+        const r = await post("/v1/admin/identity", { framework_id: fw.framework_id, claim_allowlist: fw.allow, agents: fw.agents, dry_run: true });
+        for (const d of r.diff ?? []) diffs.push("[" + fw.framework_id + "] " + d);
+      }
+      if (!diffs.length) { $("rgMsg").textContent = "没有变化"; $("rgSave").disabled = true; return; }
+      $("rgDiff").textContent = diffs.map((x) => "• " + x).join("\n");
       $("rgDiff").hidden = false;
-      $("rgMsg").textContent = r.changed + " 处变更，确认后保存";
+      $("rgMsg").textContent = diffs.length + " 处变更，确认后保存";
       $("rgSave").disabled = false;
     } catch (e) {
       $("rgMsg").textContent = "预览失败：" + e.message;
@@ -1671,17 +1686,24 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
   }
   async function rgSave(opts = {}) {
     if (!rgModel) return;
+    rgCaptureAllow();
     $("rgMsg").textContent = "保存中…";
     try {
-      const body = { framework_id: rgModel.framework_id, claim_allowlist: rgParseRules($("rgAllow").value), agents: rgModel.agents };
-      if (opts.confirmSelf) body.confirm_self_lockout = true;
-      if (opts.confirmCore) body.confirm_core = true;
-      const r = await post("/v1/admin/identity", body);
-      $("rgMsg").textContent = "已保存（" + (r.changed || 0) + " 处）" + (r.backup ? "，备份：" + r.backup.split(/[\\/]/).pop() : "");
+      let changed = 0;
+      let lastBackup = "";
+      for (const fw of rgModel.frameworks) {
+        const body = { framework_id: fw.framework_id, claim_allowlist: fw.allow, agents: fw.agents };
+        if (opts.confirmSelf) body.confirm_self_lockout = true;
+        if (opts.confirmCore) body.confirm_core = true;
+        const r = await post("/v1/admin/identity", body);
+        changed += r.changed || 0;
+        if (r.backup) lastBackup = r.backup;
+      }
+      $("rgMsg").textContent = "已保存（" + changed + " 处）" + (lastBackup ? "，备份：" + lastBackup.split(/[\\/]/).pop() : "");
       await rgLoad();
     } catch (e) {
       if (/SELF_LOCKOUT/.test(e.message || "") && confirm("这次保存会让你自己的 admin/claim 能力失效。确定继续？")) return rgSave({ confirmSelf: true });
-      if (/CORE_CONFIRM_REQUIRED/.test(e.message || "") && confirm("这是核心变更（声明白名单 / 管理员权限包）。确认由超级管理员保存？")) return rgSave({ confirmCore: true });
+      if (/CORE_CONFIRM_REQUIRED/.test(e.message || "") && confirm("这是核心变更。确认由超级管理员保存？")) return rgSave({ confirmCore: true });
       $("rgMsg").textContent = "保存失败：" + e.message;
     }
   }
@@ -1698,24 +1720,26 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
     $("rgList").addEventListener("click", (e) => {
       const btn = e.target.closest("[data-open]");
       if (!btn) return;
-      rgState.open = btn.dataset.open;
+      rgState.open = { agent: btn.dataset.open, fw: btn.dataset.fw };
       rgRenderDrawer();
     });
     $("rgDrawerBody").addEventListener("input", (e) => { if (e.target.classList.contains("rg-in")) rgUpdateFromInput(e.target); });
     $("rgDrawerBody").addEventListener("click", (e) => {
       const btn = e.target.closest("[data-act]");
       if (!btn) return;
-      const a = rgModel?.agents.find((x) => x.agent_id === rgState.open);
-      if (!a) return;
-      if (btn.dataset.act === "add-role") a.roles.push({ role_id: "chat-reader", actions: ["search", "get"], scopes: [{ layer: "memory", visibility: "user" }], user_id: null });
-      else if (btn.dataset.act === "rm-role") a.roles.splice(Number(btn.dataset.ri), 1);
+      const { agent } = rgFind(rgState.open.agent, rgState.open.fw);
+      if (!agent) return;
+      if (btn.dataset.act === "add-role") agent.roles.push({ role_id: "chat-reader", actions: ["search", "get"], scopes: [{ layer: "memory", visibility: "user" }], user_id: null });
+      else if (btn.dataset.act === "rm-role") agent.roles.splice(Number(btn.dataset.ri), 1);
       else return;
       rgMarkDirty();
       rgRenderDrawer();
     });
     $("rgDrawerClose").addEventListener("click", () => { rgState.open = null; rgRenderDrawer(); });
+    $("rgFwSelect").addEventListener("change", (e) => { rgCaptureAllow(); rgState.fw = e.target.value; rgSyncAllowText(); });
+    $("rgAllow").addEventListener("input", rgMarkDirty);
     $("rgPreview").addEventListener("click", rgPreview);
-    $("rgSave").addEventListener("click", () => rgSave(false));
+    $("rgSave").addEventListener("click", () => rgSave({}));
     const gc = $("rgGuestGc");
     if (gc) gc.addEventListener("click", async () => {
       if (!confirm("清理已过期且名下 0 条记忆的访客身份？（会先备份 identity.json）")) return;
@@ -1727,28 +1751,36 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
       } catch (e) { $("rgGcMsg").textContent = "清理失败：" + e.message; }
     });
   }
+  let rgBound = false;
+  function rgBindOnce() { if (!rgBound) { rgBound = true; rgBind(); } }
   async function rgLoad() {
     $("rgList").innerHTML = '<div class="empty"><div class="skeleton"></div></div>';
     try {
       const d = await post("/v1/admin/identity", {});
       const identity = d.identity || {};
-      const fw = (identity.frameworks || [])[0];
-      if (!fw) { $("rgList").innerHTML = '<div class="err">注册表为空</div>'; return; }
+      const fws = identity.frameworks || [];
+      if (!fws.length) { $("rgList").innerHTML = '<div class="err">注册表为空</div>'; return; }
       rgActorTier = d.actor?.tier || "admin";
       try { const st = await post("/v1/admin/identity/stats", {}); rgRefs = st.counts || {}; } catch { rgRefs = {}; }
-      rgModel = { framework_id: fw.framework_id, allow: [...(fw.claim_allowlist || [])], agents: JSON.parse(JSON.stringify(fw.agents || [])) };
-      $("rgAllow").value = (fw.claim_allowlist || []).join("\n");
+      rgModel = {
+        frameworks: fws.map((fw) => ({
+          framework_id: fw.framework_id,
+          allow: [...(fw.claim_allowlist || [])],
+          agents: JSON.parse(JSON.stringify(fw.agents || [])),
+        })),
+      };
       $("rgAllow").disabled = rgActorTier !== "superadmin";
       $("rgActor").textContent = rgActorTier === "superadmin" ? "超级管理员 · 可改核心" : "管理员 · 核心只读";
-      $("rgAllowRight").textContent = (fw.claim_allowlist || []).length + " 条规则";
       const gcBtn = $("rgGuestGc");
       if (gcBtn) gcBtn.hidden = rgActorTier !== "superadmin";
       rgBuildRows();
       $("rgCards").innerHTML = [
-        ["主体", rgModel.agents.length, "agent_id"],
+        ["框架", rgModel.frameworks.length, "tenant"],
+        ["主体", new Set(rgRows.map((x) => x.agent)).size, "agent_id"],
         ["权限包实例", rgRows.length, "actions + scopes"],
         ["空壳访客", rgRows.filter((x) => x.tier === "访客" && x.refs === 0).length, "0 引用，过期后回收"],
       ].map(([l, v, h]) => '<div class="card"><div class="label">' + l + '</div><div class="num">' + nf.format(v) + '</div><div class="hint">' + esc(h) + '</div></div>').join("");
+      rgRenderAllowSelect();
       rgRenderList();
       rgRenderDrawer();
       rgBindOnce();
@@ -1756,8 +1788,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
       $("rgList").innerHTML = '<div class="err">加载失败：' + esc(e.message) + "（需要 admin 权限）</div>";
     }
   }
-  let rgBound = false;
-  function rgBindOnce() { if (!rgBound) { rgBound = true; rgBind(); } }
+  async function loadRegistry() { return rgLoad(); }
 
   // ---------- 权限包 ----------
   async function loadRoles() {
