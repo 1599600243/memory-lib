@@ -1500,7 +1500,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
   let rgRefs = {};
   let rgRows = [];
   const rgState = { q: "", tier: "all", onlyEmpty: false, open: null, fw: null };
-  const RG_TIER_ORDER = ["管理员", "框架（主体）", "框架", "会话", "访客", "其他"];
+  const RG_TIER_ORDER = ["管理员", "框架主体", "框架成员", "会话", "访客", "其他"];
   const RG_PACK_LABEL = {
     "librarian-admin": "管理（含 admin）",
     reader: "只读（共享+经历）",
@@ -1519,8 +1519,8 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
   const RG_FRAMEWORK_AGENTS = new Set(["pilot-01", "admin-01", "home-circle", "work-circle"]);
   function rgTierOf(agentId, role) {
     if (Array.isArray(role?.actions) && role.actions.includes("admin")) return "管理员";
-    if (agentId === "qq-bot") return "框架（主体）";
-    if (RG_FRAMEWORK_AGENTS.has(agentId)) return "框架";
+    if (agentId === "qq-bot") return "框架主体";
+    if (RG_FRAMEWORK_AGENTS.has(agentId)) return "框架成员";
     if (String(agentId).startsWith("qq-")) return (rgRefs[role?.user_id] ?? 0) > 0 ? "会话" : "访客";
     return "其他";
   }
@@ -1602,7 +1602,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
         '<span class="rg-dim">' + agents + ' 主体 · ' + list.length + ' 权限包 · 引用 ' + nf.format(refs) + '</span></summary>' +
         tiers.map((tier) => {
           const g = list.filter((x) => x.tier === tier);
-          return '<details class="rg-tier"' + (tier === "访客" ? "" : " open") + '><summary>' + esc(tier) + ' · ' + g.length + '</summary>' +
+          return '<details class="rg-tier"' + (tier === "访客" ? "" : " open") + '><summary>' + esc(tier) + ' · ' + new Set(g.map((x) => x.agent)).size + ' 主体 / ' + g.length + ' 权限包</summary>' +
             '<table class="rg-table">' + head + '<tbody>' + g.map(rowHtml).join("") + '</tbody></table></details>';
         }).join("") + '</details>';
     }).join("");
