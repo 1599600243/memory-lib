@@ -202,6 +202,15 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
   .rg-role label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--fg-2)}
   .rg-role .rg-input{min-width:0;width:100%}
 
+
+  .rg-fw{border:1px solid var(--line);border-radius:var(--r);margin:0 14px 12px;background:var(--panel)}
+  .rg-fw>summary{cursor:pointer;padding:10px 12px;display:flex;gap:10px;align-items:baseline;list-style:none}
+  .rg-fw>summary::-webkit-details-marker{display:none}
+  .rg-fw>summary b{font-family:var(--mono);font-size:13px}
+  .rg-tier{margin:0 0 6px}
+  .rg-tier>summary{cursor:pointer;padding:6px 12px;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--fg-2);background:var(--panel-2);list-style:none;border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft)}
+  .rg-tier>summary::-webkit-details-marker{display:none}
+  .rg-tier .rg-table{margin:0}
 </style>
 </head>
 <body>
@@ -1531,6 +1540,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
         rgRows.push({
           agent: a.agent_id,
           role: r,
+          framework: rgModel.framework_id,
           tier: rgTierOf(a.agent_id, r),
           pack: RG_PACK_LABEL[r.role_id] ?? r.role_id,
           domain: rgDomainOf(r),
@@ -1571,26 +1581,36 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
       $("rgList").innerHTML = '<div class="empty">没有匹配的主体。试试清空搜索，或把层级切回「全部」。</div>';
       return;
     }
-    const groups = {};
-    for (const x of rows) (groups[x.tier] ??= []).push(x);
-    const order = RG_TIER_ORDER.filter((t) => groups[t]);
-    $("rgList").innerHTML = '<table class="rg-table"><thead><tr>' +
-      '<th>主体</th><th>层级</th><th>权限包</th><th>数据域</th><th class="num">引用</th><th>状态</th><th class="num">操作</th>' +
-      "</tr></thead><tbody>" +
-      order.map((tier) => {
-        const g = groups[tier];
-        return '<tr class="rg-group"><td colspan="7">' + esc(tier) + " · " + g.length + "</td></tr>" +
-          g.map((x) => '<tr class="rg-row" data-agent="' + esc(x.agent) + '">' +
-            '<td><code>' + esc(x.agent) + "</code></td>" +
-            '<td>' + rgPill(tier === "管理员" ? "bad" : tier === "访客" ? "warn" : "ok", tier) + "</td>" +
-            '<td><span class="tag">' + esc(x.pack) + "</span></td>" +
-            '<td><code class="rg-dim">' + esc(x.domain) + "</code></td>" +
-            '<td class="num">' + nf.format(x.refs) + "</td>" +
-            '<td>' + (x.refs > 0 ? rgPill("ok", "使用中") : tier === "访客" ? rgPill("warn", "空壳") : "—") + "</td>" +
-            '<td class="num"><button class="btn rg-mini" data-open="' + esc(x.agent) + '" type="button">编辑</button></td>' +
-          "</tr>").join("");
-      }).join("") + "</tbody></table>";
+    // 按框架 → 层级两级分组，框架与层级都可折叠；访客默认收起。
+    const byFramework = {};
+    for (const x of rows) (byFramework[x.framework] ??= []).push(x);
+    const tierOrder = RG_TIER_ORDER.filter((t) => rows.some((x) => x.tier === t));
+    const head = '<thead><tr><th>主体</th><th>层级</th><th>权限包</th><th>数据域</th><th class="num">引用</th><th>状态</th><th class="num">操作</th></tr></thead>';
+    const rowHtml = (x) => '<tr class="rg-row" data-agent="' + esc(x.agent) + '">' +
+      '<td><code>' + esc(x.agent) + "</code></td>" +
+      '<td>' + rgPill(x.tier === "管理员" ? "bad" : x.tier === "访客" ? "warn" : "ok", x.tier) + "</td>" +
+      '<td><span class="tag">' + esc(x.pack) + "</span></td>" +
+      '<td><code class="rg-dim">' + esc(x.domain) + "</code></td>" +
+      '<td class="num">' + nf.format(x.refs) + "</td>" +
+      '<td>' + (x.refs > 0 ? rgPill("ok", "使用中") : x.tier === "访客" ? rgPill("warn", "空壳") : "—") + "</td>" +
+      '<td class="num"><button class="btn rg-mini" data-open="' + esc(x.agent) + '" type="button">编辑</button></td></tr>';
+
+    $("rgList").innerHTML = Object.entries(byFramework).map(([fw, list]) => {
+      const agents = new Set(list.map((x) => x.agent)).size;
+      const refs = list.reduce((n, x) => n + x.refs, 0);
+      const tiers = tierOrder.filter((t) => list.some((x) => x.tier === t));
+      return '<details class="rg-fw" open>' +
+        '<summary class="rg-fw-summary"><b>' + esc(fw) + '</b>' +
+        '<span class="rg-dim">' + agents + ' 主体 · ' + list.length + ' 权限包 · 引用 ' + nf.format(refs) + '</span></summary>' +
+        tiers.map((tier) => {
+          const g = list.filter((x) => x.tier === tier);
+          const open = tier !== "访客" ? " open" : "";
+          return '<details class="rg-tier"' + open + '><summary>' + esc(tier) + ' · ' + g.length + '</summary>' +
+            '<table class="rg-table">' + head + '<tbody>' + g.map(rowHtml).join("") + '</tbody></table></details>';
+        }).join("") + '</details>';
+    }).join("");
   }
+
   function rgRenderDrawer() {
     const box = $("rgDrawer");
     if (!rgState.open) { box.hidden = true; return; }
