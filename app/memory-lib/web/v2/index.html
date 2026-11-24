@@ -213,6 +213,12 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
   .rg-tier .rg-table{margin:0}
   .rg-packs-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 12px 0}
   .rg-pin{min-width:120px}
+  .rg-chip.on{background:var(--acc-bg);border-color:var(--acc);color:var(--acc)}
+  .rg-chip input{margin-right:4px}
+  .rg-x{border:0;background:transparent;color:var(--fg-3);cursor:pointer;padding:0 2px;font:inherit}
+  .rg-x:hover{color:var(--bad)}
+  .rg-scope-add{display:flex;gap:6px;margin-top:6px;align-items:center}
+  .rg-sel{min-width:84px}
 </style>
 </head>
 <body>
@@ -1760,7 +1766,42 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
       $("rgPackSave").disabled = true;
     });
     $("rgPackList").addEventListener("input", (e) => { if (e.target.classList.contains("rg-pin")) rgPackUpdate(e.target); });
+    $("rgPackList").addEventListener("change", (e) => {
+      const cb = e.target.closest(".rg-act");
+      if (!cb) return;
+      const p = rgPacksModel[Number(cb.dataset.pi)];
+      if (!p) return;
+      const act = cb.dataset.act;
+      p.actions = cb.checked ? [...new Set([...(p.actions || []), act])] : (p.actions || []).filter((x) => x !== act);
+      rgRenderPacks();
+      $("rgPackMsg").textContent = "有未预览的修改";
+      $("rgPackSave").disabled = true;
+    });
     $("rgPackList").addEventListener("click", (e) => {
+      const delScope = e.target.closest("[data-scope-del]");
+      if (delScope) {
+        const p = rgPacksModel[Number(delScope.dataset.scopeDel)];
+        if (p) p.scopes.splice(Number(delScope.dataset.si), 1);
+        rgRenderPacks();
+        $("rgPackMsg").textContent = "有未预览的修改";
+        $("rgPackSave").disabled = true;
+        return;
+      }
+      const addScope = e.target.closest("[data-scope-add]");
+      if (addScope) {
+        const i = Number(addScope.dataset.scopeAdd);
+        const p = rgPacksModel[i];
+        const row = addScope.closest("tr");
+        const layer = row.querySelector('select[data-k="layer"]').value;
+        const visibility = row.querySelector('select[data-k="visibility"]').value;
+        if (p && !(p.scopes || []).some((s) => s.layer === layer && s.visibility === visibility)) {
+          p.scopes = [...(p.scopes || []), { layer, visibility }];
+          rgRenderPacks();
+          $("rgPackMsg").textContent = "有未预览的修改";
+          $("rgPackSave").disabled = true;
+        }
+        return;
+      }
       const btn = e.target.closest("[data-pack-del]");
       if (!btn) return;
       rgPacksModel.splice(Number(btn.dataset.packDel), 1);
@@ -1786,21 +1827,25 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
   let rgBound = false;
   function rgBindOnce() { if (!rgBound) { rgBound = true; rgBind(); } }
   // 权限包定义（属于记忆库的能力，不归属任何框架）
+  const RG_ACTIONS_CN = { search: "检索", get: "读取", propose: "写入", review: "审核", promote: "晋升", deprecate: "废弃", admin: "管理", learning: "学习", pet: "宠物" };
+  const RG_LAYERS_CN = { memory: "记忆", knowledge: "知识", learning: "学习", runtime: "运行时" };
+  const RG_VIS_CN = { user: "用户", shared: "共享", platform: "平台", agent: "智能体", project: "项目", episodic: "经历", daily: "每日", private: "私有", role: "角色" };
   const RG_CAP_LABEL = {
-    reader: "memory.read",
-    researcher: "memory.read.cross",
-    learner: "learning.use",
-    pet: "pet.use",
-    steward: "memory.review",
-    "capture-ingest": "capture.ingest",
-    "chat-reader": "memory.read.self",
-    "chat-writer": "memory.write.self",
-    "librarian-admin": "admin.all",
-    "home-owner-agent": "scene.home.owner",
-    "home-friend-agent": "scene.home.friend",
-    "ops-collector": "scene.work.collector",
-    "ops-agent": "scene.work.agent",
+    reader: "读取共享记忆",
+    researcher: "跨库检索",
+    learner: "学习中心",
+    pet: "宠物",
+    steward: "审核记忆",
+    "capture-ingest": "采集对话",
+    "chat-reader": "读取本人记忆",
+    "chat-writer": "写入本人记忆",
+    "librarian-admin": "系统管理",
+    "home-owner-agent": "家用·主人",
+    "home-friend-agent": "家用·访客",
+    "ops-collector": "工作·采集",
+    "ops-agent": "工作·代理",
   };
+  function rgScopeText(s) { return (RG_LAYERS_CN[s.layer] ?? s.layer) + "·" + (RG_VIS_CN[s.visibility] ?? s.visibility) + (s.project ? "/" + s.project : "") + (s.agent ? "/" + s.agent : ""); }
   function rgRenderPacks() {
     if (!rgModel) return;
     const editable = rgActorTier === "superadmin";
@@ -1811,23 +1856,30 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
     $("rgPackPreview").hidden = !editable;
     $("rgPackSave").hidden = !editable;
     if (!rgPacksModel.length) { $("rgPackList").innerHTML = '<div class="empty">还没有权限包定义。</div>'; return; }
-    $("rgPackList").innerHTML = '<table class="rg-table"><thead><tr><th>权限包</th><th>能力</th><th>actions</th><th>scopes</th><th class="num">授予</th>' + (editable ? "<th></th>" : "") + "</tr></thead><tbody>" +
-      rgPacksModel.map((p, i) =>
-        '<tr data-pi="' + i + '"><td>' + (editable
+    const actionOpts = Object.keys(RG_ACTIONS_CN);
+    $("rgPackList").innerHTML = '<table class="rg-table"><thead><tr><th>权限包</th><th>能力</th><th>动作</th><th>作用域</th><th class="num">授予</th>' + (editable ? "<th></th>" : "") + "</tr></thead><tbody>" +
+      rgPacksModel.map((p, i) => {
+        const acts = editable
+          ? '<div class="rg-chips">' + actionOpts.map((a) =>
+              '<label class="rg-chip' + ((p.actions || []).includes(a) ? " on" : "") + '"><input type="checkbox" class="rg-act" data-pi="' + i + '" data-act="' + a + '"' + ((p.actions || []).includes(a) ? " checked" : "") + "> " + esc(RG_ACTIONS_CN[a]) + "</label>").join("") + "</div>"
+          : '<span class="rg-dim">' + esc((p.actions || []).map((a) => RG_ACTIONS_CN[a] ?? a).join("、")) + "</span>";
+        const scopes = editable
+          ? '<div class="rg-chips">' + (p.scopes || []).map((s, si) => '<span class="tag">' + esc(rgScopeText(s)) + ' <button class="rg-x" data-scope-del="' + i + '" data-si="' + si + '" type="button">×</button></span>').join("") + "</div>" +
+            '<div class="rg-scope-add"><select class="rg-input rg-sel" data-pi="' + i + '" data-k="layer">' + Object.entries(RG_LAYERS_CN).map(([k, v]) => '<option value="' + k + '">' + v + "</option>").join("") + "</select>" +
+            '<select class="rg-input rg-sel" data-pi="' + i + '" data-k="visibility">' + Object.entries(RG_VIS_CN).filter(([k]) => k !== "private" && k !== "role").map(([k, v]) => '<option value="' + k + '">' + v + "</option>").join("") + "</select>" +
+            '<button class="btn rg-mini" data-scope-add="' + i + '" type="button">+ 作用域</button></div>'
+          : '<span class="rg-dim">' + esc((p.scopes || []).map(rgScopeText).join("、")) + "</span>";
+        return '<tr data-pi="' + i + '"><td>' + (editable
           ? '<input class="rg-input rg-pin" data-pi="' + i + '" data-k="pack_id" value="' + esc(p.pack_id) + '">'
           : "<code>" + esc(p.pack_id) + "</code>") + "</td>" +
-        '<td><span class="tag">' + esc(RG_CAP_LABEL[p.pack_id] ?? p.pack_id) + "</span></td>" +
-        '<td>' + (editable
-          ? '<input class="rg-input rg-pin" data-pi="' + i + '" data-k="actions" value="' + esc((p.actions || []).join(",")) + '">'
-          : '<span class="rg-dim">' + esc((p.actions || []).join(",")) + "</span>") + "</td>" +
-        '<td>' + (editable
-          ? '<input class="rg-input rg-pin" data-pi="' + i + '" data-k="scopes" value="' + esc((p.scopes || []).map((s) => s.layer + ":" + s.visibility).join(",")) + '">'
-          : '<span class="rg-dim">' + esc((p.scopes || []).map((s) => s.layer + ":" + s.visibility).join(",")) + "</span>") + "</td>" +
-        '<td class="num">' + (holders.get(p.pack_id) ?? 0) + "</td>" +
-        (editable ? '<td><button class="btn rg-mini" data-pack-del="' + i + '" type="button">删除</button></td>' : "") +
-        "</tr>").join("") +
-      "</tbody></table>" +
-      '<div class="rg-dim" style="padding:8px 12px">这些是<b>记忆库自己的能力定义</b>（服务端资产），不属于任何框架；框架只持有「被授予」。</div>';
+          '<td><span class="tag">' + esc(RG_CAP_LABEL[p.pack_id] ?? p.pack_id) + "</span></td>" +
+          "<td>" + acts + "</td>" +
+          "<td>" + scopes + "</td>" +
+          '<td class="num">' + (holders.get(p.pack_id) ?? 0) + "</td>" +
+          (editable ? '<td><button class="btn rg-mini" data-pack-del="' + i + '" type="button">删除</button></td>' : "") +
+          "</tr>";
+      }).join("") + "</tbody></table>" +
+      '<div class="rg-dim" style="padding:8px 12px">动作与作用域都是固定词表，勾选/下拉即可；这些是<b>记忆库自己的能力定义</b>，不属于任何框架。</div>';
   }
   function rgPackUpdate(el) {
     const i = Number(el.dataset.pi);
