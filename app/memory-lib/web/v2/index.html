@@ -250,6 +250,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
       <div class="nav-group">
         <h4>治理</h4>
         <a href="#/registry" data-view="registry"><span class="ico">⚿</span>身份权限</a>
+      <a href="#/accounts" data-view="accounts"><span class="ico">☺</span>账号</a>
         <a href="#/roles" data-view="roles"><span class="ico">◉</span>权限包</a>
         <a href="#/audit" data-view="audit"><span class="ico">≡</span>审计日志</a>
         <a href="#/recovery" data-view="recovery"><span class="ico">↺</span>恢复中心</a>
@@ -574,6 +575,28 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
         </div>
       </section>
 
+
+      <!-- 账号 -->
+      <section class="view" id="view-accounts">
+        <div class="cards" id="acCards"></div>
+        <div class="panel">
+          <h2>控制台账号 <span class="right" id="acRight"></span></h2>
+          <div id="acList"><div class="empty"><div class="skeleton"></div></div></div>
+        </div>
+        <div class="panel">
+          <h2>新建账号</h2>
+          <div class="rg-actions" style="padding:12px 14px">
+            <input class="rg-input" id="acUser" placeholder="用户名">
+            <input class="rg-input" id="acPass" type="password" placeholder="密码（≥8 位）">
+            <select class="rg-input" id="acFramework"></select>
+            <select class="rg-input" id="acAgent"></select>
+            <select class="rg-input" id="acRole"></select>
+            <button class="btn" id="acCreate" type="button">创建</button>
+            <span class="rg-dim" id="acMsg"></span>
+          </div>
+        </div>
+      </section>
+
       <section class="view" id="view-todo"><div class="panel"><h2 id="todoTitle">页面不可用</h2><div class="err" id="todoDesc">请求的页面不存在或尚未注册。</div></div></section>
     </div>
   </main>
@@ -665,6 +688,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
     evidence: ["证据", "原始对话与来源"],
     graph: ["记忆图谱", "节点与边"],
     registry: ["身份权限", "框架 / 主体 / 权限包"],
+    accounts: ["账号", "控制台登录账号"],
     roles: ["权限包", "能做什么 + 范围"],
     audit: ["审计日志", "访问与拒绝记录"],
     recovery: ["恢复中心", "备份与还原"],
@@ -679,7 +703,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
     plans: ["计划", "计划记忆"],
     profile: ["画像", "学习者画像"],
   };
-  const IMPLEMENTED = new Set(["overview", "flow", "browse", "health", "evidence", "registry", "roles", "audit", "recovery", "ingest", "agents", "runtime", "knowledge", "tools", "projects", "plans", "profile", "learning", "pet", "graph"]);
+  const IMPLEMENTED = new Set(["overview", "flow", "accounts", "browse", "health", "evidence", "registry", "roles", "audit", "recovery", "ingest", "agents", "runtime", "knowledge", "tools", "projects", "plans", "profile", "learning", "pet", "graph"]);
 
   function route() {
     const name = (location.hash.replace(/^#\//, "") || "overview").split("?")[0];
@@ -698,6 +722,7 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
     if (key === "health") loadHealth();
     if (key === "evidence") loadEvidence();
     if (key === "registry") loadRegistry();
+    if (key === "accounts") loadAccounts();
     if (key === "roles") loadRoles();
     if (key === "audit") loadAudit();
     if (key === "recovery") loadRecovery();
@@ -1510,6 +1535,102 @@ input[type=search]:focus,select:focus{outline:2px solid var(--acc);outline-offse
   }
 
   // ---------- 身份权限 ----------
+  // ---------- 账号 ----------
+  let acAccounts = [];
+  let acIdentities = { frameworks: [] };
+  function acFillSelects() {
+    const fwSel = $("acFramework");
+    fwSel.innerHTML = (acIdentities.frameworks || []).map((f) => '<option value="' + esc(f.framework_id) + '">' + esc(f.framework_id) + "</option>").join("");
+    acFillAgents();
+  }
+  function acFillAgents() {
+    const fw = (acIdentities.frameworks || []).find((f) => f.framework_id === $("acFramework").value);
+    const agents = fw?.agents ?? [];
+    $("acAgent").innerHTML = agents.map((a) => '<option value="' + esc(a.agent_id) + '">' + esc(a.agent_id) + "</option>").join("");
+    acFillRoles();
+  }
+  function acFillRoles() {
+    const fw = (acIdentities.frameworks || []).find((f) => f.framework_id === $("acFramework").value);
+    const agent = (fw?.agents ?? []).find((a) => a.agent_id === $("acAgent").value);
+    $("acRole").innerHTML = (agent?.roles ?? []).map((r) => '<option value="' + esc(r.role_id) + '">' + esc(r.role_id) + "</option>").join("");
+  }
+  function acRender() {
+    const rows = acAccounts || [];
+    $("acRight").textContent = rows.length + " 个账号";
+    $("acCards").innerHTML = [
+      ["账号", rows.length, "控制台登录"],
+      ["启用", rows.filter((x) => (x.status ?? "active") === "active").length, "可登录"],
+      ["停用", rows.filter((x) => (x.status ?? "active") !== "active").length, "立即失效"],
+    ].map(([l, v, h]) => '<div class="card"><div class="label">' + l + '</div><div class="num">' + nf.format(v) + '</div><div class="hint">' + esc(h) + '</div></div>').join("");
+    if (!rows.length) { $("acList").innerHTML = '<div class="empty">还没有控制台账号。</div>'; return; }
+    $("acList").innerHTML = '<table class="rg-table"><thead><tr><th>用户名</th><th>框架</th><th>主体</th><th>权限包</th><th>状态</th><th class="num">操作</th></tr></thead><tbody>' +
+      rows.map((a) => {
+        const active = (a.status ?? "active") === "active";
+        return "<tr><td><code>" + esc(a.username) + "</code></td>" +
+          "<td><code class=rg-dim>" + esc(a.framework_id ?? "-") + "</code></td>" +
+          "<td><code class=rg-dim>" + esc(a.agent_id ?? "-") + "</code></td>" +
+          "<td><code class=rg-dim>" + esc(a.role_id ?? "-") + "</code></td>" +
+          "<td>" + (active ? rgPill("ok", "启用") : rgPill("bad", "停用")) + "</td>" +
+          '<td class="num"><button class="btn rg-mini" data-ac-toggle="' + esc(a.username) + '" data-ac-active="' + active + '">' + (active ? "停用" : "启用") + "</button> " +
+          '<button class="btn rg-mini" data-ac-reset="' + esc(a.username) + '">重置密码</button></td></tr>';
+      }).join("") + "</tbody></table>";
+  }
+  async function loadAccounts() {
+    $("acList").innerHTML = '<div class="empty"><div class="skeleton"></div></div>';
+    try {
+      const d = await post("/v1/admin/identity", {});
+      acIdentities = d.identity || { frameworks: [] };
+      acAccounts = acIdentities.accounts || [];
+      acFillSelects();
+      acRender();
+      acBindOnce();
+    } catch (e) {
+      $("acList").innerHTML = '<div class="err">加载失败：' + esc(e.message) + "（需要 admin 权限）</div>";
+    }
+  }
+  async function acCreate() {
+    $("acMsg").textContent = "";
+    try {
+      await post("/v1/admin/account/create", {
+        username: $("acUser").value.trim(),
+        password: $("acPass").value,
+        framework_id: $("acFramework").value,
+        agent_id: $("acAgent").value,
+        role_id: $("acRole").value,
+      });
+      $("acMsg").textContent = "已创建 " + $("acUser").value.trim();
+      $("acUser").value = ""; $("acPass").value = "";
+      await loadAccounts();
+    } catch (e) { $("acMsg").textContent = "创建失败：" + e.message; }
+  }
+  async function acToggle(username, active) {
+    try {
+      await post(active ? "/v1/admin/account/suspend" : "/v1/admin/account/activate", { username });
+      await loadAccounts();
+    } catch (e) { $("acMsg").textContent = "操作失败：" + e.message; }
+  }
+  async function acReset(username) {
+    const password = prompt("给 " + username + " 设置新密码（≥8 位）：");
+    if (!password) return;
+    try {
+      await post("/v1/admin/account/password/reset", { username, password });
+      $("acMsg").textContent = "密码已重置：" + username;
+    } catch (e) { $("acMsg").textContent = "重置失败：" + e.message; }
+  }
+  function acBindOnce() {
+    if (acBindOnce.done) return;
+    acBindOnce.done = true;
+    $("acFramework").addEventListener("change", acFillAgents);
+    $("acAgent").addEventListener("change", acFillRoles);
+    $("acCreate").addEventListener("click", acCreate);
+    $("acList").addEventListener("click", (e) => {
+      const t = e.target.closest("[data-ac-toggle]");
+      if (t) { acToggle(t.dataset.acToggle, t.dataset.acActive === "true"); return; }
+      const r = e.target.closest("[data-ac-reset]");
+      if (r) acReset(r.dataset.acReset);
+    });
+  }
+
   // ---------- 身份与权限（多框架 + 列表 + 抽屉） ----------
   function rgParseRules(text) {
     return String(text || "").split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
