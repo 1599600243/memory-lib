@@ -86,7 +86,6 @@ async function withSourceTrustList(items) {
 
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "::1", "localhost"]);
 let lastGuestGcAt = 0;
-const DEFAULT_CONSOLE_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "web", "console.html");
 const DEFAULT_PET_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "web", "pet.html");
 
 export async function summarizeAuditHealth(auditPath, { threshold = 100, now = Date.now, windowMs = 60_000 } = {}) {
@@ -164,7 +163,7 @@ export function effectiveApiKeyActions(configuredActions = []) {
 }
 
 export function createLocalhostServer(options) {
-  const { libFactory, registryPath, secretStore, auditPath, host = "127.0.0.1", port = 8787, consolePath = DEFAULT_CONSOLE_PATH, petPath = DEFAULT_PET_PATH, secretsDir = null, wincredWriter } = options;
+  const { libFactory, registryPath, secretStore, auditPath, host = "127.0.0.1", port = 8787, petPath = DEFAULT_PET_PATH, secretsDir = null, wincredWriter } = options;
   const apiKeyFile = options.apiKeyFile ?? path.join(path.dirname(registryPath), "api-keys.json");
   const apiKeyPepper = options.apiKeyPepper ?? process.env.MEMORY_LIB_KEY_PEPPER ?? "memory-lib-development-pepper";
   if (!LOOPBACK_HOSTS.has(host)) {
@@ -596,44 +595,19 @@ export function createLocalhostServer(options) {
     }
 
     try {
-      // --- GET /console | / — serve the management console UI (static shell).
+      // --- GET / | /console | /console-v2 — serve console v2（旧控制台 2026-11-25 退役）。
       // Page loads are NOT audited (they carry no data); every API call behind
       // the UI is audited as usual.
-      // 2026-10-30：v2（A 密度 + 深色自动）成为默认首页；旧控制台保留在 /console-legacy。
-      const v2ConsolePath = path.join(path.dirname(consolePath), "v2", "index.html");
+      const v2ConsolePath = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "web", "v2", "index.html");
       if (method === "GET" && (url === "/console" || url === "/" || url === "/console-v2")) {
-        let html = null;
         try {
-          html = await fs.readFile(v2ConsolePath, "utf8");
-        } catch {
-          html = null;
-        }
-        if (html === null) {
-          try {
-            html = await fs.readFile(consolePath, "utf8");
-          } catch {
-            res.writeHead(503, { "content-type": "text/plain; charset=utf-8" });
-            res.end("console not found");
-            return;
-          }
-        }
-        res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
-        res.end(html);
-        return;
-      }
-
-      // --- GET /console-legacy — the previous console (kept for side-by-side comparison).
-      if (method === "GET" && url === "/console-legacy") {
-        let html;
-        try {
-          html = await fs.readFile(consolePath, "utf8");
+          const html = await fs.readFile(v2ConsolePath, "utf8");
+          res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+          res.end(html);
         } catch {
           res.writeHead(503, { "content-type": "text/plain; charset=utf-8" });
-          res.end("console.html not found");
-          return;
+          res.end("console v2 not found");
         }
-        res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
-        res.end(html);
         return;
       }
 
