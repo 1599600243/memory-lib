@@ -35,11 +35,18 @@ async function markdownFiles(root) {
   return (await walkFiles(root)).filter((file) => path.extname(file).toLowerCase() === ".md");
 }
 async function readEntries(root) {
+  // 2026-11-25：原来逐个 await 读盘，8k+11k 文件要 3.5s（capture 每次扫 3 遍 ⇒ 11-17s）。
+  // 改成小并发批处理；语义不变，顺序仍按文件名。
+  const files = await markdownFiles(root);
+  const BATCH = 64;
   const entries = [];
-  for (const file of await markdownFiles(root)) {
-    const text = await readTextFile(file);
-    const fm = text ? active(text) : null;
-    if (fm) entries.push({ file, text, frontmatter: fm });
+  for (let i = 0; i < files.length; i += BATCH) {
+    const chunk = files.slice(i, i + BATCH);
+    const read = await Promise.all(chunk.map((file) => readTextFile(file).then((text) => ({ file, text }))));
+    for (const { file, text } of read) {
+      const fm = text ? active(text) : null;
+      if (fm) entries.push({ file, text, frontmatter: fm });
+    }
   }
   return entries;
 }
@@ -78,6 +85,19 @@ export function isInsideRetrievalRoot(candidate, dataRoot = null) {
   const relative = dataRoot ? path.relative(dataRoot, path.resolve(String(candidate))) : String(candidate);
   const normalized = relative.split(path.sep).join("/");
   return REFINED_DIRS.some((dir) => normalized === dir || normalized.startsWith(`${dir}/`));
+}
+
+// 2026-11-25：snapshot/pending 每次扫全部证据+记忆（8k+11k），单次 ~3.5s；
+// capture 会连调 3 次（statusFor），把写入路径拖到 11-17s。
+// libFactory 是**按请求**创建的，所以缓存必须放在模块级，否则每个请求都冷启动。
+const STATUS_CACHE_TTL_MS = 120_000;
+const statusCache = new Map();
+function cachedStatus(key, fn) {
+  const hit = statusCache.get(key);
+  if (hit && Date.now() - hit.at < STATUS_CACHE_TTL_MS) return hit.value;
+  const value = Promise.resolve().then(fn).catch((error) => { statusCache.delete(key); throw error; });
+  statusCache.set(key, { at: Date.now(), value });
+  return value;
 }
 
 export function createRefinementObservability({ dataRoot, audit = null, now = () => Date.now(), threshold = DEFAULT_REFINEMENT_THRESHOLD, reportPath = null } = {}) {
@@ -143,10 +163,12 @@ export function createRefinementObservability({ dataRoot, audit = null, now = ()
   }
 
   async function statusFor(evidenceId, { group_id = null, user_id = null } = {}) {
-    const metrics = await snapshot({ group_id, user_id });
-    const today = await pending({ group_id, user_id });
-    const all = await pending({ group_id, user_id, since: "1970-01-01", limit: 200 });
-    return { pending: today.items.some((item) => item.evidence_id === evidenceId), unrefined_today: today.total_count, unrefined_total: all.total_count, last_refined_at: metrics.last_refined_at };
+    // 只做一次全量扫描（原来 snapshot + today + all 共 3 次），今天/总量都从同一份结果里数。
+    const __k = dataRoot + "|" + group_id + ":" + user_id;
+    const all = await cachedStatus("pending-all:" + __k, () => pending({ group_id, user_id, since: "1970-01-01", limit: 200 }));
+    const dayStart = (() => { const d = new Date(now()); d.setUTCHours(0, 0, 0, 0); return d.getTime(); })();
+    const todayItems = all.items.filter((item) => Date.parse(item.captured_at) >= dayStart);
+    return { pending: all.items.some((item) => item.evidence_id === evidenceId), unrefined_today: todayItems.length, unrefined_total: all.total_count, last_refined_at: null };
   }
 
   async function writeReport(metrics, anomalies = []) {

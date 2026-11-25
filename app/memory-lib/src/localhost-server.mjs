@@ -246,7 +246,8 @@ export function createLocalhostServer(options) {
      // 挂在 onCaptured 上 ⇒ HTTP 捕获、队列 drain、transcript 导入、memory ingest、pet remember
      // 这些**所有**走 conversationMemory.capture 的入口都自动被覆盖，不需要各自接线。
      await refinementJobs.recordCapture(event);
-     if (!event.suppressRefinement) await refinementObservability.onCapture(event);
+     // 观测/巡检是旁路：不许阻塞捕获（2026-11-25：单次 onCapture 3.6s，把 capture p90 拖到 17s）
+    if (!event.suppressRefinement) void refinementObservability.onCapture(event).catch(() => {});
      try {
        const indexed = await refreshIndex({ paths: [path.join(dataRoot, "evidence", "conversations", `${event.evidenceId}.md`)], trigger: "capture" });
        return { status: "searchable", indexed };
@@ -1776,7 +1777,7 @@ data: ${JSON.stringify(result)}
           const principal = authenticatedPrincipal(authed, agent, role);
            const result = await conversationMemory.capture({ messages: body?.messages, conversationId, source, eventId: body?.event_id, sessionId: body?.session_id, workspace, tags, partial: body?.partial === true, principal, scopes: captureScopes, extract: body?.extract });
            const refinement = await lib.refinement.statusFor(result.evidenceId, { group_id: principal.group_id === "unknown" ? null : principal.group_id, user_id: principal.user_id === "unknown" ? null : principal.user_id });
-           auditEvent = { ...auditEvent, allow: true, scope: captureScopes, resourceId: result.evidenceId };
+          auditEvent = { ...auditEvent, allow: true, scope: captureScopes, resourceId: result.evidenceId };
           await respond(200, { ok: true, ...result, refinement });
         } catch (err) {
           const detail = await captureRejectionReason(err, authed.framework?.framework_id, agent.agent_id, role.role_id);
